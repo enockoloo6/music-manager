@@ -1,122 +1,88 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+import React, { useState, useEffect } from 'react';
+import { supabase } from './supabaseClient';
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [songs, setSongs] = useState([]);
+  const [keyboards, setKeyboards] = useState([]);
+  const [search, setSearch] = useState('');
+  const [formData, setFormData] = useState({ song_name: '', beat_name: '', keyboard_id: '', tempo: '', key: '', location: '' });
+
+  useEffect(() => {
+    fetchSongs();
+    fetchKeyboards();
+  }, []);
+
+  async function fetchKeyboards() {
+    const { data } = await supabase.from('keyboards').select('*');
+    setKeyboards(data);
+  }
+
+  async function fetchSongs() {
+    const { data } = await supabase.from('songs').select(`*, styles(*, keyboards(*))`);
+    setSongs(data);
+  }
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    // 1. Create or Find Song
+    const { data: songData } = await supabase.from('songs').upsert({ song_name: formData.song_name }).select().single();
+    
+    // 2. Add Style
+    await supabase.from('styles').insert([{
+      song_id: songData.id,
+      keyboard_id: formData.keyboard_id,
+      beat_name: formData.beat_name,
+      tempo: formData.tempo,
+      musical_key: formData.key,
+      keyboard_location: formData.location
+    }]);
+    
+    setFormData({ song_name: '', beat_name: '', keyboard_id: '', tempo: '', key: '', location: '' });
+    fetchSongs();
+  }
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+    <div style={{ padding: '20px', fontFamily: 'sans-serif' }}>
+      <h1>🎹 My Beat Manager</h1>
+      
+      {/* Search Section */}
+      <input 
+        placeholder="Search for a song..." 
+        onChange={(e) => setSearch(e.target.value.toLowerCase())}
+        style={{ width: '100%', padding: '10px', marginBottom: '20px' }}
+      />
 
-      <div className="ticks"></div>
+      {/* Add New Entry Form */}
+      <form onSubmit={handleSubmit} style={{ background: '#f4f4f4', padding: '15px', borderRadius: '8px' }}>
+        <h3>Add New Song/Beat</h3>
+        <input placeholder="Song Name" value={formData.song_name} onChange={e => setFormData({...formData, song_name: e.target.value})} required />
+        <input placeholder="Beat Name" value={formData.beat_name} onChange={e => setFormData({...formData, beat_name: e.target.value})} required />
+        <select onChange={e => setFormData({...formData, keyboard_id: e.target.value})} required>
+          <option value="">Select Keyboard</option>
+          {keyboards.map(kb => <option key={kb.id} value={kb.id}>{kb.model_name}</option>)}
+        </select>
+        <input placeholder="Tempo" type="number" value={formData.tempo} onChange={e => setFormData({...formData, tempo: e.target.value})} />
+        <input placeholder="Key (e.g. C Major)" value={formData.key} onChange={e => setFormData({...formData, key: e.target.value})} />
+        <input placeholder="Menu Location" value={formData.location} onChange={e => setFormData({...formData, location: e.target.value})} />
+        <button type="submit">Save Beat</button>
+      </form>
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+      {/* List Display */}
+      <div style={{ marginTop: '20px' }}>
+        {songs.filter(s => s.song_name.toLowerCase().includes(search)).map(song => (
+          <div key={song.id} style={{ borderBottom: '1px solid #ddd', padding: '10px' }}>
+            <h2>{song.song_name}</h2>
+            {song.styles.map(style => (
+              <div key={style.id} style={{ marginLeft: '20px', color: '#555' }}>
+                <strong>{style.keyboards.model_name}:</strong> {style.beat_name} | {style.tempo} BPM | Key: {style.musical_key}
+                <p>📍 Find it at: {style.keyboard_location}</p>
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 }
 
-export default App
+export default App;
