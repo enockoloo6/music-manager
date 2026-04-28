@@ -1,0 +1,15 @@
+Project: Universal Keyboard Beat Manager
+Stack: React (Vite) + Supabase + Netlify
+Database Tables: songs, keyboards, styles (linked via Foreign Keys)
+Key Features: Search, Add Song/Style, Delete, Print Mode, Notes Field, Environment Variables for security.
+Current Status: App is live on Netlify, connected to GitHub. Credentials are secured via .env and Netlify settings.
+Last Step Completed: Added "Notes" field and "Print" functionality.
+
+
+
+
+
+
+
+
+
