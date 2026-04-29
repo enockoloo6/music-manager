@@ -322,34 +322,84 @@ function App() {
           .filter(s => s.song_name.toLowerCase().includes(search.toLowerCase()))
           .map(song => (
             <div key={song.id} className="card">
+              {/* Song Header */}
               <div className="card-header">
-                <strong style={{ fontSize: '1.2rem' }}>{song.song_name}</strong>
+                <div>
+                  <strong style={{ fontSize: '1.2rem' }}>{song.song_name}</strong>
+                  {song.styles?.length > 0 && (
+                    <span style={{ marginLeft: '10px', fontSize: '0.75rem', color: '#888' }}>
+                      {song.styles.length} beat{song.styles.length > 1 ? 's' : ''}
+                    </span>
+                  )}
+                </div>
                 {role.admin && (
                   <button onClick={() => deleteEntry('songs', song.id)} style={{ color: '#d32f2f', background: 'none' }}>
                     🗑 Delete Song
                   </button>
                 )}
               </div>
-              <div style={{ padding: '15px' }}>
-                {song.styles?.length > 0 ? song.styles.map(style => (
-                  <div key={style.id} style={{ marginBottom: '15px', borderBottom: '1px dotted #ccc', paddingBottom: '10px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <span style={{ fontWeight: 'bold', color: '#1a237e' }}>{style.beat_name}</span>
-                      <span style={{ fontSize: '0.8rem', color: '#666' }}>{style.keyboards?.model_name}</span>
+
+              {/* Beat list */}
+              <div style={{ padding: '0' }}>
+                {song.styles?.length > 0 ? song.styles.map((style, idx) => (
+                  <div key={style.id} style={{
+                    padding: '12px 15px',
+                    borderBottom: idx < song.styles.length - 1 ? '1px solid #eee' : 'none',
+                    background: idx % 2 === 0 ? '#fff' : '#fafafa'
+                  }}>
+
+                    {/* Row 1: Beat name + Location pill side by side */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', marginBottom: '6px' }}>
+                      <span style={{
+                        fontWeight: 'bold', color: '#1a237e', fontSize: '1rem'
+                      }}>
+                        🥁 {style.beat_name}
+                      </span>
+                      {style.keyboard_location && (
+                        <span style={{
+                          background: '#e3f2fd', color: '#1565c0',
+                          padding: '2px 10px', borderRadius: '20px',
+                          fontSize: '0.78rem', fontWeight: '600',
+                          border: '1px solid #90caf9'
+                        }}>
+                          📍 {style.keyboard_location}
+                        </span>
+                      )}
                     </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', fontSize: '0.85rem', marginTop: '5px' }}>
-                      <div>⏱ {style.tempo || '--'} BPM</div>
-                      <div>🎼 Key: {style.musical_key || '--'}</div>
-                      <div>📍 {style.keyboard_location || '--'}</div>
+
+                    {/* Row 2: Keyboard model */}
+                    <div style={{ fontSize: '0.78rem', color: '#888', marginBottom: '5px' }}>
+                      🎹 {style.keyboards?.model_name || '--'}
                     </div>
-                    {style.notes && <p style={{ fontSize: '0.8rem', fontStyle: 'italic', color: '#777', margin: '5px 0' }}>{style.notes}</p>}
+
+                    {/* Row 3: Tempo + Key */}
+                    <div style={{ display: 'flex', gap: '16px', fontSize: '0.82rem', color: '#555' }}>
+                      <span>⏱ <strong>{style.tempo || '--'}</strong> BPM</span>
+                      <span>🎼 Key: <strong>{style.musical_key || '--'}</strong></span>
+                    </div>
+
+                    {/* Notes */}
+                    {style.notes && (
+                      <p style={{
+                        fontSize: '0.8rem', fontStyle: 'italic', color: '#777',
+                        margin: '6px 0 0', paddingTop: '5px',
+                        borderTop: '1px dashed #eee'
+                      }}>
+                        💬 {style.notes}
+                      </p>
+                    )}
+
+                    {/* Remove button */}
                     {role.approved && (
-                      <button onClick={() => deleteEntry('styles', style.id)} style={{ padding: 0, color: 'red', background: 'none', fontSize: '0.7rem' }}>
-                        Remove Style
+                      <button onClick={() => deleteEntry('styles', style.id)}
+                        style={{ marginTop: '6px', padding: '2px 8px', color: '#c62828', background: 'none', fontSize: '0.72rem', border: '1px solid #ef9a9a', borderRadius: '4px' }}>
+                        Remove Beat
                       </button>
                     )}
                   </div>
-                )) : <p style={{ fontSize: '0.8rem', color: '#999' }}>No styles added yet.</p>}
+                )) : (
+                  <p style={{ fontSize: '0.8rem', color: '#999', padding: '12px 15px', margin: 0 }}>No beats added yet.</p>
+                )}
               </div>
             </div>
           ))}
