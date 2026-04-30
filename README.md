@@ -82,7 +82,8 @@ CREATE TABLE profiles (
   email         TEXT,
   is_approved   BOOLEAN DEFAULT FALSE,
   is_admin      BOOLEAN DEFAULT FALSE,
-  is_super_admin BOOLEAN DEFAULT FALSE
+  is_super_admin      BOOLEAN DEFAULT FALSE,
+  default_keyboard_id BIGINT REFERENCES keyboards(id)  -- user's saved default keyboard
 );
 ```
 
@@ -99,6 +100,7 @@ Run these in order in **Supabase → SQL Editor** after creating the tables abov
 | `fix_rls.sql` | RLS policies, `get_all_profiles()` RPC, super-admin trigger, public read for songs/styles/keyboards |
 | `fix_admin_update.sql` | Adds `admin_update_profile()` RPC so admins can approve/promote users (fixes silent button failure caused by RLS) |
 | `add_category_column.sql` | Adds `style_category` column (legacy — not used in current UI) |
+| `add_default_keyboard.sql` | Adds `default_keyboard_id` column to `profiles` — stores each user's preferred keyboard |
 | `insert_keyboards.sql` | Inserts 44 Yamaha keyboard models (PSR-S, PSR-SX, Genos, Tyros, PSR-A, PSR-E series) |
 
 ---
@@ -143,16 +145,17 @@ All tables have RLS enabled:
 | 📋 Beat display | `🥁 8-Beat Modern (found under Ballad) · · · 🎹 PSR-S650` — category inline, keyboard on far right |
 | ✏️ Edit beats | Inline edit — no page navigation needed |
 | 🔢 No duplicates | Song name `<datalist>` autocomplete + DB upsert on `song_name` |
-| 🎹 Keyboard required | Required field on add and edit forms |
+| 🎹 Keyboard field | Required on add and edit forms — pre-filled automatically when a default keyboard is set |
 | 🔒 Toggled forms | Login and Add Beat forms hidden by default, toggled by buttons |
 | 🖨️ Print | Clean printout — all UI controls hidden |
+| 🎹 Default keyboard | Each user sets a preferred keyboard — saved to their profile, persists across logout/reload, auto-fills the keyboard field on every beat entry |
 | 👑 Admin panel | Approve users, grant/revoke admin — no Supabase dashboard needed |
 
 ---
 
 ## 🎹 Keyboard Entry Reference
 
-To keep data consistent, use these shorthands in the **Beat Category / Location** field:
+To keep data consistent, use these shorthands in the **Beat Category** field:
 
 | Shorthand | Meaning |
 |---|---|
@@ -191,6 +194,7 @@ To keep data consistent, use these shorthands in the **Beat Category / Location*
 | **Approve/Admin buttons do nothing** | Run `fix_admin_update.sql` — RLS was blocking cross-user updates |
 | **Stuck on "Loading…"** | Run `fix_rls.sql` — recursive RLS policy on profiles table |
 | **"infinite recursion" error** | Run `fix_rls.sql` to replace all profile policies |
+| **Default keyboard not saving** | Run `add_default_keyboard.sql` — the `default_keyboard_id` column may be missing |
 
 ---
 
@@ -199,6 +203,7 @@ To keep data consistent, use these shorthands in the **Beat Category / Location*
 - [ ] Tables created in Supabase
 - [ ] `fix_rls.sql` run
 - [ ] `fix_admin_update.sql` run
+- [ ] `add_default_keyboard.sql` run
 - [ ] `insert_keyboards.sql` run
 - [ ] Environment variables set
 - [ ] Sign up with `enockoloo6@gmail.com`

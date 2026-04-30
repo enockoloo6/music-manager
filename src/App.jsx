@@ -22,6 +22,7 @@ function App() {
   const [authLoading, setAuthLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState(EMPTY_FORM);
+  const [defaultKeyboardId, setDefaultKeyboardId] = useState('');
 
   // UI toggles
   const [showLoginForm, setShowLoginForm] = useState(false);
@@ -66,12 +67,18 @@ function App() {
   async function loadRole(userId, userEmail) {
     try {
       const { data: profile, error } = await supabase
-        .from('profiles').select('is_approved, is_admin').eq('id', userId).maybeSingle();
+        .from('profiles').select('is_approved, is_admin, default_keyboard_id').eq('id', userId).maybeSingle();
       if (error) throw error;
       if (profile) {
         const r = { approved: !!profile.is_approved, admin: !!profile.is_admin };
         setRole(r);
         if (r.admin) loadProfiles();
+        // Restore saved default keyboard for this user
+        if (profile.default_keyboard_id) {
+          const kId = String(profile.default_keyboard_id);
+          setDefaultKeyboardId(kId);
+          setFormData(f => ({ ...f, keyboard_id: kId }));
+        }
       } else {
         await supabase.from('profiles').insert({ id: userId, email: userEmail, is_approved: false, is_admin: false });
         setRole({ approved: false, admin: false });
@@ -177,7 +184,7 @@ function App() {
       }]);
       if (styleErr) throw styleErr;
 
-      setFormData(EMPTY_FORM);
+      setFormData({ ...EMPTY_FORM, keyboard_id: defaultKeyboardId });
       await fetchSongs();
       alert('✅ Beat saved!');
     } catch (err) {
@@ -376,11 +383,35 @@ function App() {
           />
         </div>
 
-        {/* ── ADD BEAT TOGGLE BUTTON ───────────────────────────────────────── */}
+        {/* ── DEFAULT KEYBOARD + ADD BEAT TOGGLE ──────────────────────────── */}
         {role.approved && (
-          <div className="no-print" style={{ marginBottom: '12px' }}>
+          <div className="no-print" style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px', flexWrap: 'wrap' }}>
+            {/* Default keyboard pill */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '7px', background: '#fff', border: '1px solid #e2e8f0', borderRadius: '7px', padding: '5px 10px', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
+              <span style={{ fontSize: '0.78rem', fontWeight: '700', color: '#4a5568', whiteSpace: 'nowrap' }}>🎹 Default:</span>
+              <select
+                value={defaultKeyboardId}
+                onChange={async e => {
+                  const val = e.target.value;
+                  setDefaultKeyboardId(val);
+                  // Always keep the add form in sync
+                  setFormData(f => ({ ...f, keyboard_id: val }));
+                  // Persist to DB so it survives logout/reload
+                  if (user) {
+                    await supabase.from('profiles')
+                      .update({ default_keyboard_id: val || null })
+                      .eq('id', user.id);
+                  }
+                }}
+                style={{ border: 'none', background: 'transparent', fontSize: '0.85rem', color: '#1a237e', fontWeight: '600', padding: '2px 4px', cursor: 'pointer', maxWidth: '200px' }}
+              >
+                <option value="">— set default —</option>
+                {keyboards.map(k => <option key={k.id} value={k.id}>{k.model_name}</option>)}
+              </select>
+            </div>
+            {/* Add beat button */}
             <button
-              onClick={() => setShowAddForm(v => !v)}
+              onClick={() => { setShowAddForm(v => !v); if (!showAddForm) setFormData(f => ({ ...f, keyboard_id: defaultKeyboardId || f.keyboard_id })); }}
               style={{ background: showAddForm ? '#455a64' : '#1a237e', color: 'white', padding: '9px 18px', fontSize: '0.92rem', display: 'flex', alignItems: 'center', gap: '7px' }}>
               <span>{showAddForm ? '✕' : '➕'}</span>
               {showAddForm ? 'Close Form' : 'Add New Beat'}
@@ -431,13 +462,12 @@ function App() {
                 />
               </div>
               <div>
-                <label>Beat Category / Location on Keyboard</label>
+                <label>Beat Category</label>
                 <input
                   placeholder="e.g. Ballad, Country, Bank 3…"
                   value={formData.location}
                   onChange={e => setFormData({ ...formData, location: e.target.value })}
                 />
-                <span style={{ fontSize: '0.71rem', color: '#94a3b8' }}>Where this beat is found on the keyboard</span>
               </div>
             </div>
 
@@ -506,44 +536,61 @@ function App() {
 
                       {editingId === style.id ? (
                         /* ── EDIT MODE ─────────────────────────── */
-                        <div>
-                          <div style={{ fontSize: '0.76rem', fontWeight: '700', color: '#1a237e', marginBottom: '7px' }}>✏️ Editing beat</div>
-                          <div className="edit-grid">
+                        <div style={{ background: '#f0f4ff', borderRadius: '8px', padding: '12px', border: '1px solid #c5d0f5' }}>
+                          <div style={{ fontSize: '0.76rem', fontWeight: '700', color: '#1a237e', marginBottom: '10px' }}>✏️ Editing beat</div>
+
+                          {/* Row 1: Song (read-only display) | Keyboard */}
+                          <div className="form-grid">
                             <div>
-                              <label style={{ fontSize: '0.7rem' }}>Beat Name *</label>
-                              <input style={ei} value={editData.beat_name} onChange={e => setEditData({ ...editData, beat_name: e.target.value })} />
+                              <label>Song</label>
+                              <input style={ei} value={song.song_name} disabled />
                             </div>
                             <div>
-                              <label style={{ fontSize: '0.7rem' }}>Beat Category / Location</label>
-                              <input style={ei} placeholder="e.g. Ballad, Country…" value={editData.location} onChange={e => setEditData({ ...editData, location: e.target.value })} />
-                            </div>
-                            <div>
-                              <label style={{ fontSize: '0.7rem' }}>Keyboard *</label>
+                              <label>Keyboard *</label>
                               <select style={{ ...ei, padding: '6px 8px' }} value={editData.keyboard_id} onChange={e => setEditData({ ...editData, keyboard_id: e.target.value })}>
                                 <option value="">Select…</option>
                                 {keyboards.map(k => <option key={k.id} value={k.id}>{k.model_name}</option>)}
                               </select>
                             </div>
+                          </div>
+
+                          {/* Row 2: Beat Name | Beat Category */}
+                          <div className="form-grid" style={{ marginTop: '8px' }}>
                             <div>
-                              <label style={{ fontSize: '0.7rem' }}>Tempo (BPM)</label>
-                              <input style={ei} type="number" value={editData.tempo} onChange={e => setEditData({ ...editData, tempo: e.target.value })} />
+                              <label>Beat Name *</label>
+                              <input style={ei} placeholder="e.g. 8-Beat Modern" value={editData.beat_name} onChange={e => setEditData({ ...editData, beat_name: e.target.value })} />
                             </div>
                             <div>
-                              <label style={{ fontSize: '0.7rem' }}>Key</label>
-                              <input style={ei} placeholder="e.g. G" value={editData.key} onChange={e => setEditData({ ...editData, key: e.target.value })} />
-                            </div>
-                            <div style={{ gridColumn: '1 / -1' }}>
-                              <label style={{ fontSize: '0.7rem' }}>Notes</label>
-                              <textarea style={{ ...ei, height: '56px', resize: 'vertical' }} value={editData.notes} onChange={e => setEditData({ ...editData, notes: e.target.value })} />
+                              <label>Beat Category</label>
+                              <input style={ei} placeholder="e.g. Ballad, Country…" value={editData.location} onChange={e => setEditData({ ...editData, location: e.target.value })} />
                             </div>
                           </div>
-                          <div style={{ display: 'flex', gap: '8px', marginTop: '9px' }}>
+
+                          {/* Row 3: Tempo | Key */}
+                          <div className="form-grid" style={{ marginTop: '8px' }}>
+                            <div>
+                              <label>Tempo (BPM)</label>
+                              <input style={ei} type="number" placeholder="e.g. 92" value={editData.tempo} onChange={e => setEditData({ ...editData, tempo: e.target.value })} />
+                            </div>
+                            <div>
+                              <label>Key</label>
+                              <input style={ei} placeholder="e.g. G, Bb" value={editData.key} onChange={e => setEditData({ ...editData, key: e.target.value })} />
+                            </div>
+                          </div>
+
+                          {/* Notes */}
+                          <div style={{ marginTop: '8px' }}>
+                            <label>Notes</label>
+                            <textarea style={{ ...ei, minHeight: '56px', resize: 'vertical' }} placeholder="Fill levels, variations…" value={editData.notes} onChange={e => setEditData({ ...editData, notes: e.target.value })} />
+                          </div>
+
+                          <div style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
                             <button onClick={() => saveEdit(style.id)} disabled={saving}
-                              style={{ background: '#1a237e', color: 'white', fontSize: '0.8rem', padding: '6px 14px' }}>
-                              {saving ? '⏳…' : '💾 Save'}
+                              style={{ background: '#1a237e', color: 'white', fontSize: '0.85rem', padding: '8px 18px' }}>
+                              {saving ? '⏳…' : '💾 Save Changes'}
                             </button>
                             <button onClick={cancelEdit}
-                              style={{ background: '#eef0f3', color: '#555', fontSize: '0.8rem', padding: '6px 14px' }}>
+                              style={{ background: '#eef0f3', color: '#555', fontSize: '0.85rem', padding: '8px 14px' }}>
                               Cancel
                             </button>
                           </div>
