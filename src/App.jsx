@@ -89,8 +89,22 @@ function App() {
 
   async function toggleStatus(pId, field, current) {
     const target = profiles.find(p => p.id === pId);
-    if (target?.email === SUPER_ADMIN_EMAIL) return;
-    await supabase.from('profiles').update({ [field]: !current }).eq('id', pId);
+    if (!target || target.email === SUPER_ADMIN_EMAIL) return;
+
+    // Compute the new values for both fields — RPC requires both at once
+    const newApproved = field === 'is_approved' ? !current : !!target.is_approved;
+    const newAdmin    = field === 'is_admin'    ? !current : !!target.is_admin;
+
+    const { error } = await supabase.rpc('admin_update_profile', {
+      target_id:        pId,
+      new_is_approved:  newApproved,
+      new_is_admin:     newAdmin
+    });
+
+    if (error) {
+      alert('Update failed: ' + error.message);
+      return;
+    }
     loadProfiles();
   }
 
