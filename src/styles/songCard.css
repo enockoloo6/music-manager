@@ -1,0 +1,69 @@
+.song-card {
+  overflow: hidden;
+}
+
+.song-card__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.song-card__title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.song-card__actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.song-card__actions button {
+  border: none;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  background: #eef2ff;
+  color: #1e3a8a;
+}
+
+.song-card__delete {
+  background: #fee2e2 !important;
+  color: #b91c1c !important;
+}
+
+.song-card__lyrics-badge {
+  background: #dcfce7;
+  color: #166534;
+  font-size: 0.72rem;
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-weight: 700;
+}
+
+.song-card__lyrics-preview {
+  margin: 0 16px 16px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: #f8fafc;
+  color: #475569;
+  font-size: 0.88rem;
+  line-height: 1.7;
+  border-left: 4px solid #cbd5e1;
+}
+
+@media (max-width: 768px) {
+  .song-card__actions {
+    width: 100%;
+  }
+
+  .song-card__actions button {
+    flex: 1;
+  }
+}
