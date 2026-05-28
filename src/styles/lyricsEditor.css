@@ -1,0 +1,58 @@
+.lyrics-editor {
+  background: #fff;
+  border: 1px solid #dbe4ee;
+  border-radius: 12px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.lyrics-editor__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.lyrics-editor__label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #64748b;
+  margin-bottom: 4px;
+}
+
+.lyrics-editor textarea {
+  width: 100%;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  padding: 14px;
+  resize: vertical;
+  font-family: inherit;
+  font-size: 0.98rem;
+  line-height: 1.7;
+}
+
+.lyrics-editor__actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.lyrics-editor__actions span {
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
+.lyrics-editor button {
+  background: #1a237e;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-weight: 600;
+}
