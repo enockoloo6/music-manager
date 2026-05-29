@@ -5,6 +5,7 @@ import AppFooter from './components/AppFooter';
 import LyricsEditor from './components/LyricsEditor';
 import LyricsMode from './components/LyricsMode';
 import OfflineBanner from './components/OfflineBanner';
+import RecentAdditions from './components/RecentAdditions';
 import SearchBar from './components/SearchBar';
 import SongCard from './components/SongCard';
 import VersionBadge from './components/VersionBadge';
@@ -356,6 +357,21 @@ function AppIntegrated() {
     [songs, search]
   );
 
+  const recentAdditions = useMemo(() => (
+    songs
+      .flatMap(song => (song.styles || []).map(style => ({
+        id: style.id,
+        songName: song.song_name,
+        beatName: style.beat_name,
+        category: style.keyboard_location,
+        keyboardName: style.keyboards?.model_name,
+        createdAt: style.created_at
+      })))
+      .filter(item => item.createdAt)
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+      .slice(0, 5)
+  ), [songs]);
+
   const isSuperAdmin = emailAddress => emailAddress === SUPER_ADMIN_EMAIL;
 
   const Badge = ({ text, color }) => (
@@ -387,7 +403,16 @@ function AppIntegrated() {
         .beat-row:last-child { border-bottom: none; }
         .panel { background: #fff; border: 1px solid #e2e8f0; border-radius: 11px; padding: 20px; margin-bottom: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.05); }
         .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-        @media (max-width: 700px) { .form-grid { grid-template-columns: 1fr; } }
+        .recent-additions { background: #fff; border: 1px solid #e2e8f0; border-radius: 11px; padding: 14px; margin: 0 0 14px; box-shadow: 0 1px 4px rgba(0,0,0,0.05); }
+        .recent-additions__header { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 8px; }
+        .recent-additions__header h2 { margin: 0; color: #1a237e; font-size: 1rem; }
+        .recent-additions__header > span { background: #e8eaf6; color: #1a237e; border-radius: 999px; padding: 3px 9px; font-size: 0.74rem; font-weight: 700; }
+        .recent-additions__eyebrow { color: #64748b; font-size: 0.72rem; font-weight: 800; letter-spacing: 0.07em; text-transform: uppercase; }
+        .recent-additions__item { display: flex; justify-content: space-between; gap: 12px; padding: 8px 0; border-top: 1px solid #f1f5f9; }
+        .recent-additions__item strong { color: #1a237e; font-size: 0.9rem; }
+        .recent-additions__meta { color: #64748b; font-size: 0.78rem; margin-top: 2px; }
+        .recent-additions__item time { color: #94a3b8; font-size: 0.74rem; white-space: nowrap; }
+        @media (max-width: 700px) { .form-grid { grid-template-columns: 1fr; } .recent-additions__item { flex-direction: column; gap: 3px; } }
       `}</style>
 
       <div style={{ background: 'linear-gradient(90deg,#0d1b6e 0%,#1a237e 100%)', padding: '12px 22px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap', boxShadow: '0 2px 8px rgba(0,0,0,0.2)' }}>
@@ -481,6 +506,7 @@ function AppIntegrated() {
         )}
 
         <SearchBar value={search} onChange={setSearch} resultCount={filteredSongs.length} totalCount={songs.length} />
+        <RecentAdditions items={recentAdditions} />
 
         {role.approved && (
           <div className="no-print" style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px', flexWrap: 'wrap' }}>
