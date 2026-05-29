@@ -29,15 +29,21 @@ Do not work directly on `main` because it auto-deploys to Netlify production.
 ## Active Release
 
 ```text
-v1.1.0 — Lyrics Support
+v1.2.0 — Category Quick Filters
 ```
 
-Current goal:
+Current active task:
 
-- allow lyrics to be saved per song
-- make lyrics easy to view during singing
-- prepare the app for audio playback later
-- continue reducing the size of `src/App.jsx`
+```text
+Integrate src/components/CategoryFilters.jsx into src/AppIntegrated.jsx.
+```
+
+Important:
+
+- `CategoryFilters.jsx` already exists.
+- Do not recreate `CategoryFilters.jsx`.
+- Categories are stored in `styles.keyboard_location`, not `songs.category`.
+- `src/App.jsx` already exports `AppIntegrated`.
 
 ---
 
@@ -46,108 +52,191 @@ Current goal:
 Before continuing work, review these files:
 
 ```text
+START_HERE_MUSIC_MANAGER.md
 ROADMAP.md
-docs/refactor-progress.md
-docs/lyrics-mode-plan.md
-docs/audio-support-plan.md
+docs/checkpoints.md
+docs/app-integration-switch.md
+docs/recent-additions-and-audit-plan.md
 ```
 
-These explain what is done, pending, and in progress.
-
----
-
-# Database Migration Already Added
+Then review the active app files:
 
 ```text
-supabase/migrations/20260528_add_lyrics_to_songs.sql
-```
-
-Adds:
-
-```sql
-music_manager.songs.lyrics text
-```
-
-Remember to run schema refresh after database changes:
-
-```sql
-notify pgrst, 'reload schema';
-```
-
----
-
-# Components Already Extracted
-
-```text
-src/components/LyricsMode.jsx
-src/components/LyricsEditor.jsx
-src/components/SongCard.jsx
-src/components/SearchBar.jsx
-src/components/AppFooter.jsx
-src/components/VersionBadge.jsx
-```
-
----
-
-# Services Already Added
-
-```text
+src/AppIntegrated.jsx
+src/App.jsx
+src/components/CategoryFilters.jsx
 src/services/songLyricsService.js
 ```
 
-Includes:
-
-- updating song lyrics
-- lyrics-aware search helper
-
 ---
 
-# Styles Already Added
+# Current App Status
 
-```text
-src/styles/lyricsMode.css
-src/styles/lyricsEditor.css
-src/styles/songCard.css
-src/styles/searchBar.css
-src/styles/appFooter.css
-```
-
----
-
-# Versioning Groundwork
-
-```text
-src/appVersion.js
-```
-
-Contains:
+The active app switch has already been done. `src/App.jsx` exports `AppIntegrated`:
 
 ```js
-APP_VERSION
-APP_RELEASE_NAME
+import AppIntegrated from './AppIntegrated';
+
+export default AppIntegrated;
+```
+
+Main active app logic is now in:
+
+```text
+src/AppIntegrated.jsx
+```
+
+---
+
+# Completed Features
+
+## Authentication and Admin
+
+```text
+✓ login
+✓ signup
+✓ logout
+✓ admin approval
+✓ admin promotion
+✓ protected super admin
+✓ default keyboard
+```
+
+Protected super admin:
+
+```text
+enockoloo6@gmail.com
+```
+
+## Library Management
+
+```text
+✓ song loading
+✓ keyboard loading
+✓ add beat
+✓ edit beat
+✓ delete beat
+✓ delete song
+```
+
+## Lyrics / Presentation
+
+```text
+✓ lyrics storage
+✓ lyrics editor
+✓ lyrics search
+✓ presentation mode
+✓ large lyrics display
+✓ font size controls
+✓ print from presentation mode
+```
+
+## Dashboard
+
+```text
+✓ SearchBar
+✓ Recently Added panel
+✓ Recently Added collapse/expand
+✓ Recently Added state persistence
+✓ Library Statistics dashboard
+```
+
+## Search
+
+Search currently supports:
+
+```text
+✓ song name
+✓ lyrics
+✓ beat name
+✓ category
+✓ keyboard model
+✓ tempo
+✓ musical key
+✓ notes
+✓ date search
+```
+
+Date search examples:
+
+```text
+today
+yesterday
+this week
+last week
+May 2026
+29 May 2026
+```
+
+---
+
+# Critical Data Model Note
+
+There is currently no `songs.category` field.
+
+Categories are stored on styles/beats:
+
+```text
+styles.keyboard_location
+```
+
+Category filtering must therefore use the song styles array, for example:
+
+```js
+song.styles.some((style) => style.keyboard_location === selectedCategory)
+```
+
+This is important because one song can have multiple beats/styles/categories.
+
+---
+
+# Audit Policy
+
+Audit information is admin-only.
+
+```text
+✓ Admins can see audit information
+✗ Normal users cannot see audit information
+```
+
+Any audit trail UI or recently modified metadata must respect this policy.
+
+---
+
+# Documentation Rule
+
+After every milestone completion, update the handoff documentation so a new chat can continue without guessing.
+
+At minimum, keep these files synchronized:
+
+```text
+START_HERE_MUSIC_MANAGER.md
+docs/resume-guide.md
+docs/checkpoints.md
+docs/app-integration-switch.md
+ROADMAP.md
 ```
 
 ---
 
 # Next Coding Task
 
-The next important step is wiring the extracted pieces into `src/App.jsx`:
+Integrate Category Quick Filters:
 
-- import the new components
-- import the new CSS files
-- replace inline search with `SearchBar`
-- replace inline song card rendering with `SongCard`
-- add LyricsMode state
-- add LyricsEditor state
-- use `updateSongLyrics()` from `songLyricsService.js`
-- use `songMatchesSearch()` for title + lyrics search
-- render `AppFooter`
+1. Import existing `CategoryFilters.jsx` into `src/AppIntegrated.jsx`.
+2. Derive available categories from `songs[].styles[].keyboard_location`.
+3. Store selected category filter state.
+4. Apply the selected category together with the existing search results.
+5. Provide an `All` option to clear the category filter.
+6. Keep the UI clean and musician-focused.
+
+Do not create a new database migration for this task.
 
 ---
 
 # Preserve Existing Working Features
 
-While wiring the new components, avoid breaking:
+While adding Category Quick Filters, avoid breaking:
 
 - login/signup
 - admin approval
@@ -156,23 +245,12 @@ While wiring the new components, avoid breaking:
 - beat add/edit/delete
 - default keyboard
 - keyboard/style loading
-
----
-
-# Next Release After Lyrics
-
-```text
-v1.2.0 — Audio Support
-```
-
-Planned:
-
-- Supabase Storage bucket: `music-manager-audio`
-- `song_audio` table
-- upload audio
-- play audio
-- multiple recordings per song
-- connect audio playback into Lyrics Mode
+- lyrics editing
+- lyrics search
+- presentation mode
+- date search
+- recently added
+- statistics dashboard
 
 ---
 
@@ -190,4 +268,4 @@ toward:
 worship and performance music platform
 ```
 
-Development should remain gradual and safe.
+Development should remain gradual, documented, and safe.
