@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 const STORAGE_KEY = 'music-manager-recent-additions-open';
 
@@ -27,16 +27,10 @@ function RecentAdditions({ items = [] }) {
     }
   }, [isOpen]);
 
-  const summary = useMemo(() => {
-    if (!items.length) return 'No recent additions yet';
-    const latest = items[0];
-    return `${latest.songName} was added most recently`;
-  }, [items]);
-
   if (!items.length) return null;
 
   return (
-    <section className={`recent-additions no-print ${isOpen ? 'recent-additions--open' : 'recent-additions--closed'}`} aria-label="Recently added beats">
+    <section className={`recent-additions no-print ${isOpen ? 'recent-additions--open' : 'recent-additions--closed'}`} aria-label="Recently added songs">
       <button
         type="button"
         className="recent-additions__toggle"
@@ -44,12 +38,7 @@ function RecentAdditions({ items = [] }) {
         aria-expanded={isOpen}
       >
         <span className="recent-additions__icon" aria-hidden="true">🕘</span>
-        <span className="recent-additions__title-block">
-          <span className="recent-additions__eyebrow">Recently Added</span>
-          <span className="recent-additions__title">Latest {items.length} additions</span>
-          <span className="recent-additions__summary">{summary}</span>
-        </span>
-        <span className="recent-additions__count">{items.length}</span>
+        <span className="recent-additions__title">Recently Added</span>
         <span className="recent-additions__chevron" aria-hidden="true">{isOpen ? '▾' : '▸'}</span>
       </button>
 
@@ -57,14 +46,7 @@ function RecentAdditions({ items = [] }) {
         <div className="recent-additions__list">
           {items.map(item => (
             <article key={item.id} className="recent-additions__item">
-              <div className="recent-additions__item-main">
-                <strong>{item.songName}</strong>
-                <div className="recent-additions__meta">
-                  <span>{item.beatName || 'Unnamed beat'}</span>
-                  {item.category && <span>{item.category}</span>}
-                  {item.keyboardName && <span>{item.keyboardName}</span>}
-                </div>
-              </div>
+              <strong>{item.songName}</strong>
               <time className="recent-additions__date" dateTime={item.createdAt || undefined}>
                 {formatAddedDate(item.createdAt)}
               </time>
