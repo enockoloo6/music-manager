@@ -107,6 +107,18 @@ function songWasAddedWithinRange(song, range) {
   });
 }
 
+function styleMatchesSearch(style, search) {
+  const beatName = style.beat_name?.toLowerCase() || '';
+  const category = style.keyboard_location?.toLowerCase() || '';
+  const keyboardName = style.keyboards?.model_name?.toLowerCase() || '';
+  const tempo = style.tempo ? String(style.tempo).toLowerCase() : '';
+  const musicalKey = style.musical_key?.toLowerCase() || '';
+  const notes = style.notes?.toLowerCase() || '';
+
+  return [beatName, category, keyboardName, tempo, musicalKey, notes]
+    .some(value => value.includes(search));
+}
+
 export function songMatchesSearch(song, rawSearch) {
   const search = rawSearch.trim().toLowerCase();
   if (!search) return true;
@@ -114,6 +126,10 @@ export function songMatchesSearch(song, rawSearch) {
   const songName = song.song_name?.toLowerCase() || '';
   const lyrics = song.lyrics?.toLowerCase() || '';
   const dateRange = getDateRangeFromSearch(search);
+  const metadataMatches = (song.styles || []).some(style => styleMatchesSearch(style, search));
 
-  return songName.includes(search) || lyrics.includes(search) || songWasAddedWithinRange(song, dateRange);
+  return songName.includes(search)
+    || lyrics.includes(search)
+    || metadataMatches
+    || songWasAddedWithinRange(song, dateRange);
 }
