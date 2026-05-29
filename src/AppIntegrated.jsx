@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { supabase } from './supabaseClient';
 
 import AppFooter from './components/AppFooter';
+import LibraryStats from './components/LibraryStats';
 import LyricsEditor from './components/LyricsEditor';
 import LyricsMode from './components/LyricsMode';
 import OfflineBanner from './components/OfflineBanner';
@@ -403,16 +404,19 @@ function AppIntegrated() {
         .beat-row:last-child { border-bottom: none; }
         .panel { background: #fff; border: 1px solid #e2e8f0; border-radius: 11px; padding: 20px; margin-bottom: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.05); }
         .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-        .recent-additions { background: #fff; border: 1px solid #e2e8f0; border-radius: 11px; padding: 14px; margin: 0 0 14px; box-shadow: 0 1px 4px rgba(0,0,0,0.05); }
-        .recent-additions__header { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 8px; }
-        .recent-additions__header h2 { margin: 0; color: #1a237e; font-size: 1rem; }
-        .recent-additions__header > span { background: #e8eaf6; color: #1a237e; border-radius: 999px; padding: 3px 9px; font-size: 0.74rem; font-weight: 700; }
-        .recent-additions__eyebrow { color: #64748b; font-size: 0.72rem; font-weight: 800; letter-spacing: 0.07em; text-transform: uppercase; }
+        .recent-additions { background: #fff; border: 1px solid #e2e8f0; border-radius: 11px; padding: 10px 14px; margin: 0 0 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.05); }
+        .recent-additions__toggle { width: 100%; display: flex; align-items: center; gap: 8px; background: transparent; color: #1a237e; padding: 2px 0; text-align: left; }
+        .recent-additions__title { font-size: 0.98rem; font-weight: 800; flex: 1; }
+        .recent-additions__chevron { color: #64748b; font-size: 0.9rem; }
         .recent-additions__item { display: flex; justify-content: space-between; gap: 12px; padding: 8px 0; border-top: 1px solid #f1f5f9; }
         .recent-additions__item strong { color: #1a237e; font-size: 0.9rem; }
-        .recent-additions__meta { color: #64748b; font-size: 0.78rem; margin-top: 2px; }
-        .recent-additions__item time { color: #94a3b8; font-size: 0.74rem; white-space: nowrap; }
-        @media (max-width: 700px) { .form-grid { grid-template-columns: 1fr; } .recent-additions__item { flex-direction: column; gap: 3px; } }
+        .recent-additions__date { color: #94a3b8; font-size: 0.74rem; white-space: nowrap; }
+        .library-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 0 0 14px; }
+        .library-stats__item { background: #fff; border: 1px solid #e2e8f0; border-radius: 11px; padding: 12px 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.05); display: grid; grid-template-columns: auto 1fr; align-items: center; column-gap: 8px; }
+        .library-stats__icon { grid-row: span 2; font-size: 1.2rem; }
+        .library-stats__value { color: #1a237e; font-weight: 900; font-size: 1.08rem; line-height: 1; }
+        .library-stats__label { color: #64748b; font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; }
+        @media (max-width: 700px) { .form-grid { grid-template-columns: 1fr; } .recent-additions__item { flex-direction: column; gap: 3px; } .library-stats { grid-template-columns: repeat(2, 1fr); } }
       `}</style>
 
       <div style={{ background: 'linear-gradient(90deg,#0d1b6e 0%,#1a237e 100%)', padding: '12px 22px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap', boxShadow: '0 2px 8px rgba(0,0,0,0.2)' }}>
@@ -507,6 +511,7 @@ function AppIntegrated() {
 
         <SearchBar value={search} onChange={setSearch} resultCount={filteredSongs.length} totalCount={songs.length} />
         <RecentAdditions items={recentAdditions} />
+        <LibraryStats songs={songs} keyboards={keyboards} />
 
         {role.approved && (
           <div className="no-print" style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px', flexWrap: 'wrap' }}>
