@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { supabase } from './supabaseClient';
 
 import AppFooter from './components/AppFooter';
+import CategoryFilters from './components/CategoryFilters';
 import LibraryStats from './components/LibraryStats';
 import LyricsEditor from './components/LyricsEditor';
 import LyricsMode from './components/LyricsMode';
@@ -15,6 +16,7 @@ import useOnlineStatus from './hooks/useOnlineStatus';
 import { songMatchesSearch, updateSongLyrics } from './services/songLyricsService';
 
 import './styles/appFooter.css';
+import './styles/categoryFilters.css';
 import './styles/lyricsEditor.css';
 import './styles/lyricsMode.css';
 import './styles/offlineBanner.css';
@@ -38,6 +40,7 @@ function AppIntegrated() {
   const [keyboards, setKeyboards] = useState([]);
   const [profiles, setProfiles] = useState([]);
   const [search, setSearch] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('All');
   const [user, setUser] = useState(null);
   const [role, setRole] = useState({ approved: false, admin: false });
   const [authMode, setAuthMode] = useState('login');
@@ -353,9 +356,28 @@ function AppIntegrated() {
     [songs]
   );
 
+  const categories = useMemo(() => {
+    const categoryNames = songs
+      .flatMap(song => song.styles || [])
+      .map(style => style.keyboard_location?.trim())
+      .filter(Boolean);
+
+    return ['All', ...new Set(categoryNames)].sort((a, b) => {
+      if (a === 'All') return -1;
+      if (b === 'All') return 1;
+      return a.localeCompare(b);
+    });
+  }, [songs]);
+
   const filteredSongs = useMemo(
-    () => songs.filter(song => songMatchesSearch(song, search)),
-    [songs, search]
+    () => songs.filter(song => {
+      const matchesSearch = songMatchesSearch(song, search);
+      const matchesCategory = selectedCategory === 'All'
+        || (song.styles || []).some(style => style.keyboard_location === selectedCategory);
+
+      return matchesSearch && matchesCategory;
+    }),
+    [songs, search, selectedCategory]
   );
 
   const recentAdditions = useMemo(() => (
@@ -510,6 +532,11 @@ function AppIntegrated() {
         )}
 
         <SearchBar value={search} onChange={setSearch} resultCount={filteredSongs.length} totalCount={songs.length} />
+        <CategoryFilters
+          categories={categories}
+          selectedCategory={selectedCategory}
+          onSelect={setSelectedCategory}
+        />
         <RecentAdditions items={recentAdditions} />
         <LibraryStats songs={songs} keyboards={keyboards} />
 
