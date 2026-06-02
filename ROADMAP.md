@@ -1,539 +1,212 @@
 # Music Manager Roadmap
 
-This document is the main reference for the Music Manager project. It records what is already done, what is in progress, what is pending, and how future versions should be planned.
-
----
-
 ## Repository
-
-GitHub repository:
 
 ```text
 enockoloo6/music-manager
 ```
 
----
+Active development branch:
 
-## Branch Workflow
-
-### Production Branch
-
-```bash
-main
-```
-
-- Auto-deploys to Netlify production.
-- Should only receive stable, tested changes.
-
-### Active Development Branch
-
-```bash
+```text
 eoloo
 ```
 
-- All development should happen here first.
-- This is the safe working branch.
-
-### Recommended Future Branch
-
-```bash
-staging
-```
-
-Purpose:
-
-- test before production
-- confirm database changes
-- verify UI and admin flows
-- avoid pushing untested work directly to `main`
-
-Recommended flow:
-
-```text
-feature branch -> eoloo -> staging -> main -> release tag
-```
+The repository is the source of truth.
 
 ---
 
-## Current Stack
+# Current Repository Reality
 
-- React + Vite frontend
-- Supabase backend
-- Supabase Auth using shared `auth.users`
-- Netlify deployment
+The application is already running on the integrated architecture.
 
----
+Verified from code:
 
-## Database Architecture
-
-### Dedicated App Schema
-
-Status: Done
-
-Music Manager uses its own Supabase schema:
-
-```sql
-music_manager
-```
-
-This isolates it from other apps using the same Supabase project, especially `nyumba-yangu`.
-
-### Frontend Schema Configuration
-
-File:
-
-```text
-src/supabaseClient.js
-```
-
-The frontend uses:
-
-```js
-db: { schema: 'music_manager' }
-```
-
-### Shared Auth
-
-Supabase Auth remains shared globally:
-
-```sql
-auth.users
-```
-
-Music Manager app roles and permissions are stored in:
-
-```sql
-music_manager.profiles
-```
+- App.jsx exports AppIntegrated
+- Lyrics editor exists
+- Lyrics search exists
+- Presentation mode exists
+- Print mode exists
+- Category Quick Filters exist
+- Library statistics dashboard exists
+- Recently Added panel exists
+- Offline banner exists
+- Version badge exists
+- Default keyboard support exists
+- Admin approval exists
+- Admin promotion exists
+- Protected super admin exists
 
 ---
 
-## Current Tables
+# Current Release Status
 
-Inside `music_manager` schema:
+## v1.0 Foundation
 
-- `keyboards`
-- `songs`
-- `styles`
-- `profiles`
+Completed.
 
-Relationships were recreated manually after migration.
+Includes:
 
----
-
-## Required RPC Functions
-
-The following functions exist inside the `music_manager` schema.
-
-### `get_all_profiles()`
-
-Used by the admin panel to load user profiles.
-
-### `admin_update_profile()`
-
-Used for:
-
-- approving users
-- granting admin access
-- protecting the super admin account
-
----
-
-## Protected Super Admin
-
-Protected account:
-
-```text
-enockoloo6@gmail.com
-```
-
-Rules:
-
-- cannot be demoted through admin controls
-- should remain protected at RPC/database level
-
----
-
-## Supabase Configuration Notes
-
-In Supabase:
-
-```text
-Project Settings -> Data API -> Exposed Schemas
-```
-
-Must include:
-
-```text
-music_manager
-```
-
-If missing, the app may show:
-
-```text
-Invalid schema: music_manager
-```
-
-After schema or function changes, run:
-
-```sql
-notify pgrst, 'reload schema';
-```
-
----
-
-# Project Status
-
-## Done
-
-### Authentication
-
-- login
-- signup
-- logout
-- shared Supabase Auth
-
-### User/Admin System
-
-- admin approval system
-- admin promotion
+- authentication
+- admin approval workflow
+- admin promotion workflow
 - protected super admin
-- role handling through `music_manager.profiles`
+- keyboard management
+- song and beat management
+- dedicated music_manager schema
+- RPC administration functions
 
-### Song and Beat Management
+---
 
-- song loading
-- add/edit beats
-- existing song functionality working
+## v1.1 Lyrics and Presentation
 
-### Keyboard and Style Management
+Completed.
 
-- keyboard loading
-- styles loading
-- default keyboard support
+Includes:
 
-### Schema Migration
+- lyrics storage
+- lyrics editing
+- lyrics search
+- presentation mode
+- font size controls
+- printable lyrics output
 
-- moved app data from shared `public` schema to dedicated `music_manager` schema
-- updated frontend Supabase client to use `music_manager`
-- recreated required relationships
-- created required RPC functions
-
-### README
-
-README updated on branch `eoloo` with:
-
-- schema migration information
-- RPC setup
-- branch workflow
-- troubleshooting
-- architecture notes
-- setup checklist
-
-Reference commit:
+Print isolation fix:
 
 ```text
-979f80c2556f6b71c944cebe3d7e2559c1d5d545
+6435b8042c5e4dfe7fedbd121738c50faef06847
 ```
 
 ---
 
-# In Progress
+## v1.2 Category Quick Filters
 
-## Roadmap and Version Planning
+Implemented in code.
 
-Status: In progress
+Current status:
 
-Purpose:
+```text
+Awaiting manual verification before milestone closure.
+```
 
-- make project direction clear
-- allow easy resumption later
-- track done, pending, and active work
-- support proper release/version planning
+Verified implementation:
+
+- CategoryFilters component exists
+- categoryFilters.css exists
+- selectedCategory state exists
+- categories derived from styles.keyboard_location
+- category filter combines with search
+- All category option exists
+
+Verification still required:
+
+- browser testing
+- mobile testing
+- regression testing
 
 ---
 
-# Pending / Planned Features
+# Current Priority
 
-## 1. Lyrics Support
+Before new feature development:
 
-Status: Planned
-
-Goal:
-
-Allow users to paste and save song lyrics together with existing song details.
-
-### Planned Capabilities
-
-- paste lyrics into a song
-- edit saved lyrics
-- view lyrics clearly during singing
-- search songs by lyrics later
-
-### Suggested Database Change
-
-Add to `music_manager.songs`:
-
-```sql
-lyrics text
-```
-
-Optional future fields:
-
-```sql
-notes text
-composer text
-tempo integer
-song_key text
-```
-
-### Planned UI
-
-Add a lyrics area in the song form.
-
-Add a dedicated lyrics viewing mode with:
-
-- large readable text
-- mobile-friendly layout
-- dark worship/performance view
-- simple navigation back to song list
+1. Complete documentation synchronization.
+2. Verify Category Quick Filters.
+3. Verify lyrics print isolation.
+4. Close v1.2.0.
 
 ---
 
-## 2. Lyrics Mode / Singing View
+# Next Planned Feature
 
-Status: Planned
+## Audio Recording and Playback
 
-Goal:
-
-Make lyrics easy to read while singing.
-
-### Planned Features
-
-- full-screen or near full-screen lyrics view
-- large font
-- high contrast
-- optional font size controls
-- optional auto-scroll later
-- minimal buttons during performance
-
-Possible label:
+Status:
 
 ```text
-Lyrics Mode
+Planned
 ```
 
-or:
+Potential implementation:
 
-```text
-Singing Mode
-```
+- song_audio table
+- Supabase Storage bucket
+- upload interface
+- playback interface
+- song recording attachments
 
----
-
-## 3. Audio Recording and Playback
-
-Status: Planned
-
-Goal:
-
-Allow audio to be saved with songs and played when needed.
-
-Use cases:
-
-- choir practice recordings
-- keyboard demonstrations
-- reference singing
-- live recordings
-- instrumental guides
-
-### Storage Decision
-
-Audio files should not be stored directly in PostgreSQL.
-
-Use:
-
-```text
-Supabase Storage
-```
-
-Recommended bucket:
+Suggested bucket:
 
 ```text
 music-manager-audio
 ```
 
-The database should store only:
+Suggested table:
 
-- file path
-- file name
-- public/signed URL reference
-- metadata
-
-### Recommended Table
-
-Create a separate table:
-
-```sql
+```text
 music_manager.song_audio
 ```
 
-Suggested columns:
-
-```sql
-id uuid primary key default gen_random_uuid(),
-song_id uuid references music_manager.songs(id) on delete cascade,
-file_path text not null,
-file_name text,
-duration_seconds integer,
-uploaded_by uuid references auth.users(id),
-created_at timestamptz default now()
-```
-
-### Planned UI
-
-- upload/select audio file
-- play audio inside song details
-- show audio file name
-- allow replacing/removing audio later
-- support multiple recordings per song later
+This feature has not yet been implemented.
 
 ---
 
-## 4. App Versioning
+# Future Enhancements
 
-Status: Planned
+## Search Improvements
 
-Goal:
+Possible future work:
 
-Allow clear tracking of app versions and make it possible to choose/install/use known stable versions.
+- keyboard-only filters
+- advanced filtering
+- saved searches
 
-### Recommended Versioning
+## Setlist / Worship Mode
 
-Use semantic versioning:
+Possible future work:
 
-```text
-v1.0.0
-v1.1.0
-v1.2.0
-```
+- service setlists
+- ordered song flow
+- next song navigation
+- lyrics linked to setlists
 
-Meaning:
+## Import / Export
 
-- patch: `v1.0.1` for bug fixes
-- minor: `v1.1.0` for new features
-- major: `v2.0.0` for big/breaking changes
+Possible future work:
 
-### Recommended Git Flow
+- JSON export
+- JSON import
+- backup tools
 
-```text
-eoloo -> staging -> main -> git tag -> GitHub release
-```
+## Mobile Improvements
 
-Example:
+Possible future work:
 
-```bash
-git tag v1.1.0
-git push origin v1.1.0
-```
+- larger touch targets
+- improved responsive layouts
+- performance mode controls
 
-### Planned Version Display
+## Offline / PWA
 
-Add app version somewhere visible, for example:
+Possible future work:
 
-- footer
-- admin page
-- about/settings page
-
-Suggested source:
-
-```text
-package.json version
-```
-
----
-
-# Suggested Release Plan
-
-## v1.0.0
-
-Current stable foundation.
-
-Includes:
-
-- login/signup
-- song loading
-- keyboard loading
-- add/edit beats
-- admin approval
-- admin promotion
-- default keyboard
-- protected super admin
-- isolated `music_manager` schema
-
-## v1.1.0
-
-Planned lyrics release.
-
-Includes:
-
-- lyrics field
-- paste/edit lyrics
-- lyrics view mode
-- mobile readable singing view
-
-## v1.2.0
-
-Planned audio release.
-
-Includes:
-
-- Supabase Storage audio bucket
-- audio upload
-- audio playback
-- `song_audio` table
-
-## v1.3.0
-
-Possible usability release.
-
-May include:
-
-- improved mobile responsiveness
-- loading states
-- error states
-- better admin UI
-- search/filter improvements
-
-## v2.0.0
-
-Possible major refactor release.
-
-May include:
-
-- split `App.jsx`
-- modular architecture
-- routing
-- services layer
-- hooks
-- stronger styling system
-- possible PWA/offline support
+- installable application
+- cached lyrics
+- offline viewing
 
 ---
 
 # Technical Debt
 
-## Main Issue
+Current major technical debt:
 
-Most logic currently lives in:
+Most application logic still resides inside:
 
 ```text
-src/App.jsx
+src/AppIntegrated.jsx
 ```
 
-This should be gradually refactored.
-
-## Target Structure
+Target direction:
 
 ```text
 src/
@@ -542,81 +215,38 @@ src/
   hooks/
   services/
   styles/
-  utils/
 ```
 
-## Recommended Refactor Order
+Recommended future refactor:
 
-1. Extract Supabase service functions
-2. Extract reusable components
-3. Extract admin page logic
-4. Extract song form/list/detail components
-5. Add routing if needed
-6. Improve styling structure
+1. move business logic into services
+2. move reusable logic into hooks
+3. reduce AppIntegrated size
+4. create page-level structure
+5. introduce routing when justified
 
 ---
 
-# Future Ideas
+# Documentation Rule
 
-## Search and Filter
+Documentation is part of the product.
 
-- search by song title
-- search by lyrics
-- filter by keyboard
-- filter by style
+Whenever a milestone is completed:
 
-## Worship Session / Setlist Mode
-
-- create setlists
-- order songs for service
-- next/previous song navigation
-- lyrics mode per setlist
-
-## Import / Export
-
-- export songs as JSON
-- import songs from backup
-- backup lyrics/audio metadata
-
-## Backup Tools
-
-- database backup notes
-- Supabase export process
-- storage backup process
-
-## Mobile Improvements
-
-- better phone layout
-- large touch buttons
-- performance mode
-
-## Offline / PWA
-
-Possible future major feature:
-
-- installable app
-- cached lyrics
-- offline viewing
+- update START_HERE_MUSIC_MANAGER.md
+- update docs/project-state.md
+- update docs/resume-guide.md
+- update docs/checkpoints.md
+- update docs/app-integration-switch.md
+- update docs/changelog.md
+- update ROADMAP.md
 
 ---
 
 # Immediate Next Steps
 
-1. Keep all work on `eoloo`.
-2. Add lyrics support first.
-3. Add lyrics viewing/singing mode.
-4. Add app version display.
-5. Add audio upload/playback after lyrics are stable.
-6. Start tagging stable releases from `main`.
-
----
-
-# Development Rule
-
-Do not push experimental changes directly to `main`.
-
-All work should begin on:
-
-```bash
-git checkout eoloo
-```
+1. Finish repository documentation audit.
+2. Create docs/changelog.md.
+3. Run Category Quick Filters verification.
+4. Run regression testing.
+5. Close v1.2.0 if verification passes.
