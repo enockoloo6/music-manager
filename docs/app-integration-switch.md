@@ -1,12 +1,34 @@
 # App.jsx Integration Switch
 
-The integrated lyrics-ready app has been created in:
+## Repository Reality
+
+The integration switch is already complete.
+
+`src/App.jsx` currently exports `AppIntegrated` and is the active application entry point.
+
+```js
+import AppIntegrated from './AppIntegrated';
+
+export default AppIntegrated;
+```
+
+There is no pending App.jsx switch task.
+
+---
+
+## Active Application
 
 ```text
 src/AppIntegrated.jsx
 ```
 
-This file includes the new modular architecture and wires together:
+This is the active application and contains the primary app logic.
+
+---
+
+## Verified Integrated Components
+
+AppIntegrated currently wires together:
 
 - LyricsMode
 - LyricsEditor
@@ -18,34 +40,65 @@ This file includes the new modular architecture and wires together:
 - useOnlineStatus
 - songLyricsService
 - CategoryFilters
+- LibraryStats
+- RecentAdditions
 
-## Current Safe State
-
-The original production-safe app is still in:
-
-```text
-src/App.jsx
-```
-
-The integrated version is beside it, ready for final activation.
+---
 
 ## Category Quick Filters Status
 
-CategoryFilters.jsx exists and AppIntegrated.jsx imports CategoryFilters together with categoryFilters.css. Documentation should be kept synchronized with implementation progress.
+Verified in repository:
 
-## Final Switch
+- CategoryFilters.jsx exists
+- categoryFilters.css exists
+- AppIntegrated imports both files
+- selectedCategory state exists
+- categories are derived from styles.keyboard_location
+- category filtering is combined with search filtering
 
-When ready, replace the contents of `src/App.jsx` with:
+Status:
 
-```js
-import AppIntegrated from './AppIntegrated';
-
-export default AppIntegrated;
+```text
+Implemented in code
+Awaiting manual verification before milestone closure
 ```
+
+---
+
+## Lyrics Presentation Printing
+
+Verified print isolation changes exist in the repository.
+
+Reference commit:
+
+```text
+6435b8042c5e4dfe7fedbd121738c50faef06847
+```
+
+Current verification requirement:
+
+- lyrics-only content prints
+- application UI does not print
+- multi-page lyrics remain readable
+
+---
+
+## Current Recommended Work
+
+1. Complete documentation synchronization.
+2. Run Category Quick Filters verification checklist.
+3. Verify lyrics print isolation.
+4. Close v1.2.0 only after successful testing.
+
+---
 
 ## Important
 
-Keep all testing on branch:
+The repository is the source of truth.
+
+If this document disagrees with code, update this document.
+
+All testing and development should continue on:
 
 ```bash
 eoloo
