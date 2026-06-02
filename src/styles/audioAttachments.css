@@ -12,8 +12,27 @@
   color: #1e3a8a;
 }
 
-.audio-attachments input[type="file"] {
-  margin-bottom: 10px;
+.audio-attachments__manager,
+.audio-recorder,
+.audio-recorder__preview,
+.audio-attachments__item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.audio-recorder__controls {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.audio-recorder__status {
+  font-weight: 600;
+}
+
+.audio-recorder__error {
+  color: #b91c1c;
 }
 
 .audio-attachments audio {
@@ -21,10 +40,11 @@
   max-width: 450px;
 }
 
-.audio-attachments > div {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
+.audio-attachments__list {
+  margin-top: 10px;
+}
+
+.audio-attachments__item {
   margin-top: 8px;
   padding-top: 8px;
   border-top: 1px dashed #dbeafe;
@@ -35,6 +55,10 @@
 }
 
 @media (max-width: 768px) {
+  .audio-recorder__controls {
+    flex-direction: column;
+  }
+
   .audio-attachments audio {
     max-width: 100%;
   }
