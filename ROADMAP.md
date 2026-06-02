@@ -110,10 +110,9 @@ Verification still required:
 
 Before new feature development:
 
-1. Complete documentation synchronization.
-2. Verify Category Quick Filters.
-3. Verify lyrics print isolation.
-4. Close v1.2.0.
+1. Verify Category Quick Filters.
+2. Verify lyrics print isolation.
+3. Close v1.2.0 only after successful verification.
 
 ---
 
@@ -245,8 +244,7 @@ Whenever a milestone is completed:
 
 # Immediate Next Steps
 
-1. Finish repository documentation audit.
-2. Create docs/changelog.md.
-3. Run Category Quick Filters verification.
-4. Run regression testing.
-5. Close v1.2.0 if verification passes.
+1. Run Category Quick Filters verification.
+2. Run lyrics print isolation regression verification.
+3. Run broader regression testing.
+4. Close v1.2.0 if verification passes.
