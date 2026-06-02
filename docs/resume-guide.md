@@ -24,6 +24,22 @@ Do not work directly on `main` because it auto-deploys to Netlify production.
 
 ---
 
+# Repository-First Rule
+
+The repository is the source of truth.
+
+Before making decisions, verify documentation claims against the current code on branch `eoloo`.
+
+If documentation and code disagree, update the documentation to match the code.
+
+Primary state file:
+
+```text
+docs/project-state.md
+```
+
+---
+
 # Current Development Focus
 
 ## Active Release
@@ -35,38 +51,52 @@ v1.2.0 — Category Quick Filters
 Current active task:
 
 ```text
-Integrate src/components/CategoryFilters.jsx into src/AppIntegrated.jsx.
+Run the Category Quick Filters verification checklist and close the milestone only if testing passes.
 ```
 
-Important:
+Important verified repository facts:
 
-- `CategoryFilters.jsx` already exists.
+- `src/App.jsx` exports `AppIntegrated`.
+- `src/AppIntegrated.jsx` imports `CategoryFilters`.
+- `src/AppIntegrated.jsx` imports `./styles/categoryFilters.css`.
+- `selectedCategory` state exists in `src/AppIntegrated.jsx`.
+- Categories are derived from `songs[].styles[].keyboard_location`.
+- Search and category filtering are combined in `filteredSongs`.
+- `CategoryFilters` renders below `SearchBar`.
+- `src/components/CategoryFilters.jsx` exists.
+- `src/styles/categoryFilters.css` exists.
 - Do not recreate `CategoryFilters.jsx`.
-- Categories are stored in `styles.keyboard_location`, not `songs.category`.
-- `src/App.jsx` already exports `AppIntegrated`.
+- Do not create a database migration for Category Quick Filters.
 
 ---
 
 # Important Files to Read First
 
-Before continuing work, review these files:
+Before continuing work, review these files in this order:
 
 ```text
 START_HERE_MUSIC_MANAGER.md
-ROADMAP.md
+docs/project-state.md
+docs/resume-guide.md
 docs/checkpoints.md
 docs/app-integration-switch.md
-docs/recent-additions-and-audit-plan.md
+docs/changelog.md
+ROADMAP.md
 ```
 
 Then review the active app files:
 
 ```text
-src/AppIntegrated.jsx
 src/App.jsx
+src/AppIntegrated.jsx
 src/components/CategoryFilters.jsx
+src/styles/categoryFilters.css
+src/components/LyricsMode.jsx
+src/styles/lyricsMode.css
 src/services/songLyricsService.js
 ```
+
+Note: `docs/changelog.md` may need to be created if repository documentation continues to reference it.
 
 ---
 
@@ -88,7 +118,7 @@ src/AppIntegrated.jsx
 
 ---
 
-# Completed Features
+# Completed / Implemented in Code
 
 ## Authentication and Admin
 
@@ -129,6 +159,19 @@ enockoloo6@gmail.com
 ✓ large lyrics display
 ✓ font size controls
 ✓ print from presentation mode
+✓ lyrics-only print isolation
+```
+
+Print isolation fix commit:
+
+```text
+6435b8042c5e4dfe7fedbd121738c50faef06847 - Fix print isolation for lyrics presentation mode
+```
+
+Accepted print limitation:
+
+```text
+Some browsers or PDF generators may still create trailing blank pages after lyrics printing.
 ```
 
 ## Dashboard
@@ -141,7 +184,7 @@ enockoloo6@gmail.com
 ✓ Library Statistics dashboard
 ```
 
-## Search
+## Search and Filtering
 
 Search currently supports:
 
@@ -149,13 +192,15 @@ Search currently supports:
 ✓ song name
 ✓ lyrics
 ✓ beat name
-✓ category
+✓ category/location text
 ✓ keyboard model
 ✓ tempo
 ✓ musical key
 ✓ notes
 ✓ date search
 ```
+
+Category Quick Filters are implemented in code and use `styles.keyboard_location` through the song styles array.
 
 Date search examples:
 
@@ -183,10 +228,29 @@ styles.keyboard_location
 Category filtering must therefore use the song styles array, for example:
 
 ```js
-song.styles.some((style) => style.keyboard_location === selectedCategory)
+(song.styles || []).some((style) => style.keyboard_location === selectedCategory)
 ```
 
 This is important because one song can have multiple beats/styles/categories.
+
+---
+
+# Pending Manual Verification
+
+Category Quick Filters should not be marked closed until the following has been tested in the browser:
+
+- category buttons render below search
+- categories are derived from existing style/beat locations
+- selecting a category narrows the song list
+- `All` restores the full searched list
+- search text and category filter work together
+- songs with multiple styles still appear when any matching style has the selected category
+- mobile layout remains usable
+
+Also verify the recent print fix:
+
+- lyrics-only print output does not show dashboard/admin/general app UI
+- printed lyrics flow across pages without repeated lyrics or page-break truncation
 
 ---
 
@@ -205,38 +269,40 @@ Any audit trail UI or recently modified metadata must respect this policy.
 
 # Documentation Rule
 
+Documentation is part of the product.
+
 After every milestone completion, update the handoff documentation so a new chat can continue without guessing.
 
 At minimum, keep these files synchronized:
 
 ```text
 START_HERE_MUSIC_MANAGER.md
+docs/project-state.md
 docs/resume-guide.md
 docs/checkpoints.md
 docs/app-integration-switch.md
+docs/changelog.md
 ROADMAP.md
 ```
 
 ---
 
-# Next Coding Task
+# Next Work
 
-Integrate Category Quick Filters:
+Do not start new feature development until documentation synchronization and repository audit are complete.
 
-1. Import existing `CategoryFilters.jsx` into `src/AppIntegrated.jsx`.
-2. Derive available categories from `songs[].styles[].keyboard_location`.
-3. Store selected category filter state.
-4. Apply the selected category together with the existing search results.
-5. Provide an `All` option to clear the category filter.
-6. Keep the UI clean and musician-focused.
+Next steps:
 
-Do not create a new database migration for this task.
+1. Finish synchronizing stale documentation.
+2. Run the Category Quick Filters verification checklist.
+3. If testing passes, close v1.2.0 in documentation.
+4. Continue to the next roadmap milestone.
 
 ---
 
 # Preserve Existing Working Features
 
-While adding Category Quick Filters, avoid breaking:
+While verifying or changing Category Quick Filters, avoid breaking:
 
 - login/signup
 - admin approval
@@ -248,6 +314,7 @@ While adding Category Quick Filters, avoid breaking:
 - lyrics editing
 - lyrics search
 - presentation mode
+- print isolation
 - date search
 - recently added
 - statistics dashboard
