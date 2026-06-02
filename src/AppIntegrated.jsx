@@ -22,6 +22,7 @@ import './styles/lyricsMode.css';
 import './styles/offlineBanner.css';
 import './styles/searchBar.css';
 import './styles/songCard.css';
+import './styles/audioAttachments.css';
 
 const SUPER_ADMIN_EMAIL = 'enockoloo6@gmail.com';
 
@@ -640,6 +641,8 @@ function AppIntegrated() {
               onEditDataChange={setEditData}
               onEditLyrics={setEditingLyricsSong}
               onOpenLyrics={setLyricsSong}
+              user={user}
+              canManageAudio={role?.approved}
             />
           ))}
         </div>

@@ -1,0 +1,41 @@
+.audio-attachments {
+  margin: 12px 0;
+  padding: 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #fafcff;
+}
+
+.audio-attachments strong {
+  display: block;
+  margin-bottom: 8px;
+  color: #1e3a8a;
+}
+
+.audio-attachments input[type="file"] {
+  margin-bottom: 10px;
+}
+
+.audio-attachments audio {
+  width: 100%;
+  max-width: 450px;
+}
+
+.audio-attachments > div {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed #dbeafe;
+}
+
+.audio-attachments button {
+  width: fit-content;
+}
+
+@media (max-width: 768px) {
+  .audio-attachments audio {
+    max-width: 100%;
+  }
+}

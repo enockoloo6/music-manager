@@ -1,62 +1,98 @@
-# Changelog
+# v1.3.0 – Audio Upload & Playback
 
-## 2026-06-02
+Status: Implemented and manually verified
 
-### Documentation Synchronization
+## Added
 
-Repository audit completed against implementation.
+### Audio Attachments
 
-Updated:
+Songs can now have one or more audio attachments.
 
-- START_HERE_MUSIC_MANAGER.md
-- docs/project-state.md
-- docs/resume-guide.md
-- docs/checkpoints.md
-- docs/app-integration-switch.md
-- ROADMAP.md
+Implemented components:
 
-Purpose:
+* `src/components/AudioAttachments.jsx`
+* `src/services/songAudioService.js`
+* `src/styles/audioAttachments.css`
 
-- remove stale roadmap items
-- align documentation with repository reality
-- establish repository-first workflow
+### Audio Storage
 
----
+Supabase Storage bucket:
 
-### Category Quick Filters
+* `music-manager-audio`
 
-Verified from repository:
+Bucket configuration:
 
-- CategoryFilters component exists
-- categoryFilters.css exists
-- AppIntegrated imports both
-- selectedCategory state exists
-- filtering combines category and search
+* Private bucket
+* Signed URLs used for playback
+* Authenticated upload
+* Authenticated read
+* Authenticated delete
 
-Status:
+### Audio Metadata
 
-```text
-Implemented in code
-Awaiting manual verification
+New table:
+
+```sql
+music_manager.song_audio
 ```
 
----
+Stores:
 
-### Lyrics Printing
+* song_id
+* storage_path
+* file_name
+* mime_type
+* size_bytes
+* created_by
+* created_at
 
-Reference commit:
+### Song Integration
 
-```text
-6435b8042c5e4dfe7fedbd121738c50faef06847
-```
+Audio attachments are displayed directly inside each SongCard.
 
-Description:
+Users can:
 
-Fix print isolation for lyrics presentation mode.
+* Upload audio files
+* Play audio files
+* Delete audio files
 
-Status:
+### Permissions
 
-```text
-Implemented
-Awaiting regression verification
-```
+Audio management follows existing approval rules.
+
+Approved users can:
+
+* Upload audio
+* Delete audio
+
+All authenticated users with access can play audio through signed URLs.
+
+## Manual Verification Completed
+
+Verified:
+
+* Audio upload
+* Audio retrieval
+* Audio playback
+* Audio deletion
+* Signed URL generation
+* Supabase Storage integration
+* song_audio database integration
+
+## Pending
+
+Future enhancement:
+
+### v1.4.0
+
+Microphone Recording
+
+Planned features:
+
+* Start Recording
+* Stop Recording
+* Browser microphone permission
+* MediaRecorder integration
+* Automatic upload of recordings
+* Playback of recorded audio
+
