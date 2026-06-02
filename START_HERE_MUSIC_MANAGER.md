@@ -23,7 +23,7 @@ The repository wins over chat history.
 v1.2.0 - Category Quick Filters
 
 ## Status
-Implementation complete in code and manual verification passed.
+Implementation complete and manual verification complete.
 
 ## Read Next
 1. docs/project-state.md
