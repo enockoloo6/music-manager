@@ -7,31 +7,28 @@ Use this file to decide when to run SQL, when to test, and what must be verified
 ## Current Milestone
 
 ```text
-v1.2.0 - Category Quick Filters
+v1.2.0 - Category Quick Filters Verification
 ```
 
 Current active task:
 
 ```text
-Integrate src/components/CategoryFilters.jsx into src/AppIntegrated.jsx.
+Verify implemented functionality and close the milestone only after successful testing.
 ```
 
-Important notes:
+Important verified repository facts:
 
-- `CategoryFilters.jsx` already exists.
-- Do not recreate `CategoryFilters.jsx`.
-- Categories are stored in `styles.keyboard_location`, not `songs.category`.
-- No SQL migration is needed for Category Quick Filters.
+- `CategoryFilters.jsx` exists.
+- `categoryFilters.css` exists.
+- `AppIntegrated.jsx` imports both files.
+- `selectedCategory` state exists.
+- Categories are derived from `styles.keyboard_location`.
+- Search and category filtering are combined.
+- No SQL migration is required.
 
 ---
 
 ## Checkpoint 1: Lyrics
-
-Migration file:
-
-```text
-supabase/migrations/20260528_add_lyrics_to_songs.sql
-```
 
 Status:
 
@@ -49,32 +46,31 @@ Verify:
 - use presentation mode
 - adjust font size controls
 - print from presentation mode
+- verify lyrics-only print isolation
+
+Reference fix:
+
+```text
+6435b8042c5e4dfe7fedbd121738c50faef06847
+```
 
 ---
 
 ## Checkpoint 2: Song Metadata
 
-Migration file:
-
-```text
-supabase/migrations/20260529_add_song_metadata.sql
-```
-
 Status:
 
 ```text
-Migration exists, but metadata UI should only be resumed intentionally.
+Migration exists. Resume only intentionally.
 ```
 
-Do not create a duplicate metadata migration.
-
-When metadata UI work resumes, verify:
+Verify when resumed:
 
 - tempo field
 - musical key field
 - notes field
 - metadata search
-- admin-only audit visibility where applicable
+- admin-only audit visibility
 
 ---
 
@@ -83,37 +79,33 @@ When metadata UI work resumes, verify:
 Status:
 
 ```text
-In progress
+Implemented in code - awaiting manual verification
 ```
 
-No SQL required.
+Verified implementation:
 
-Expected implementation:
+- CategoryFilters imported into AppIntegrated
+- selectedCategory state exists
+- categories derived from songs[].styles[].keyboard_location
+- filtering combines search and category matching
+- All option exists
+- dedicated CSS file exists
 
-1. Import existing `src/components/CategoryFilters.jsx` into `src/AppIntegrated.jsx`.
-2. Add `selectedCategory` state.
-3. Generate category options from `songs[].styles[].keyboard_location`.
-4. Filter songs using both existing search logic and selected category.
-5. Provide an `All` option to clear the category filter.
-6. Keep styling light and mobile-friendly.
-
-Category filtering must use the styles array, for example:
-
-```js
-song.styles.some((style) => style.keyboard_location === selectedCategory)
-```
-
-Do not use `songs.category`; that field does not exist.
-
-Test after implementation:
+Required verification:
 
 - category buttons render below search
-- categories are derived from existing style/beat locations
+- categories are derived from existing style locations
 - selecting a category narrows the song list
-- `All` restores the full searched list
+- All restores the full searched list
 - search text and category filter work together
-- songs with multiple styles still appear when any matching style has the selected category
+- songs with multiple styles appear when any style matches
 - mobile layout remains usable
+
+Milestone closure criteria:
+
+- all checks above pass
+- no regression in search behavior
+- no regression in lyrics mode or presentation mode
 
 ---
 
@@ -122,13 +114,13 @@ Test after implementation:
 Status:
 
 ```text
-Not ready yet
+Not started
 ```
 
-Later this will need:
+Future work:
 
-- `song_audio` table
-- `music-manager-audio` Supabase Storage bucket
+- song_audio table
+- music-manager-audio storage bucket
 - upload UI
 - playback UI
 
@@ -136,7 +128,7 @@ Later this will need:
 
 ## Full Regression Testing Order
 
-Before merging to main, test on `eoloo`:
+Before merging to main, test on eoloo:
 
 1. login
 2. signup
@@ -175,29 +167,27 @@ Before merging to main, test on `eoloo`:
 
 Audit information is admin-only.
 
-```text
-✓ Admins can see audit information
-✗ Normal users cannot see audit information
-```
-
-Normal users must not see who added or modified a song/beat.
+Admins can see audit information.
+Normal users must not see audit information.
 
 ---
 
 ## Documentation Rule
 
-After every milestone completion, update:
+After every milestone completion, synchronize:
 
-```text
-START_HERE_MUSIC_MANAGER.md
-docs/resume-guide.md
-docs/checkpoints.md
-docs/app-integration-switch.md
-ROADMAP.md
-```
+- START_HERE_MUSIC_MANAGER.md
+- docs/project-state.md
+- docs/resume-guide.md
+- docs/checkpoints.md
+- docs/app-integration-switch.md
+- docs/changelog.md
+- ROADMAP.md
 
 ---
 
 ## Main Rule
 
-Do not merge to `main` until testing passes on `eoloo`.
+The repository is the source of truth.
+
+Do not merge to main until testing passes on eoloo.
