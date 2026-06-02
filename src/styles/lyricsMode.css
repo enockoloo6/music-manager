@@ -62,9 +62,18 @@
 }
 
 @media print {
+  body * {
+    visibility: hidden;
+  }
+
+  .lyrics-mode,
+  .lyrics-mode * {
+    visibility: visible;
+  }
+
   .lyrics-mode {
-    position: static;
-    inset: auto;
+    position: absolute;
+    inset: 0;
     display: block;
     background: #fff;
     color: #000;
