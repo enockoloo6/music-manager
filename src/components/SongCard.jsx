@@ -1,6 +1,13 @@
 import React from 'react';
 import AudioAttachments from './AudioAttachments';
 
+function getFirstLyricLine(lyrics) {
+  return (lyrics || '')
+    .split(/\r?\n/)
+    .map(line => line.trim())
+    .find(Boolean) || '';
+}
+
 function SongCard({
   song,
   role,
@@ -19,7 +26,8 @@ function SongCard({
   user,
   canManageAudio
 }) {
-  const hasLyrics = Boolean(song.lyrics?.trim());
+  const firstLyricLine = getFirstLyricLine(song.lyrics);
+  const hasLyrics = Boolean(firstLyricLine);
 
   const inputStyle = {
     padding: '6px 8px',
@@ -54,7 +62,7 @@ function SongCard({
             type="button"
             onClick={() => onOpenLyrics?.(song)}
           >
-            🎤 Lyrics
+            Lyrics
           </button>
 
           {role?.approved && (
@@ -62,7 +70,7 @@ function SongCard({
               type="button"
               onClick={() => onEditLyrics?.(song)}
             >
-              ✍️ Edit Lyrics
+              Edit Lyrics
             </button>
           )}
 
@@ -72,7 +80,7 @@ function SongCard({
               onClick={() => onDeleteSong?.(song.id)}
               className="song-card__delete"
             >
-              🗑 Delete
+              Delete
             </button>
           )}
         </div>
@@ -80,8 +88,7 @@ function SongCard({
 
       {hasLyrics && (
         <div className="song-card__lyrics-preview">
-          {song.lyrics.trim().slice(0, 180)}
-          {song.lyrics.trim().length > 180 ? '…' : ''}
+          {firstLyricLine}
         </div>
       )}
 
@@ -118,7 +125,7 @@ function SongCard({
                       marginBottom: '10px'
                     }}
                   >
-                    ✏️ Editing beat
+                    Editing beat
                   </div>
 
                   <div className="form-grid">
@@ -267,7 +274,7 @@ function SongCard({
                       onClick={() => onSaveEdit?.(style.id)}
                       disabled={saving}
                     >
-                      {saving ? '⏳…' : '💾 Save Changes'}
+                      {saving ? 'Saving…' : 'Save Changes'}
                     </button>
 
                     <button
@@ -295,7 +302,7 @@ function SongCard({
                         fontSize: '0.97rem'
                       }}
                     >
-                      🥁 {style.beat_name}
+                      {style.beat_name}
 
                       {style.keyboard_location && (
                         <span
@@ -319,7 +326,7 @@ function SongCard({
                         flexShrink: 0
                       }}
                     >
-                      🎹 {style.keyboards?.model_name || '--'}
+                      {style.keyboards?.model_name || '--'}
                     </span>
                   </div>
 
@@ -333,11 +340,11 @@ function SongCard({
                     }}
                   >
                     <span>
-                      ⏱ <strong>{style.tempo || '--'}</strong> BPM
+                      <strong>{style.tempo || '--'}</strong> BPM
                     </span>
 
                     <span>
-                      🎼 Key: <strong>{style.musical_key || '--'}</strong>
+                      Key: <strong>{style.musical_key || '--'}</strong>
                     </span>
                   </div>
 
@@ -352,7 +359,7 @@ function SongCard({
                         borderTop: '1px dashed #e8eef4'
                       }}
                     >
-                      💬 {style.notes}
+                      {style.notes}
                     </p>
                   )}
 
@@ -369,14 +376,14 @@ function SongCard({
                         type="button"
                         onClick={() => onStartEdit?.(style)}
                       >
-                        ✏️ Edit
+                        Edit
                       </button>
 
                       <button
                         type="button"
                         onClick={() => onDeleteBeat?.(style.id)}
                       >
-                        🗑 Remove
+                        Remove
                       </button>
                     </div>
                   )}
