@@ -1,38 +1,209 @@
-# Audio Feature Status
+# Music Manager Project State
 
-Current status:
+Repository:
+enockoloo6/music-manager
 
-Audio Upload & Playback is operational.
+Branch:
+eoloo
+
+---
+
+# Source of Truth
+
+Repository code and repository documentation are the source of truth.
+
+Never rely on previous chats.
+
+Verify repository state first.
+
+---
+
+# Current Release Status
+
+## v1.2.0 Category Quick Filters
+
+Status:
+Complete
+Verified
 
 Implemented:
 
-* AudioAttachments component
-* songAudioService
-* Supabase Storage integration
-* song_audio metadata table
-* Signed URL playback
-* Audio deletion workflow
+* Category filters
+* Search + Category combination
+* Mobile support
 
-Infrastructure:
+Verification completed.
 
-Storage bucket:
+---
+
+## v1.3.0 Audio Upload & Playback
+
+Status:
+Complete
+Verified
+
+Implemented:
+
+* Audio upload
+* Audio playback
+* Audio deletion
+* Signed URLs
+* song_audio metadata
+* Storage integration
+
+Storage Bucket:
 
 music-manager-audio
 
-Database table:
+Database:
 
 music_manager.song_audio
 
-Verified Working:
+Verification completed.
 
-* Upload audio
-* Playback audio
-* Delete audio
-* Persist attachments across refresh
+---
 
-Next planned milestone:
+## v1.4.0 Microphone Recording
 
-v1.4.0 Microphone Recording
+Status:
+In Progress
 
-The existing upload pipeline will be reused for recorded audio blobs generated through the browser MediaRecorder API.
+Implemented:
+
+* getUserMedia()
+* MediaRecorder
+* Start Recording
+* Stop Recording
+* Preview Recording
+* Save Recording
+* Existing upload pipeline reuse
+* Recording UI styling
+
+Pending:
+
+* Full verification
+* Mobile testing
+* Audio visibility cleanup
+
+---
+
+# Current Product Direction
+
+Music Manager is transitioning from:
+
+Beat-Centric
+
+to
+
+Song-Centric
+
+Target:
+
+Song
+├─ Lyrics
+├─ Audio
+├─ Notes
+├─ Tags
+└─ Beats
+
+Songs must be creatable without beats.
+
+---
+
+# Current Technical Debt
+
+Largest technical debt:
+
+src/AppIntegrated.jsx
+
+Strategy:
+
+Gradual extraction into:
+
+* components
+* hooks
+* services
+
+No rewrites.
+
+Only incremental refactoring.
+
+---
+
+# Known Issues
+
+## Audio Visibility
+
+Logged-out users currently receive confusing audio state information.
+
+Need separation between:
+
+* Metadata visibility
+* Playback visibility
+
+Investigation pending.
+
+---
+
+## Recently Added
+
+Issue:
+
+Dates appear similar.
+
+Need audit of:
+
+* database values
+* display logic
+
+Decision pending:
+
+Recently Added
+
+or
+
+Recently Added / Updated
+
+---
+
+# Mobile UX Decisions
+
+Song cards should display:
+
+Song Name
+
+First lyric line...
+
+Only.
+
+Not full lyrics.
+
+---
+
+# Offline First Requirement
+
+Priority:
+
+High
+
+Cache:
+
+* Songs
+* Lyrics
+* Beats
+* Keyboards
+* Categories
+
+Preferred technology:
+
+* IndexedDB
+* Service Worker
+
+Goal:
+
+Online once
+↓
+Cached
+↓
+Usable offline
 
