@@ -1,98 +1,188 @@
-# v1.3.0 – Audio Upload & Playback
+# Music Manager Changelog
 
-Status: Implemented and manually verified
+---
+
+# v1.4.0 Microphone Recording
+
+Status:
+In Progress
+
+Date:
+June 2026
+
+---
 
 ## Added
 
-### Audio Attachments
+### Microphone Recording
 
-Songs can now have one or more audio attachments.
+Implemented:
 
-Implemented components:
+* Browser microphone access
+* navigator.mediaDevices.getUserMedia()
+* MediaRecorder integration
+* Start Recording
+* Stop Recording
+* Preview Recording
+* Save Recording
 
-* `src/components/AudioAttachments.jsx`
-* `src/services/songAudioService.js`
-* `src/styles/audioAttachments.css`
+Recordings reuse the existing audio upload pipeline.
 
-### Audio Storage
+No new database tables required.
 
-Supabase Storage bucket:
+No new storage buckets required.
 
-* `music-manager-audio`
+---
 
-Bucket configuration:
+### Recording UI
 
-* Private bucket
-* Signed URLs used for playback
-* Authenticated upload
-* Authenticated read
-* Authenticated delete
+Added:
 
-### Audio Metadata
+* Recording controls
+* Recording preview
+* Save recording workflow
+* Recording status feedback
 
-New table:
+---
 
-```sql
-music_manager.song_audio
-```
+### Audio Diagnostics
 
-Stores:
+Added diagnostic handling for audio loading failures.
 
-* song_id
-* storage_path
-* file_name
-* mime_type
-* size_bytes
-* created_by
-* created_at
+Purpose:
 
-### Song Integration
+Prevent audio access failures from appearing as missing audio.
 
-Audio attachments are displayed directly inside each SongCard.
+Current investigation:
 
-Users can:
+Logged-out users can still receive misleading audio state information.
 
-* Upload audio files
-* Play audio files
-* Delete audio files
+Further refinement required.
 
-### Permissions
+---
 
-Audio management follows existing approval rules.
+## Architectural Decisions
 
-Approved users can:
+### Song-Centric Direction
 
-* Upload audio
-* Delete audio
+Music Manager is transitioning from:
 
-All authenticated users with access can play audio through signed URLs.
+Beat-Centric
 
-## Manual Verification Completed
+to
 
-Verified:
+Song-Centric
 
-* Audio upload
-* Audio retrieval
-* Audio playback
-* Audio deletion
-* Signed URL generation
-* Supabase Storage integration
-* song_audio database integration
+Target model:
 
-## Pending
+Song
+├─ Lyrics
+├─ Audio
+├─ Notes
+├─ Tags
+└─ Beats
 
-Future enhancement:
+Songs must be creatable before beats exist.
 
-### v1.4.0
+Beats become optional attachments.
+
+---
+
+### Documentation Governance
+
+New project rule:
+
+Discuss
+↓
+Agree
+↓
+Update Documentation
+↓
+Commit Documentation
+↓
+Implement Code
+↓
+Commit Code
+↓
+Update Documentation
+↓
+Commit Documentation
+
+Documentation is part of the product.
+
+---
+
+### Offline First Strategy
+
+Accepted direction:
+
+Cache:
+
+* Songs
+* Lyrics
+* Beats
+* Keyboards
+* Categories
+
+Technology target:
+
+* IndexedDB
+* Service Worker
+
+Goal:
+
+Online once
+↓
+Cached
+↓
+Offline use
+
+---
+
+### Mobile UX Decisions
+
+Song cards should show:
+
+Song Name
+
+First lyric line...
+
+Only.
+
+Not full lyrics.
+
+---
+
+### Dashboard Simplification
+
+Planned:
+
+Reports
+
+├─ Recently Added
+├─ Library Statistics
+├─ Activity
+└─ Audit
+
+Category filters should become collapsible.
+
+---
+
+## Commits
 
 Microphone Recording
 
-Planned features:
+35347701d408223b4b1f9aa900d0d073fb190241
 
-* Start Recording
-* Stop Recording
-* Browser microphone permission
-* MediaRecorder integration
-* Automatic upload of recordings
-* Playback of recorded audio
+Recording UI Styling
+
+bad62ceb8cfaa088090e000e2737aa260e14e8f5
+
+Audio Diagnostic Improvements
+
+2a5f36d390b252c8e4b2f2478bead1ece8d8b1fc
+
+Documentation Synchronization
+
+f5bc391be5d1ef2d9ae96e52cf6fdb73938dd67f
 
