@@ -20,9 +20,25 @@ function getRecordingExtension(mimeType) {
   return 'webm';
 }
 
+function getAudioLoadMessage(err, user) {
+  const message = err?.message || 'Audio could not be loaded.';
+  const lowerMessage = message.toLowerCase();
+
+  if (!user) {
+    return 'Audio exists, but playback details may require login because audio storage is private.';
+  }
+
+  if (lowerMessage.includes('permission') || lowerMessage.includes('policy') || lowerMessage.includes('rls')) {
+    return 'Audio exists, but your account does not currently have permission to read it.';
+  }
+
+  return message;
+}
+
 export default function AudioAttachments({ song, user, canManage }) {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [loadError, setLoadError] = useState('');
   const [uploading, setUploading] = useState(false);
   const [recording, setRecording] = useState(false);
   const [savingRecording, setSavingRecording] = useState(false);
@@ -37,10 +53,13 @@ export default function AudioAttachments({ song, user, canManage }) {
   async function load() {
     if (!song?.id) return;
     setLoading(true);
+    setLoadError('');
     try {
       setItems(await fetchSongAudio(song.id));
     } catch (err) {
-      console.error(err);
+      console.error('audio load error:', err);
+      setItems([]);
+      setLoadError(getAudioLoadMessage(err, user));
     } finally {
       setLoading(false);
     }
@@ -48,7 +67,7 @@ export default function AudioAttachments({ song, user, canManage }) {
 
   useEffect(() => {
     load();
-  }, [song?.id]);
+  }, [song?.id, user?.id]);
 
   useEffect(() => {
     return () => {
@@ -206,10 +225,17 @@ export default function AudioAttachments({ song, user, canManage }) {
         <div>Loading audio…</div>
       ) : (
         <div className="audio-attachments__list">
-          {items.length === 0 && <div className="audio-attachments__empty">No audio attachments yet.</div>}
+          {loadError && <div className="audio-attachments__error">{loadError}</div>}
+          {!loadError && items.length === 0 && <div className="audio-attachments__empty">No audio attachments yet.</div>}
           {items.map(audio => (
             <div key={audio.id} className="audio-attachments__item">
-              {audio.signed_url && <audio controls src={audio.signed_url} preload="none" />}
+              {audio.signed_url ? (
+                <audio controls src={audio.signed_url} preload="none" />
+              ) : (
+                <div className="audio-attachments__error">
+                  Audio file found, but playback link could not be generated.
+                </div>
+              )}
               <span>{audio.file_name}</span>
               {canManage && (
                 <button type="button" onClick={() => handleDelete(audio)}>
