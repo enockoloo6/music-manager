@@ -1,35 +1,120 @@
-## v1.3.0 Audio Upload & Playback
-
-Status: Complete
-
-Features:
-
-* Attach audio to songs
-* Upload audio files
-* Audio metadata storage
-* Inline playback
-* Audio deletion
-* Signed URL playback
-* Supabase Storage integration
-
-Manual verification completed.
+# Music Manager Roadmap
 
 ---
 
-## v1.4.0 Audio Recording
+## v1.4.0 Microphone Recording
 
-Status: Planned
+Status:
+In Progress
 
-Goals:
+Implemented:
 
-* Record directly from microphone
-* Start / Stop recording controls
-* MediaRecorder integration
-* Automatic upload to existing audio pipeline
-* Playback recorded audio
-* Mobile browser support
+* getUserMedia
+* MediaRecorder
+* Recording controls
+* Preview recording
+* Save recording
+* Existing upload pipeline reuse
 
-Notes:
+Remaining:
 
-The upload and playback infrastructure already exists and will be reused by recording functionality.
+* Verification
+* Audio visibility cleanup
+* Mobile testing
+
+---
+
+## v1.4.x Offline Foundation
+
+Status:
+Planned
+
+Goal:
+
+Offline-first operation.
+
+Cache:
+
+* Songs
+* Lyrics
+* Beats
+* Keyboards
+* Categories
+
+Technology:
+
+* IndexedDB
+* Service Worker
+
+Expected Result:
+
+Online Once
+↓
+Data Cached
+↓
+Works Offline
+
+---
+
+## v1.5.0 Song Foundation
+
+Status:
+Planned
+
+Goal:
+
+Move from Beat-Centric to Song-Centric.
+
+Features:
+
+* Add Song without Beat
+* Add Lyrics without Beat
+* Attach Beat later
+* Song lifecycle support
+
+---
+
+## v1.6.0 Mobile UX
+
+Status:
+Planned
+
+Features:
+
+* First lyric line preview
+* Compact song cards
+* Better mobile navigation
+* Category collapse
+
+---
+
+## v1.7.0 Reports
+
+Status:
+Planned
+
+Reports section:
+
+* Recently Added
+* Library Statistics
+* Activity
+* Audit
+
+Dashboard simplified for musicians.
+
+---
+
+## v2.0
+
+Long Term Vision
+
+Music Manager becomes:
+
+Song
+Lyrics
+Audio
+Beats
+Practice
+
+platform rather than a simple beat repository.
 
