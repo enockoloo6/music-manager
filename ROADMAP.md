@@ -79,6 +79,7 @@ Current implementation scope:
 * Saving a song must not require keyboard selection.
 * A style/beat row is created only when optional beat details are supplied.
 * Default keyboard settings move to a dedicated Settings view.
+* Admin user management moves to an Admin-only view.
 
 ---
 

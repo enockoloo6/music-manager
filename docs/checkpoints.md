@@ -97,6 +97,8 @@ Verify:
 * A beat/style row is created only when optional beat details are provided.
 * Existing default keyboard still pre-fills optional piano settings.
 * Default keyboard selector appears in Settings, not on the main library page.
+* Admin panel appears only in Admin view.
+* Admin navigation appears only for admins.
 * Existing beat edit flow still works.
 
 ---
