@@ -23,6 +23,7 @@ import './styles/songCard.css';
 import './styles/audioAttachments.css';
 
 const SUPER_ADMIN_EMAIL = 'enockoloo6@gmail.com';
+const DEFAULT_APP_TITLE = 'Music Manager';
 
 const EMPTY_FORM = {
   song_name: '',
@@ -52,6 +53,8 @@ function AppIntegrated() {
   const [songs, setSongs] = useState([]);
   const [keyboards, setKeyboards] = useState([]);
   const [profiles, setProfiles] = useState([]);
+  const [appTitle, setAppTitle] = useState(DEFAULT_APP_TITLE);
+  const [savingAppTitle, setSavingAppTitle] = useState(false);
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [selectedContributor, setSelectedContributor] = useState('All');
@@ -80,7 +83,12 @@ function AppIntegrated() {
   useEffect(() => {
     fetchSongs(false);
     fetchKeyboards();
+    loadAppSettings();
   }, []);
+
+  useEffect(() => {
+    document.title = appTitle || DEFAULT_APP_TITLE;
+  }, [appTitle]);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -154,6 +162,49 @@ function AppIntegrated() {
   async function loadProfiles() {
     const { data } = await supabase.rpc('get_all_profiles');
     setProfiles(data || []);
+  }
+
+  async function loadAppSettings() {
+    const { data, error } = await supabase
+      .from('app_settings')
+      .select('setting_value')
+      .eq('setting_key', 'app_title')
+      .maybeSingle();
+
+    if (error) {
+      console.error('loadAppSettings error:', error.message);
+      return;
+    }
+
+    if (data?.setting_value) {
+      setAppTitle(data.setting_value);
+    }
+  }
+
+  async function updateAppTitle(nextTitle) {
+    if (!role.admin) return;
+
+    const title = nextTitle.trim();
+    if (!title) {
+      alert('Please enter an app name.');
+      return;
+    }
+
+    setSavingAppTitle(true);
+
+    try {
+      const { error } = await supabase.rpc('admin_set_app_setting', {
+        setting_key: 'app_title',
+        setting_value: title
+      });
+
+      if (error) throw error;
+      setAppTitle(title);
+    } catch (err) {
+      alert('App name update failed: ' + err.message);
+    } finally {
+      setSavingAppTitle(false);
+    }
   }
 
   async function toggleStatus(profileId, field, current) {
@@ -608,8 +659,8 @@ function AppIntegrated() {
 
       <div style={{ background: 'linear-gradient(90deg,#0d1b6e 0%,#1a237e 100%)', padding: '12px 22px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap', boxShadow: '0 2px 8px rgba(0,0,0,0.2)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-          <span style={{ fontSize: '1.5rem' }}>🎹</span>
-          <span style={{ color: '#fff', fontWeight: '800', fontSize: '1.18rem', letterSpacing: '0.02em' }}>My Beat Library</span>
+          <span style={{ fontSize: '1.5rem' }}>♫</span>
+          <span style={{ color: '#fff', fontWeight: '800', fontSize: '1.18rem', letterSpacing: '0.02em' }}>{appTitle}</span>
           <VersionBadge />
           {user && !authLoading && (
             role.admin ? <Badge text="ADMIN" color="#c62828" /> :
@@ -741,8 +792,12 @@ function AppIntegrated() {
 
         {(role.approved || role.admin) && activeView === 'settings' && (
           <SettingsPage
+            appTitle={appTitle}
             defaultKeyboardId={defaultKeyboardId}
             keyboards={keyboards}
+            isAdmin={role.admin}
+            savingAppTitle={savingAppTitle}
+            onAppTitleChange={updateAppTitle}
             onDefaultKeyboardChange={updateDefaultKeyboard}
           />
         )}

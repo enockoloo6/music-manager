@@ -1,6 +1,10 @@
 function SettingsPage({
+  appTitle = 'Music Manager',
   defaultKeyboardId = '',
   keyboards = [],
+  isAdmin = false,
+  savingAppTitle = false,
+  onAppTitleChange,
   onDefaultKeyboardChange
 }) {
   return (
@@ -10,6 +14,34 @@ function SettingsPage({
       </h2>
 
       <div style={{ display: 'grid', gap: '14px' }}>
+        {isAdmin && (
+          <form
+            onSubmit={event => {
+              event.preventDefault();
+              const formData = new FormData(event.currentTarget);
+              onAppTitleChange?.(String(formData.get('appTitle') || ''));
+            }}
+            style={{ display: 'grid', gap: '8px' }}
+          >
+            <div>
+              <label>App Name</label>
+              <input
+                name="appTitle"
+                defaultValue={appTitle}
+                placeholder="Music Manager"
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={savingAppTitle}
+              style={{ width: 'fit-content', background: '#315a78', color: '#fff', padding: '8px 13px' }}
+            >
+              {savingAppTitle ? 'Saving...' : 'Save App Name'}
+            </button>
+          </form>
+        )}
+
         <div>
           <label>Default Keyboard</label>
           <select
