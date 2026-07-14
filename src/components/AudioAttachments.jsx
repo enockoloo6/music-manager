@@ -52,12 +52,19 @@ export default function AudioAttachments({ song, user, canManage }) {
 
   async function load() {
     if (!song?.id) return;
+    if (!user) {
+      setItems([]);
+      setLoadError('');
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     setLoadError('');
     try {
       setItems(await fetchSongAudio(song.id));
     } catch (err) {
-      console.error('audio load error:', err);
+      if (user) console.error('audio load error:', err);
       setItems([]);
       setLoadError(getAudioLoadMessage(err, user));
     } finally {
@@ -225,8 +232,9 @@ export default function AudioAttachments({ song, user, canManage }) {
         <div>Loading audio…</div>
       ) : (
         <div className="audio-attachments__list">
+          {!user && <div className="audio-attachments__empty">Login to view audio attachments.</div>}
           {loadError && <div className="audio-attachments__error">{loadError}</div>}
-          {!loadError && items.length === 0 && <div className="audio-attachments__empty">No audio attachments yet.</div>}
+          {user && !loadError && items.length === 0 && <div className="audio-attachments__empty">No audio attachments yet.</div>}
           {items.map(audio => (
             <div key={audio.id} className="audio-attachments__item">
               {audio.signed_url ? (

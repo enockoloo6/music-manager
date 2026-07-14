@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import AudioAttachments from './AudioAttachments';
 
 function getFirstLyricLine(lyrics) {
@@ -26,6 +26,8 @@ function SongCard({
   user,
   canManageAudio
 }) {
+  const [showMore, setShowMore] = useState(false);
+  const [showAudio, setShowAudio] = useState(false);
   const firstLyricLine = getFirstLyricLine(song.lyrics);
   const hasLyrics = Boolean(firstLyricLine);
 
@@ -65,6 +67,25 @@ function SongCard({
             Lyrics
           </button>
 
+          <button
+            type="button"
+            onClick={() => setShowMore(current => !current)}
+            aria-expanded={showMore}
+          >
+            More
+          </button>
+        </div>
+      </div>
+
+      {showMore && (
+        <div className="song-card__more no-print" style={{ display: 'flex', gap: '7px', flexWrap: 'wrap', padding: '9px 16px', borderBottom: '1px solid #eef2f7', background: '#f8fafc' }}>
+          <button
+            type="button"
+            onClick={() => setShowAudio(current => !current)}
+          >
+            {showAudio ? 'Hide Audio' : 'Audio'}
+          </button>
+
           {role?.approved && (
             <button
               type="button"
@@ -80,11 +101,11 @@ function SongCard({
               onClick={() => onDeleteSong?.(song.id)}
               className="song-card__delete"
             >
-              Delete
+              Delete Song
             </button>
           )}
         </div>
-      </div>
+      )}
 
       {hasLyrics && (
         <div className="song-card__lyrics-preview">
@@ -92,11 +113,13 @@ function SongCard({
         </div>
       )}
 
-      <AudioAttachments
-        song={song}
-        user={user}
-        canManage={canManageAudio}
-      />
+      {showAudio && (
+        <AudioAttachments
+          song={song}
+          user={user}
+          canManage={canManageAudio}
+        />
+      )}
 
       <div>
         {song.styles?.length > 0 ? (
@@ -364,28 +387,33 @@ function SongCard({
                   )}
 
                   {role?.approved && (
-                    <div
-                      className="no-print"
-                      style={{
-                        display: 'flex',
-                        gap: '7px',
-                        marginTop: '8px'
-                      }}
-                    >
-                      <button
-                        type="button"
-                        onClick={() => onStartEdit?.(style)}
-                      >
-                        Edit
-                      </button>
+                    <details className="no-print" style={{ marginTop: '8px' }}>
+                      <summary style={{ cursor: 'pointer', color: '#1a237e', fontSize: '0.78rem', fontWeight: 700 }}>
+                        Beat actions
+                      </summary>
 
-                      <button
-                        type="button"
-                        onClick={() => onDeleteBeat?.(style.id)}
+                      <div
+                        style={{
+                          display: 'flex',
+                          gap: '7px',
+                          marginTop: '7px'
+                        }}
                       >
-                        Remove
-                      </button>
-                    </div>
+                        <button
+                          type="button"
+                          onClick={() => onStartEdit?.(style)}
+                        >
+                          Edit Beat
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => onDeleteBeat?.(style.id)}
+                        >
+                          Remove Beat
+                        </button>
+                      </div>
+                    </details>
                   )}
                 </div>
               )}

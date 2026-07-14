@@ -4,11 +4,10 @@ import { supabase } from './supabaseClient';
 import AdminPage from './components/AdminPage';
 import AppFooter from './components/AppFooter';
 import CategoryFilters from './components/CategoryFilters';
-import LibraryStats from './components/LibraryStats';
 import LyricsEditor from './components/LyricsEditor';
 import LyricsMode from './components/LyricsMode';
 import OfflineBanner from './components/OfflineBanner';
-import RecentAdditions from './components/RecentAdditions';
+import ReportsPage from './components/ReportsPage';
 import SearchBar from './components/SearchBar';
 import SettingsPage from './components/SettingsPage';
 import SongCard from './components/SongCard';
@@ -401,6 +400,12 @@ function AppIntegrated() {
     setActiveView('admin');
   }
 
+  function openReportsView() {
+    setShowAddForm(false);
+    setEditingLyricsSong(null);
+    setActiveView('reports');
+  }
+
   const songNameOptions = useMemo(
     () => [...new Set(songs.map(song => song.song_name))].sort(),
     [songs]
@@ -504,9 +509,6 @@ function AppIntegrated() {
         </div>
 
         <div className="no-print" style={{ display: 'flex', gap: '8px' }}>
-          <button onClick={() => window.print()} style={{ background: 'rgba(255,255,255,0.13)', color: '#fff', padding: '7px 13px', fontSize: '0.83rem', border: '1px solid rgba(255,255,255,0.25)' }}>
-            🖨 Print
-          </button>
           {user ? (
             <button onClick={() => supabase.auth.signOut()} style={{ background: '#c62828', color: 'white', padding: '7px 14px', fontSize: '0.83rem' }}>
               Logout
@@ -568,6 +570,14 @@ function AppIntegrated() {
               Settings
             </button>
 
+            <button
+              type="button"
+              onClick={openReportsView}
+              style={{ background: activeView === 'reports' ? '#1a237e' : '#fff', color: activeView === 'reports' ? '#fff' : '#1a237e', border: '1px solid #cfd8e3', padding: '9px 14px', fontSize: '0.9rem' }}
+            >
+              Reports
+            </button>
+
             {role.admin && (
               <button
                 type="button"
@@ -590,13 +600,16 @@ function AppIntegrated() {
         {activeView === 'library' && (
           <>
             <SearchBar value={search} onChange={setSearch} resultCount={filteredSongs.length} totalCount={songs.length} />
-            <CategoryFilters
-              categories={categories}
-              selectedCategory={selectedCategory}
-              onSelect={setSelectedCategory}
-            />
-            <RecentAdditions items={recentAdditions} />
-            <LibraryStats songs={songs} keyboards={keyboards} />
+            <details className="no-print" style={{ marginBottom: '12px' }}>
+              <summary style={{ cursor: 'pointer', color: '#1a237e', fontWeight: 800, fontSize: '0.88rem' }}>
+                Categories
+              </summary>
+              <CategoryFilters
+                categories={categories}
+                selectedCategory={selectedCategory}
+                onSelect={setSelectedCategory}
+              />
+            </details>
           </>
         )}
 
@@ -613,6 +626,14 @@ function AppIntegrated() {
             profiles={profiles}
             isSuperAdmin={isSuperAdmin}
             onToggleStatus={toggleStatus}
+          />
+        )}
+
+        {(role.approved || role.admin) && activeView === 'reports' && (
+          <ReportsPage
+            recentAdditions={recentAdditions}
+            songs={songs}
+            keyboards={keyboards}
           />
         )}
 
