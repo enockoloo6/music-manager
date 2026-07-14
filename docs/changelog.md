@@ -25,6 +25,13 @@ Implemented:
 * A style/beat row is created only when optional beat details are supplied.
 * Default keyboard moved from the library page into Settings.
 * Admin user management moved from the library page into an Admin-only view.
+* Reports moved out of the library page into a Reports view.
+* Category filters are collapsed by default.
+* Song-card secondary actions moved behind More.
+* Beat edit/remove actions are collapsed behind Beat actions.
+* Audio tools load only when opened for a song.
+* Logged-out users no longer query audio metadata from song cards.
+* Global Print action removed from the header; Lyrics Mode keeps its print action.
 
 This starts the transition from beat-first entry to the documented song-centric workflow.
 
@@ -47,6 +54,10 @@ d9aae1d
 Admin User Management View
 
 127faad
+
+Library Cleanup
+
+bfaa5c0
 
 ---
 
