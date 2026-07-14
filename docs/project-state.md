@@ -111,6 +111,8 @@ Implemented direction:
 * Version and role labels stay visually quiet.
 * Lyrics previews are not shown on song cards because Lyrics opens the full view.
 * Audio is visible as a primary song action next to Lyrics.
+* Song count appears beside Add Song.
+* Search and category filtering share one control row.
 
 ---
 
