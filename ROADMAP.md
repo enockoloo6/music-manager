@@ -59,7 +59,7 @@ Works Offline
 ## v1.5.0 Song Foundation
 
 Status:
-Planned
+Started
 
 Goal:
 
@@ -71,6 +71,13 @@ Features:
 * Add Lyrics without Beat
 * Attach Beat later
 * Song lifecycle support
+
+Current implementation scope:
+
+* The add form starts with song name and lyrics.
+* Piano/beat settings are optional.
+* Saving a song must not require keyboard selection.
+* A style/beat row is created only when optional beat details are supplied.
 
 ---
 
@@ -117,4 +124,3 @@ Beats
 Practice
 
 platform rather than a simple beat repository.
-

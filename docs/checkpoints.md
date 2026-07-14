@@ -80,6 +80,26 @@ Verify:
 
 ---
 
+# Checkpoint 4A
+
+Song-First Add Flow
+
+Status:
+In Progress
+
+Verify:
+
+* Add form starts with Song Name and Lyrics.
+* Song can be saved with only a song name.
+* Song can be saved with song name and lyrics.
+* Keyboard is not required to save a song.
+* Beat details are optional.
+* A beat/style row is created only when optional beat details are provided.
+* Existing default keyboard still pre-fills optional piano settings.
+* Existing beat edit flow still works.
+
+---
+
 # Checkpoint 5
 
 Audio Visibility
@@ -150,4 +170,3 @@ Before merge:
 * recently added
 * statistics
 * mobile layout
-
