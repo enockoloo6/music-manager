@@ -57,6 +57,8 @@ Implemented:
 * Moved Category filtering beside the library sort control and removed the category tab beside search.
 * Library sort and category controls are available to public users.
 * Song count uses compact wording without `in library`.
+* Logged-in users can filter songs by contributor email.
+* Added `music_manager.songs.created_by` to track who first added new songs.
 * Beat details now use pipe separators and the subdued piano model color.
 * Audio recording now has a standard maximum duration, visible timer, and automatic stop.
 * Lyrics Mode close action is more visible.

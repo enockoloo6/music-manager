@@ -127,6 +127,8 @@ Implemented direction:
 * Compact library sort and category controls sit beside the song count.
 * Library sort and category controls are available to public users.
 * Song count uses compact wording, for example `38 songs`.
+* Logged-in users can filter songs by contributor email.
+* New songs store the profile id of the user who first added the song.
 * Search no longer has a separate category tab beside it.
 * Beat details use pipe separators and share the subdued piano model color.
 * Audio recording has a standard maximum duration with a visible timer and automatic stop.
