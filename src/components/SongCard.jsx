@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import AudioAttachments from './AudioAttachments';
+import LyricsEditor from './LyricsEditor';
 
 function getFirstLyricLine(lyrics) {
   return (lyrics || '')
@@ -35,8 +36,10 @@ function SongCard({
   onEditDataChange,
   onEditLyrics,
   onOpenLyrics,
+  onSaveLyrics,
   user,
-  canManageAudio
+  canManageAudio,
+  isEditingLyrics
 }) {
   const [showMore, setShowMore] = useState(false);
   const [showAudio, setShowAudio] = useState(false);
@@ -118,6 +121,17 @@ function SongCard({
               Delete Song
             </button>
           )}
+        </div>
+      )}
+
+      {isEditingLyrics && (
+        <div className="song-card__lyrics-editor no-print">
+          <LyricsEditor
+            song={song}
+            saving={saving}
+            onCancel={() => onEditLyrics?.(null)}
+            onSave={onSaveLyrics}
+          />
         </div>
       )}
 

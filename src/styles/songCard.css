@@ -40,6 +40,11 @@
   color: #b91c1c !important;
 }
 
+.song-card__lyrics-editor {
+  border-bottom: 1px solid #e8eef4;
+  padding: 12px 16px;
+}
+
 .beat-row__summary {
   display: flex;
   align-items: center;

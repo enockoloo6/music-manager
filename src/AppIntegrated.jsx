@@ -4,7 +4,6 @@ import { supabase } from './supabaseClient';
 import AdminPage from './components/AdminPage';
 import AppFooter from './components/AppFooter';
 import CategoryFilters from './components/CategoryFilters';
-import LyricsEditor from './components/LyricsEditor';
 import LyricsMode from './components/LyricsMode';
 import OfflineBanner from './components/OfflineBanner';
 import ReportsPage from './components/ReportsPage';
@@ -710,12 +709,6 @@ function AppIntegrated() {
           </form>
         )}
 
-        {activeView === 'library' && editingLyricsSong && (
-          <div className="panel" style={{ borderTop: '4px solid #1a237e' }}>
-            <LyricsEditor song={editingLyricsSong} saving={saving} onCancel={() => setEditingLyricsSong(null)} onSave={saveLyrics} />
-          </div>
-        )}
-
         {activeView === 'library' && (
         <div>
           {songs.length === 0 && (
@@ -739,8 +732,10 @@ function AppIntegrated() {
               onEditDataChange={setEditData}
               onEditLyrics={setEditingLyricsSong}
               onOpenLyrics={setLyricsSong}
+              onSaveLyrics={saveLyrics}
               user={user}
               canManageAudio={role?.approved}
+              isEditingLyrics={editingLyricsSong?.id === song.id}
             />
           ))}
         </div>
