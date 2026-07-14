@@ -4,18 +4,22 @@
 
 # Current Architecture
 
-Music Manager currently behaves mostly as a Beat Library.
+Music Manager now uses a song-first workflow.
 
-Relationships:
+Current relationships:
 
 Song
+├─ Lyrics
+├─ Audio
 └─ Styles / Beats
-├─ Keyboard
-├─ Tempo
-├─ Key
-└─ Notes
+   ├─ Keyboard
+   ├─ Tempo
+   ├─ Key
+   ├─ Beat category
+   ├─ Favorite/preferred flag
+   └─ Worship/Praise/Other use label
 
-Many workflows still assume a beat exists.
+Beats are optional attachments. A song can exist before lyrics, audio, or beat details are added.
 
 ---
 
@@ -108,7 +112,7 @@ Future:
 
 Current:
 
-Private bucket
+Supabase Storage bucket
 
 music-manager-audio
 
@@ -116,11 +120,17 @@ Metadata:
 
 music_manager.song_audio
 
-Need separation between:
+Current behavior:
 
-Metadata visibility
-and
-Playback visibility
+* Songs with audio expose audio access publicly.
+* Songs without audio hide the audio action for public users.
+* Approved users can add audio inline when a song has no audio.
+* Audio recording uses a standard maximum duration with a visible timer.
+
+Future:
+
+* Optional offline audio caching
+* More detailed recording metadata
 
 Audio playback policy to be reviewed.
 
@@ -143,4 +153,3 @@ services/
 Do not rewrite working functionality.
 
 Incremental extraction only.
-

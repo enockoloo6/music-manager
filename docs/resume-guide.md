@@ -66,27 +66,31 @@ Verified
 
 # Current Active Milestone
 
-v1.4.0 Microphone Recording
+v1.5.0 Song Foundation
 
 Status:
 In Progress
 
 Implemented:
 
-* Microphone capture
-* MediaRecorder
-* Recording controls
-* Preview recording
-* Save recording
-* Recording UI styling
+* Song-first add flow
+* Optional lyrics, audio, and beat settings
+* Settings, Admin, and Reports navigation
+* Public audio visibility
+* Inline Add Lyrics and Add Audio
+* Latest/category/contributor filters
+* App title setting and Android install metadata
+* Read-only offline cache foundation
+* Song duplication
+* Multiple beat management with favorite/preferred and Worship/Praise/Other labels
+* Public beat-details action labelled More
+* Invalid timestamp-like beat use values cleaned and hidden
 
 Recent commits:
 
-35347701d408223b4b1f9aa900d0d073fb190241
+6e7729a
 
-bad62ceb8cfaa088090e000e2737aa260e14e8f5
-
-2a5f36d390b252c8e4b2f2478bead1ece8d8b1fc
+282a27c
 
 ---
 
@@ -112,13 +116,12 @@ Do not design new features assuming a beat must exist.
 
 # Immediate Priorities
 
-1. Fix audio visibility
-2. Offline cache foundation
-3. Song foundation
-4. Reports section
-5. Category toggle
-6. Recently Added audit
-7. Microphone verification
+1. Full regression testing before production merge
+2. Offline audio caching design
+3. Offline save and synchronization
+4. Further AppIntegrated.jsx extraction
+5. Reports and audit expansion
+6. Microphone mobile verification
 
 ---
 
@@ -126,7 +129,7 @@ Do not design new features assuming a beat must exist.
 
 ## Mobile
 
-Only first lyric line should appear on song cards.
+Song cards should stay compact, with actions visible and no full lyrics preview.
 
 ## Reports
 
@@ -141,9 +144,8 @@ Reports
 
 ## Categories
 
-Make collapsible.
+Category filtering is available as a compact dropdown beside sorting.
 
 ## Offline
 
 Offline support is a product requirement.
-

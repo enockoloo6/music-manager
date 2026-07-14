@@ -66,7 +66,7 @@ Verification completed.
 ## v1.4.0 Microphone Recording
 
 Status:
-In Progress
+Implemented
 
 Implemented:
 
@@ -81,16 +81,15 @@ Implemented:
 
 Pending:
 
-* Full verification
-* Mobile testing
-* Audio visibility cleanup
+* Full regression verification
+* Broader mobile browser testing
 
 ---
 
 ## v1.5.0 Song Foundation
 
 Status:
-Started
+In Progress
 
 Implemented direction:
 
@@ -148,6 +147,7 @@ Implemented direction:
 * Keyboard model text remains smaller and subdued, matching the beat notes color.
 * Song count appears beside Add Song.
 * Search and category filtering share one control row.
+* Invalid timestamp-like beat use values have been removed from live data and are hidden in the UI.
 
 ---
 
@@ -205,16 +205,15 @@ Only incremental refactoring.
 
 # Known Issues
 
-## Audio Visibility
+## Offline Audio and Sync
 
-Logged-out users currently receive confusing audio state information.
+Read-only local cache exists for library data.
 
-Need separation between:
+Not implemented yet:
 
-* Metadata visibility
-* Playback visibility
-
-Investigation pending.
+* Offline audio file caching
+* Offline song, lyric, beat, or audio edits
+* Save queue and later synchronization
 
 ---
 

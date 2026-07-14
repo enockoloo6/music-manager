@@ -5,7 +5,7 @@
 ## v1.4.0 Microphone Recording
 
 Status:
-In Progress
+Implemented
 
 Implemented:
 
@@ -18,16 +18,15 @@ Implemented:
 
 Remaining:
 
-* Verification
-* Audio visibility cleanup
-* Mobile testing
+* Full regression verification
+* Broader mobile browser testing
 
 ---
 
 ## v1.4.x Offline Foundation
 
 Status:
-Planned
+Read-only cache implemented
 
 Goal:
 
@@ -54,12 +53,17 @@ Data Cached
 ↓
 Works Offline
 
+Current limitations:
+
+* Audio files are not cached offline.
+* Offline edits are not queued or synchronized.
+
 ---
 
 ## v1.5.0 Song Foundation
 
 Status:
-Started
+In Progress
 
 Goal:
 
@@ -84,13 +88,19 @@ Current implementation scope:
 * Category filters are collapsed until needed.
 * Song-card secondary actions and audio tools are shown on demand.
 * Logged-out audio permission noise is suppressed.
+* Public audio links are visible only when audio exists.
+* Approved users can add lyrics or audio inline when missing.
+* Songs can be duplicated.
+* Multiple beats are managed behind Beats or More.
+* Beats can be favorite/preferred and labelled Worship, Praise, or Other.
+* Invalid timestamp-like beat labels are cleaned from data and hidden in the UI.
 
 ---
 
 ## v1.6.0 Mobile UX
 
 Status:
-Planned
+In Progress
 
 Features:
 
@@ -98,6 +108,10 @@ Features:
 * Compact song cards
 * Better mobile navigation
 * Category collapse
+
+Current direction:
+
+Song cards should show the title and relevant actions, not lyrics previews or status badges.
 
 ---
 

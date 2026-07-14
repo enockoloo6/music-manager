@@ -4,7 +4,7 @@
 
 # Current Milestone
 
-v1.4.0 Microphone Recording
+v1.5.0 Song Foundation
 
 Status:
 In Progress
@@ -66,7 +66,7 @@ Verify:
 Microphone Recording
 
 Status:
-In Progress
+Implemented
 
 Verify:
 
@@ -85,7 +85,7 @@ Verify:
 Song-First Add Flow
 
 Status:
-In Progress
+Implemented
 
 Verify:
 
@@ -100,6 +100,11 @@ Verify:
 * Admin panel appears only in Admin view.
 * Admin navigation appears only for admins.
 * Existing beat edit flow still works.
+* Inline Add Lyrics appears on the selected song card.
+* Inline Add Audio appears on the selected song card.
+* Duplicate Song copies lyrics and beat settings.
+* Multiple beats can be managed from the Beats or More action.
+* Favorite/preferred and Worship/Praise/Other beat labels can be saved.
 
 ---
 
@@ -108,7 +113,7 @@ Verify:
 Audio Visibility
 
 Status:
-Investigation
+Implemented
 
 Verify:
 
@@ -119,8 +124,9 @@ Logged In
 
 Logged Out
 
-* metadata state clear
-* no misleading messages
+* songs with audio show audio access
+* songs without audio hide audio access
+* no private-storage diagnostic message appears as the public action
 
 ---
 
@@ -129,7 +135,7 @@ Logged Out
 Offline Foundation
 
 Status:
-Planned
+Read-only cache implemented
 
 Verify:
 
@@ -144,6 +150,12 @@ Offline:
 * search works
 * lyrics work
 * beats visible
+
+Not included:
+
+* audio file caching
+* offline edits
+* sync queue
 
 ---
 

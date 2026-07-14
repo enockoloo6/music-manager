@@ -1,6 +1,6 @@
 # Offline Plan
 
-Future target release: v2.0.0 or later.
+Future target release for full offline editing: v2.0.0 or later.
 
 Music Manager should eventually work even when internet is poor or unavailable.
 
@@ -20,6 +20,10 @@ The app should still allow users to:
 Start with read-only offline mode.
 
 This means the app can show the last saved copy of songs, lyrics, keyboards, and app title, but editing will still require internet at first.
+
+Status:
+
+Implemented as a foundation. The app currently keeps read-only cached library data available locally after online use.
 
 ## Why Read-Only First
 
@@ -55,6 +59,8 @@ The app can expose install metadata using:
 - cached app shell
 
 This does not mean audio or edits are available offline.
+
+Current app name and install metadata use `Music Manager`.
 
 ## Future Audio Offline Support
 

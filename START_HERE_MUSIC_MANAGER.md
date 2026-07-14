@@ -106,44 +106,37 @@ Features:
 
 # Active Milestone
 
-v1.4.0 Microphone Recording
+v1.5.0 Song Foundation
 
 Status:
 In Progress
 
 Implemented:
 
-* getUserMedia()
-* MediaRecorder
-* Start Recording
-* Stop Recording
-* Preview Recording
-* Save Recording
-* Existing upload pipeline reuse
-* Recording UI styling
+* Song-first add flow
+* Optional lyrics, audio, and beat attachments
+* Settings, Reports, and Admin navigation
+* Public audio visibility for songs that have audio
+* Inline Add Lyrics and Add Audio actions for approved users
+* Latest-added sorting, category filtering, and contributor filtering
+* Configurable app title and Android install name: Music Manager
+* Read-only local cache foundation
+* Song duplication
+* Multiple beat support with favorite/preferred and Worship/Praise/Other labels
+* Public beat-details action labelled More
+* Beat details hide invalid timestamp-like use values
 
 Recent commits:
 
-35347701d408223b4b1f9aa900d0d073fb190241
-bad62ceb8cfaa088090e000e2737aa260e14e8f5
-2a5f36d390b252c8e4b2f2478bead1ece8d8b1fc
+6e7729a
+282a27c
 
 ---
 
 # Known Issues
 
-Audio visibility when logged out.
-
-Current symptom:
-
-Audio diagnostic message appears for all songs.
-
-Root cause investigation:
-
-Need separation between:
-
-* Audio metadata visibility
-* Audio playback visibility
+Offline audio caching and offline edit synchronization are not implemented.
+The current offline work is read-only cache support for library data.
 
 ---
 
@@ -153,23 +146,22 @@ Song cards should display:
 
 Song Title
 
-First lyric line...
+Available actions
 
 Only.
 
-Not entire lyrics.
+Not full lyrics previews or status badges.
 
 ---
 
 # High Priority Roadmap
 
-1. Audio visibility fix
-2. Offline cache foundation
-3. Song-centric foundation
-4. Reports section
-5. Category toggle
-6. Recently Added audit
-7. Microphone UX enhancements
+1. Finish full regression testing
+2. Improve offline audio caching design
+3. Add offline save and sync queue
+4. Continue extracting AppIntegrated.jsx
+5. Extend Reports and audit views
+6. Polish microphone recording on mobile
 
 ---
 
@@ -191,6 +183,10 @@ Preferred stack:
 * Service Worker
 * Background Sync
 
+Current implementation:
+
+Read-only local cache foundation only. Audio files and offline edits are future work.
+
 ---
 
 # Read Next
@@ -201,4 +197,3 @@ Preferred stack:
 4. docs/changelog.md
 5. docs/architecture.md
 6. ROADMAP.md
-
