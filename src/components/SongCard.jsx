@@ -18,7 +18,7 @@ function beatMetaParts(style) {
 
 function beatDisplayName(style) {
   const category = style.location?.trim();
-  return category ? `${style.beat_name} (${category})` : style.beat_name;
+  return category ? `${style.beat_name}(${category})` : style.beat_name;
 }
 
 function SongCard({

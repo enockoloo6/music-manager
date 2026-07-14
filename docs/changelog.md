@@ -47,7 +47,7 @@ Implemented:
 * Approved users see Add Lyrics when a song has no lyrics.
 * Lyrics Mode close action is more visible.
 * Song cards no longer show beat count or lyrics status badges.
-* Beat category now appears beside the beat name in parentheses.
+* Beat category now appears attached to the beat name as `Beat(category)`.
 * Keyboard model is visually separated to the right of each beat row where space allows.
 
 Public audio visibility depends on applying the public read migration to the active Supabase project.
