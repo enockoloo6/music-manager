@@ -43,6 +43,11 @@ Implemented:
 * Audio links appear for public users only when a song has audio.
 * Approved users can still open Audio for songs without audio to upload recordings.
 * Added public read migration for `music_manager.song_audio` metadata and `music-manager-audio` storage objects.
+* Lyrics links appear only when a song has lyrics.
+* Approved users see Add Lyrics when a song has no lyrics.
+* Lyrics Mode close action is more visible.
+
+Public audio visibility depends on applying the public read migration to the active Supabase project.
 
 This starts the transition from beat-first entry to the documented song-centric workflow.
 
@@ -81,6 +86,10 @@ Library Search Controls
 Public Audio Links
 
 6df6921
+
+Lyrics Action Refinements
+
+4a2ba68
 
 ---
 
