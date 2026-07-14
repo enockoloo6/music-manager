@@ -453,10 +453,18 @@ function AppIntegrated() {
   const isSuperAdmin = emailAddress => emailAddress === SUPER_ADMIN_EMAIL;
 
   const Badge = ({ text, color }) => (
-    <span style={{ background: color, color: '#fff', padding: '2px 9px', borderRadius: '12px', fontSize: '0.72rem', marginLeft: '7px', fontWeight: 600 }}>
+    <span style={{ background: color, color: '#fff', padding: '1px 6px', borderRadius: '10px', fontSize: '0.62rem', marginLeft: '4px', fontWeight: 600, opacity: 0.85 }}>
       {text}
     </span>
   );
+
+  const navButtonStyle = view => ({
+    background: activeView === view ? 'rgba(255,255,255,0.22)' : 'transparent',
+    color: '#fff',
+    border: '1px solid rgba(255,255,255,0.24)',
+    padding: '6px 10px',
+    fontSize: '0.8rem'
+  });
 
   return (
     <div style={{ fontFamily: 'system-ui, sans-serif', color: '#222', minHeight: '100vh', background: '#f0f2f7' }}>
@@ -468,21 +476,21 @@ function AppIntegrated() {
           border-radius: 7px; font-family: inherit; font-size: 0.92rem;
           background: #fff; transition: border-color 0.15s;
         }
-        input:focus, select:focus, textarea:focus { outline: none; border-color: #1a237e; box-shadow: 0 0 0 2px rgba(26,35,126,0.1); }
+        input:focus, select:focus, textarea:focus { outline: none; border-color: #7fb7d8; box-shadow: 0 0 0 2px rgba(127,183,216,0.18); }
         button { cursor: pointer; border-radius: 6px; border: none; font-weight: 600; transition: all 0.15s; }
         button:hover { opacity: 0.87; }
         button:disabled { opacity: 0.5; cursor: not-allowed; }
         label { font-size: 0.76rem; font-weight: 700; color: #4a5568; display: block; margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.03em; }
         .card { border: 1px solid #e2e8f0; border-radius: 11px; overflow: hidden; background: white; margin-bottom: 13px; box-shadow: 0 1px 5px rgba(0,0,0,0.07); }
-        .card-header { background: linear-gradient(90deg,#1a237e 0%,#283593 100%); padding: 11px 16px; display: flex; justify-content: space-between; align-items: center; }
-        .song-title { font-size: 1.08rem; font-weight: 800; color: #fff; letter-spacing: 0.01em; }
-        .beat-count-badge { background: rgba(255,255,255,0.2); color: #fff; font-size: 0.7rem; padding: 2px 8px; border-radius: 10px; margin-left: 8px; }
+        .card-header { background: #dceff8; padding: 11px 16px; display: flex; justify-content: space-between; align-items: center; }
+        .song-title { font-size: 1.08rem; font-weight: 800; color: #17324d; letter-spacing: 0.01em; }
+        .beat-count-badge { background: rgba(23,50,77,0.1); color: #315a78; font-size: 0.7rem; padding: 2px 8px; border-radius: 10px; margin-left: 8px; }
         .beat-row { padding: 11px 16px; border-bottom: 1px solid #f0f4f8; }
         .beat-row:last-child { border-bottom: none; }
         .panel { background: #fff; border: 1px solid #e2e8f0; border-radius: 11px; padding: 20px; margin-bottom: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.05); }
         .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
         .recent-additions { background: #fff; border: 1px solid #e2e8f0; border-radius: 11px; padding: 10px 14px; margin: 0 0 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.05); }
-        .recent-additions__toggle { width: 100%; display: flex; align-items: center; gap: 8px; background: transparent; color: #1a237e; padding: 2px 0; text-align: left; }
+        .recent-additions__toggle { width: 100%; display: flex; align-items: center; gap: 8px; background: transparent; color: #315a78; padding: 2px 0; text-align: left; }
         .recent-additions__title { font-size: 0.98rem; font-weight: 800; flex: 1; }
         .recent-additions__chevron { color: #64748b; font-size: 0.9rem; }
         .recent-additions__item { display: flex; justify-content: space-between; gap: 12px; padding: 8px 0; border-top: 1px solid #f1f5f9; }
@@ -491,13 +499,13 @@ function AppIntegrated() {
         .library-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 0 0 14px; }
         .library-stats__item { background: #fff; border: 1px solid #e2e8f0; border-radius: 11px; padding: 12px 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.05); display: grid; grid-template-columns: auto 1fr; align-items: center; column-gap: 8px; }
         .library-stats__icon { grid-row: span 2; font-size: 1.2rem; }
-        .library-stats__value { color: #1a237e; font-weight: 900; font-size: 1.08rem; line-height: 1; }
+        .library-stats__value { color: #315a78; font-weight: 900; font-size: 1.08rem; line-height: 1; }
         .library-stats__label { color: #64748b; font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; }
         @media (max-width: 700px) { .form-grid { grid-template-columns: 1fr; } .recent-additions__item { flex-direction: column; gap: 3px; } .library-stats { grid-template-columns: repeat(2, 1fr); } }
       `}</style>
 
       <div style={{ background: 'linear-gradient(90deg,#0d1b6e 0%,#1a237e 100%)', padding: '12px 22px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap', boxShadow: '0 2px 8px rgba(0,0,0,0.2)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
           <span style={{ fontSize: '1.5rem' }}>🎹</span>
           <span style={{ color: '#fff', fontWeight: '800', fontSize: '1.18rem', letterSpacing: '0.02em' }}>My Beat Library</span>
           <VersionBadge />
@@ -508,7 +516,25 @@ function AppIntegrated() {
           )}
         </div>
 
-        <div className="no-print" style={{ display: 'flex', gap: '8px' }}>
+        <div className="no-print" style={{ display: 'flex', gap: '7px', alignItems: 'center', flexWrap: 'wrap' }}>
+          {(role.approved || role.admin) && (
+            <>
+              <button type="button" onClick={openLibraryView} style={navButtonStyle('library')}>
+                Library
+              </button>
+              <button type="button" onClick={openSettingsView} style={navButtonStyle('settings')}>
+                Settings
+              </button>
+              <button type="button" onClick={openReportsView} style={navButtonStyle('reports')}>
+                Reports
+              </button>
+              {role.admin && (
+                <button type="button" onClick={openAdminView} style={navButtonStyle('admin')}>
+                  Admin
+                </button>
+              )}
+            </>
+          )}
           {user ? (
             <button onClick={() => supabase.auth.signOut()} style={{ background: '#c62828', color: 'white', padding: '7px 14px', fontSize: '0.83rem' }}>
               Logout
@@ -552,48 +578,12 @@ function AppIntegrated() {
           </div>
         )}
 
-        {(role.approved || role.admin) && (
+        {(role.approved || role.admin) && activeView === 'library' && (
           <div className="no-print" style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px', flexWrap: 'wrap' }}>
-            <button
-              type="button"
-              onClick={openLibraryView}
-              style={{ background: activeView === 'library' ? '#1a237e' : '#fff', color: activeView === 'library' ? '#fff' : '#1a237e', border: '1px solid #cfd8e3', padding: '9px 14px', fontSize: '0.9rem' }}
-            >
-              Library
+            <button onClick={() => { setShowAddForm(value => !value); if (!showAddForm) setFormData(current => ({ ...current, keyboard_id: defaultKeyboardId || current.keyboard_id })); }} style={{ background: showAddForm ? '#64748b' : '#5f9fbd', color: 'white', padding: '9px 18px', fontSize: '0.92rem', display: 'flex', alignItems: 'center', gap: '7px' }}>
+              <span>{showAddForm ? '✕' : '➕'}</span>
+              {showAddForm ? 'Close Form' : 'Add Song'}
             </button>
-
-            <button
-              type="button"
-              onClick={openSettingsView}
-              style={{ background: activeView === 'settings' ? '#1a237e' : '#fff', color: activeView === 'settings' ? '#fff' : '#1a237e', border: '1px solid #cfd8e3', padding: '9px 14px', fontSize: '0.9rem' }}
-            >
-              Settings
-            </button>
-
-            <button
-              type="button"
-              onClick={openReportsView}
-              style={{ background: activeView === 'reports' ? '#1a237e' : '#fff', color: activeView === 'reports' ? '#fff' : '#1a237e', border: '1px solid #cfd8e3', padding: '9px 14px', fontSize: '0.9rem' }}
-            >
-              Reports
-            </button>
-
-            {role.admin && (
-              <button
-                type="button"
-                onClick={openAdminView}
-                style={{ background: activeView === 'admin' ? '#1a237e' : '#fff', color: activeView === 'admin' ? '#fff' : '#1a237e', border: '1px solid #cfd8e3', padding: '9px 14px', fontSize: '0.9rem' }}
-              >
-                Admin
-              </button>
-            )}
-
-            {activeView === 'library' && (
-              <button onClick={() => { setShowAddForm(value => !value); if (!showAddForm) setFormData(current => ({ ...current, keyboard_id: defaultKeyboardId || current.keyboard_id })); }} style={{ background: showAddForm ? '#455a64' : '#1a237e', color: 'white', padding: '9px 18px', fontSize: '0.92rem', display: 'flex', alignItems: 'center', gap: '7px' }}>
-                <span>{showAddForm ? '✕' : '➕'}</span>
-                {showAddForm ? 'Close Form' : 'Add Song'}
-              </button>
-            )}
           </div>
         )}
 

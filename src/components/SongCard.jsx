@@ -8,6 +8,15 @@ function getFirstLyricLine(lyrics) {
     .find(Boolean) || '';
 }
 
+function beatMetaParts(style) {
+  return [
+    style.keyboards?.model_name,
+    style.tempo ? `${style.tempo} BPM` : null,
+    style.musical_key ? `Key ${style.musical_key}` : null,
+    style.keyboard_location
+  ].filter(Boolean);
+}
+
 function SongCard({
   song,
   role,
@@ -28,8 +37,7 @@ function SongCard({
 }) {
   const [showMore, setShowMore] = useState(false);
   const [showAudio, setShowAudio] = useState(false);
-  const firstLyricLine = getFirstLyricLine(song.lyrics);
-  const hasLyrics = Boolean(firstLyricLine);
+  const hasLyrics = Boolean(getFirstLyricLine(song.lyrics));
 
   const inputStyle = {
     padding: '6px 8px',
@@ -69,6 +77,14 @@ function SongCard({
 
           <button
             type="button"
+            onClick={() => setShowAudio(current => !current)}
+            aria-expanded={showAudio}
+          >
+            {showAudio ? 'Hide Audio' : 'Audio'}
+          </button>
+
+          <button
+            type="button"
             onClick={() => setShowMore(current => !current)}
             aria-expanded={showMore}
           >
@@ -79,13 +95,6 @@ function SongCard({
 
       {showMore && (
         <div className="song-card__more no-print" style={{ display: 'flex', gap: '7px', flexWrap: 'wrap', padding: '9px 16px', borderBottom: '1px solid #eef2f7', background: '#f8fafc' }}>
-          <button
-            type="button"
-            onClick={() => setShowAudio(current => !current)}
-          >
-            {showAudio ? 'Hide Audio' : 'Audio'}
-          </button>
-
           {role?.approved && (
             <button
               type="button"
@@ -104,12 +113,6 @@ function SongCard({
               Delete Song
             </button>
           )}
-        </div>
-      )}
-
-      {hasLyrics && (
-        <div className="song-card__lyrics-preview">
-          {firstLyricLine}
         </div>
       )}
 
@@ -310,65 +313,13 @@ function SongCard({
                 </div>
               ) : (
                 <div>
-                  <div
-                    style={{
-                      display: 'flex',
-                      alignItems: 'baseline',
-                      justifyContent: 'space-between',
-                      gap: '8px'
-                    }}
-                  >
-                    <span
-                      style={{
-                        fontWeight: '700',
-                        color: '#1a237e',
-                        fontSize: '0.97rem'
-                      }}
-                    >
-                      {style.beat_name}
-
-                      {style.keyboard_location && (
-                        <span
-                          style={{
-                            fontWeight: '400',
-                            color: '#94a3b8',
-                            fontSize: '0.8rem',
-                            marginLeft: '6px'
-                          }}
-                        >
-                          (<em>{style.keyboard_location}</em>)
-                        </span>
-                      )}
-                    </span>
-
-                    <span
-                      style={{
-                        fontSize: '0.78rem',
-                        color: '#64748b',
-                        whiteSpace: 'nowrap',
-                        flexShrink: 0
-                      }}
-                    >
-                      {style.keyboards?.model_name || '--'}
-                    </span>
-                  </div>
-
-                  <div
-                    style={{
-                      display: 'flex',
-                      gap: '16px',
-                      fontSize: '0.82rem',
-                      color: '#555',
-                      marginTop: '5px'
-                    }}
-                  >
-                    <span>
-                      <strong>{style.tempo || '--'}</strong> BPM
-                    </span>
-
-                    <span>
-                      Key: <strong>{style.musical_key || '--'}</strong>
-                    </span>
+                  <div className="beat-row__summary">
+                    <strong className="beat-row__name">{style.beat_name}</strong>
+                    {beatMetaParts(style).map(part => (
+                      <span key={part} className="beat-row__meta">
+                        {part}
+                      </span>
+                    ))}
                   </div>
 
                   {style.notes && (

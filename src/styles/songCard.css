@@ -29,8 +29,9 @@
   padding: 8px 10px;
   font-size: 0.8rem;
   font-weight: 600;
-  background: #eef2ff;
-  color: #1e3a8a;
+  background: #f6fbfd;
+  color: #315a78;
+  border: 1px solid #b8d9e8;
 }
 
 .song-card__delete {
@@ -39,23 +40,34 @@
 }
 
 .song-card__lyrics-badge {
-  background: #dcfce7;
-  color: #166534;
+  background: #eef8f0;
+  color: #49705a;
   font-size: 0.72rem;
   padding: 4px 8px;
   border-radius: 999px;
   font-weight: 700;
 }
 
-.song-card__lyrics-preview {
-  margin: 0 16px 16px;
-  padding: 12px 14px;
-  border-radius: 10px;
-  background: #f8fafc;
-  color: #475569;
-  font-size: 0.88rem;
-  line-height: 1.7;
-  border-left: 4px solid #cbd5e1;
+.beat-row__summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: nowrap;
+  min-width: 0;
+}
+
+.beat-row__name {
+  color: #315a78;
+  font-size: 0.95rem;
+  min-width: 0;
+}
+
+.beat-row__meta {
+  color: #64748b;
+  font-size: 0.8rem;
+  white-space: nowrap;
+  padding-left: 10px;
+  border-left: 1px solid #d9e8ef;
 }
 
 @media (max-width: 768px) {
@@ -65,5 +77,17 @@
 
   .song-card__actions button {
     flex: 1;
+  }
+
+  .beat-row__summary {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .beat-row__meta {
+    border-left: 0;
+    padding-left: 0;
+    white-space: normal;
   }
 }
