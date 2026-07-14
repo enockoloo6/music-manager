@@ -52,6 +52,9 @@ Implemented:
 * Open song-card actions, such as Hide Audio, are visually emphasized for easier scanning.
 * Library defaults to latest-added songs first, using the newest beat timestamp available for each song.
 * Added a compact sort control beside the song count.
+* Moved Category filtering beside the library sort control and removed the category tab beside search.
+* Beat details now use pipe separators and the subdued piano model color.
+* Audio recording now has a standard maximum duration, visible timer, and automatic stop.
 * Lyrics Mode close action is more visible.
 * Song cards no longer show beat count or lyrics status badges.
 * Beat category from `styles.keyboard_location` now appears attached to the beat name as `Beat(category)`.
