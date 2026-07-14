@@ -19,7 +19,7 @@ The app should still allow users to:
 
 Start with read-only offline mode.
 
-This means the app can show the last saved copy of songs and lyrics, but editing will still require internet at first.
+This means the app can show the last saved copy of songs, lyrics, keyboards, and app title, but editing will still require internet at first.
 
 ## Why Read-Only First
 
@@ -89,6 +89,7 @@ Start with safe read-only offline viewing first.
 
 Current status:
 
+- Read-only cache for songs, lyrics, keyboards, and app title is implemented using browser storage.
 - Offline audio caching is not implemented.
 - Offline save and later synchronization is not implemented.
 - Android install metadata is a separate step from full offline capability.

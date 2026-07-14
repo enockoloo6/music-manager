@@ -59,8 +59,10 @@ Implemented:
 * Song count uses compact wording without `in library`.
 * Logged-in users can filter songs by contributor email.
 * Added `music_manager.songs.created_by` to track who first added new songs.
+* Backfilled existing songs to `ngoziredorcas@gmail.com` as contributor.
 * Added admin-controlled app title settings with `Music Manager` as the default.
 * Added Android-friendly install metadata and a music-focused app mark.
+* Added a read-only local cache foundation for songs, keyboards, and app title.
 * Confirmed offline audio caching and offline save/sync are still future work.
 * Beat details now use pipe separators and the subdued piano model color.
 * Audio recording now has a standard maximum duration, visible timer, and automatic stop.
