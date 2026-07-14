@@ -1,0 +1,67 @@
+.app-header__title {
+  overflow-wrap: anywhere;
+}
+
+.library-toolbar__filter select {
+  max-width: 100%;
+}
+
+@media (max-width: 640px) {
+  .app-header {
+    align-items: stretch !important;
+    padding: 10px 14px !important;
+  }
+
+  .app-header__brand,
+  .app-header__nav {
+    width: 100%;
+  }
+
+  .app-header__brand {
+    align-items: flex-start !important;
+  }
+
+  .app-header__mark {
+    line-height: 1;
+  }
+
+  .app-header__title {
+    flex: 1 1 160px;
+    font-size: 1rem !important;
+    line-height: 1.25;
+  }
+
+  .app-header__nav {
+    gap: 6px !important;
+  }
+
+  .app-header__nav button {
+    flex: 1 1 calc(50% - 6px);
+    min-width: 0;
+    text-align: center;
+  }
+
+  .library-toolbar {
+    align-items: stretch !important;
+    gap: 8px !important;
+  }
+
+  .library-toolbar > button,
+  .library-toolbar__count,
+  .library-toolbar__filter {
+    width: 100%;
+  }
+
+  .library-toolbar__count {
+    display: block;
+  }
+
+  .library-toolbar__filter {
+    justify-content: space-between;
+  }
+
+  .library-toolbar__filter select {
+    flex: 1;
+    min-width: 0 !important;
+  }
+}

@@ -113,10 +113,16 @@
 @media (max-width: 768px) {
   .song-card__actions {
     width: 100%;
+    gap: 10px;
   }
 
   .song-card__actions .song-card__link-action {
     flex: 0 0 auto;
+  }
+
+  .song-card__actions .song-card__link-action--active {
+    flex: 1 1 100%;
+    text-align: center;
   }
 
   .beat-row__summary {

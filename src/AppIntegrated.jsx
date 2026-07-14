@@ -22,6 +22,7 @@ import './styles/offlineBanner.css';
 import './styles/searchBar.css';
 import './styles/songCard.css';
 import './styles/audioAttachments.css';
+import './styles/appLayout.css';
 
 const SUPER_ADMIN_EMAIL = 'enockoloo6@gmail.com';
 const DEFAULT_APP_TITLE = 'Music Manager';
@@ -684,10 +685,10 @@ function AppIntegrated() {
         @media (max-width: 700px) { .form-grid { grid-template-columns: 1fr; } .recent-additions__item { flex-direction: column; gap: 3px; } .library-stats { grid-template-columns: repeat(2, 1fr); } }
       `}</style>
 
-      <div style={{ background: 'linear-gradient(90deg,#0d1b6e 0%,#1a237e 100%)', padding: '12px 22px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap', boxShadow: '0 2px 8px rgba(0,0,0,0.2)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-          <span style={{ fontSize: '1.5rem' }}>♫</span>
-          <span style={{ color: '#fff', fontWeight: '800', fontSize: '1.18rem', letterSpacing: '0.02em' }}>{appTitle}</span>
+      <div className="app-header" style={{ background: 'linear-gradient(90deg,#0d1b6e 0%,#1a237e 100%)', padding: '12px 22px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap', boxShadow: '0 2px 8px rgba(0,0,0,0.2)' }}>
+        <div className="app-header__brand" style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+          <span className="app-header__mark" style={{ fontSize: '1.5rem' }}>♫</span>
+          <span className="app-header__title" style={{ color: '#fff', fontWeight: '800', fontSize: '1.18rem', letterSpacing: '0.02em' }}>{appTitle}</span>
           <VersionBadge />
           {user && !authLoading && (
             role.admin ? <Badge text="ADMIN" color="#c62828" /> :
@@ -696,7 +697,7 @@ function AppIntegrated() {
           )}
         </div>
 
-        <div className="no-print" style={{ display: 'flex', gap: '7px', alignItems: 'center', flexWrap: 'wrap' }}>
+        <div className="app-header__nav no-print" style={{ display: 'flex', gap: '7px', alignItems: 'center', flexWrap: 'wrap' }}>
           {(role.approved || role.admin) && (
             <>
               <button type="button" onClick={openLibraryView} style={navButtonStyle('library')}>
@@ -764,19 +765,19 @@ function AppIntegrated() {
         )}
 
         {activeView === 'library' && (
-          <div className="no-print" style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px', flexWrap: 'wrap' }}>
+          <div className="library-toolbar no-print" style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px', flexWrap: 'wrap' }}>
             {(role.approved || role.admin) && (
               <button onClick={() => { setShowAddForm(value => !value); if (!showAddForm) setFormData(current => ({ ...current, keyboard_id: defaultKeyboardId || current.keyboard_id })); }} style={{ background: showAddForm ? '#64748b' : '#5f9fbd', color: 'white', padding: '9px 18px', fontSize: '0.92rem', display: 'flex', alignItems: 'center', gap: '7px' }}>
                 <span>{showAddForm ? '✕' : '➕'}</span>
                 {showAddForm ? 'Close Form' : 'Add Song'}
               </button>
             )}
-            <span style={{ color: '#64748b', fontSize: '0.86rem', fontWeight: 700 }}>
+            <span className="library-toolbar__count" style={{ color: '#64748b', fontSize: '0.86rem', fontWeight: 700 }}>
               {search.trim()
                 ? `${filteredSongs.length} of ${songs.length} song${songs.length === 1 ? '' : 's'}`
                 : `${songs.length} song${songs.length === 1 ? '' : 's'}`}
             </span>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '6px', margin: 0, textTransform: 'none', letterSpacing: 0, color: '#64748b', fontSize: '0.78rem' }}>
+            <label className="library-toolbar__filter" style={{ display: 'flex', alignItems: 'center', gap: '6px', margin: 0, textTransform: 'none', letterSpacing: 0, color: '#64748b', fontSize: '0.78rem' }}>
               Sort
               <select
                 value={librarySort}
@@ -787,7 +788,7 @@ function AppIntegrated() {
                 <option value="name">Song name</option>
               </select>
             </label>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '6px', margin: 0, textTransform: 'none', letterSpacing: 0, color: '#64748b', fontSize: '0.78rem' }}>
+            <label className="library-toolbar__filter" style={{ display: 'flex', alignItems: 'center', gap: '6px', margin: 0, textTransform: 'none', letterSpacing: 0, color: '#64748b', fontSize: '0.78rem' }}>
               Category
               <select
                 value={selectedCategory}
@@ -800,7 +801,7 @@ function AppIntegrated() {
               </select>
             </label>
             {user && (
-              <label style={{ display: 'flex', alignItems: 'center', gap: '6px', margin: 0, textTransform: 'none', letterSpacing: 0, color: '#64748b', fontSize: '0.78rem' }}>
+              <label className="library-toolbar__filter library-toolbar__filter--wide" style={{ display: 'flex', alignItems: 'center', gap: '6px', margin: 0, textTransform: 'none', letterSpacing: 0, color: '#64748b', fontSize: '0.78rem' }}>
                 Added by
                 <select
                   value={selectedContributor}
