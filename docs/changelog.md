@@ -55,6 +55,8 @@ Implemented:
 * Library defaults to latest-added songs first, using the newest beat timestamp available for each song.
 * Added a compact sort control beside the song count.
 * Moved Category filtering beside the library sort control and removed the category tab beside search.
+* Library sort and category controls are available to public users.
+* Song count uses compact wording without `in library`.
 * Beat details now use pipe separators and the subdued piano model color.
 * Audio recording now has a standard maximum duration, visible timer, and automatic stop.
 * Lyrics Mode close action is more visible.

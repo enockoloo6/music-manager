@@ -125,6 +125,8 @@ Implemented direction:
 * Open inline song-card actions use the same active visual treatment across lyrics, audio, and More.
 * Library defaults to latest-added songs first, using the newest beat timestamp available for each song.
 * Compact library sort and category controls sit beside the song count.
+* Library sort and category controls are available to public users.
+* Song count uses compact wording, for example `38 songs`.
 * Search no longer has a separate category tab beside it.
 * Beat details use pipe separators and share the subdued piano model color.
 * Audio recording has a standard maximum duration with a visible timer and automatic stop.
