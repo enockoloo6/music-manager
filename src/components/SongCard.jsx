@@ -57,6 +57,7 @@ function SongCard({
   const hasBeats = (song.styles?.length || 0) > 0;
   const canOpenAudio = hasAudio || canManageAudio;
   const hasMoreActions = Boolean(role?.approved || role?.admin);
+  const beatsActionLabel = role?.approved || role?.admin ? 'Beats' : 'More';
 
   const inputStyle = {
     padding: '6px 8px',
@@ -110,7 +111,7 @@ function SongCard({
               onClick={() => setShowBeats(current => !current)}
               aria-expanded={showBeats}
             >
-              {showBeats ? 'Hide Beats' : 'Beats'}
+              {showBeats ? `Hide ${beatsActionLabel}` : beatsActionLabel}
             </button>
           )}
 
