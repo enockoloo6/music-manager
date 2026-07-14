@@ -38,12 +38,25 @@ const EMPTY_FORM = {
   notes: ''
 };
 
+function getSongLatestTimestamp(song) {
+  const styleTimes = (song.styles || [])
+    .map(style => style.created_at ? new Date(style.created_at).getTime() : 0)
+    .filter(Boolean);
+
+  return Math.max(
+    song.created_at ? new Date(song.created_at).getTime() : 0,
+    ...styleTimes,
+    0
+  );
+}
+
 function AppIntegrated() {
   const [songs, setSongs] = useState([]);
   const [keyboards, setKeyboards] = useState([]);
   const [profiles, setProfiles] = useState([]);
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
+  const [librarySort, setLibrarySort] = useState('latest');
   const [activeView, setActiveView] = useState('library');
   const [user, setUser] = useState(null);
   const [role, setRole] = useState({ approved: false, admin: false });
@@ -465,14 +478,25 @@ function AppIntegrated() {
   }, [songs]);
 
   const filteredSongs = useMemo(
-    () => songs.filter(song => {
-      const matchesSearch = songMatchesSearch(song, search);
-      const matchesCategory = selectedCategory === 'All'
-        || (song.styles || []).some(style => style.keyboard_location === selectedCategory);
+    () => {
+      const matchingSongs = songs.filter(song => {
+        const matchesSearch = songMatchesSearch(song, search);
+        const matchesCategory = selectedCategory === 'All'
+          || (song.styles || []).some(style => style.keyboard_location === selectedCategory);
 
-      return matchesSearch && matchesCategory;
-    }),
-    [songs, search, selectedCategory]
+        return matchesSearch && matchesCategory;
+      });
+
+      return [...matchingSongs].sort((a, b) => {
+        if (librarySort === 'name') {
+          return a.song_name.localeCompare(b.song_name);
+        }
+
+        const latestDiff = getSongLatestTimestamp(b) - getSongLatestTimestamp(a);
+        return latestDiff || a.song_name.localeCompare(b.song_name);
+      });
+    },
+    [songs, search, selectedCategory, librarySort]
   );
 
   const recentAdditions = useMemo(() => (
@@ -629,6 +653,17 @@ function AppIntegrated() {
                 ? `${filteredSongs.length} of ${songs.length} song${songs.length === 1 ? '' : 's'}`
                 : `${songs.length} song${songs.length === 1 ? '' : 's'} in library`}
             </span>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '6px', margin: 0, textTransform: 'none', letterSpacing: 0, color: '#64748b', fontSize: '0.78rem' }}>
+              Sort
+              <select
+                value={librarySort}
+                onChange={event => setLibrarySort(event.target.value)}
+                style={{ width: 'auto', minWidth: '130px', padding: '6px 8px', fontSize: '0.82rem' }}
+              >
+                <option value="latest">Latest added</option>
+                <option value="name">Song name</option>
+              </select>
+            </label>
           </div>
         )}
 
