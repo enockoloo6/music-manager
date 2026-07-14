@@ -157,6 +157,10 @@ Configurable App Title and Install Metadata
 
 0c69183
 
+App Settings RPC Fix
+
+Pending
+
 ---
 
 # v1.4.0 Microphone Recording
