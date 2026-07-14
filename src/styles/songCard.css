@@ -40,35 +40,41 @@
   color: #b91c1c !important;
 }
 
-.song-card__lyrics-badge {
-  background: #eef8f0;
-  color: #49705a;
-  font-size: 0.72rem;
-  padding: 4px 8px;
-  border-radius: 999px;
-  font-weight: 700;
-}
-
 .beat-row__summary {
   display: flex;
   align-items: center;
-  gap: 10px;
-  flex-wrap: nowrap;
+  justify-content: space-between;
+  gap: 16px;
   min-width: 0;
 }
 
-.beat-row__name {
+.beat-row__details {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.beat-row__name,
+.beat-row__meta,
+.beat-row__keyboard {
   color: #315a78;
   font-size: 0.95rem;
+  font-weight: 400;
+  line-height: 1.45;
   min-width: 0;
 }
 
 .beat-row__meta {
-  color: #64748b;
-  font-size: 0.8rem;
   white-space: nowrap;
-  padding-left: 10px;
-  border-left: 1px solid #d9e8ef;
+}
+
+.beat-row__keyboard {
+  flex: 0 0 auto;
+  margin-left: auto;
+  text-align: right;
+  white-space: nowrap;
 }
 
 @media (max-width: 768px) {
@@ -83,12 +89,16 @@
   .beat-row__summary {
     align-items: flex-start;
     flex-direction: column;
-    gap: 4px;
+    gap: 6px;
   }
 
-  .beat-row__meta {
-    border-left: 0;
-    padding-left: 0;
+  .beat-row__keyboard {
+    margin-left: 0;
+    text-align: left;
+  }
+
+  .beat-row__meta,
+  .beat-row__keyboard {
     white-space: normal;
   }
 }

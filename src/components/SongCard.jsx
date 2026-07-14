@@ -10,11 +10,15 @@ function getFirstLyricLine(lyrics) {
 
 function beatMetaParts(style) {
   return [
-    style.keyboards?.model_name,
     style.tempo ? `${style.tempo} BPM` : null,
     style.musical_key ? `Key ${style.musical_key}` : null,
     style.keyboard_location
   ].filter(Boolean);
+}
+
+function beatDisplayName(style) {
+  const category = style.location?.trim();
+  return category ? `${style.beat_name} (${category})` : style.beat_name;
 }
 
 function SongCard({
@@ -58,16 +62,6 @@ function SongCard({
       <div className="card-header song-card__header">
         <div className="song-card__title-wrap">
           <span className="song-title">{song.song_name}</span>
-          {song.styles?.length > 0 && (
-            <span className="beat-count-badge">
-              {song.styles.length} beat{song.styles.length > 1 ? 's' : ''}
-            </span>
-          )}
-          {hasLyrics && (
-            <span className="song-card__lyrics-badge">
-              Lyrics
-            </span>
-          )}
         </div>
 
         <div className="song-card__actions no-print">
@@ -326,12 +320,20 @@ function SongCard({
               ) : (
                 <div>
                   <div className="beat-row__summary">
-                    <strong className="beat-row__name">{style.beat_name}</strong>
-                    {beatMetaParts(style).map(part => (
-                      <span key={part} className="beat-row__meta">
-                        {part}
+                    <div className="beat-row__details">
+                      <span className="beat-row__name">{beatDisplayName(style)}</span>
+                      {beatMetaParts(style).map(part => (
+                        <span key={part} className="beat-row__meta">
+                          {part}
+                        </span>
+                      ))}
+                    </div>
+
+                    {style.keyboards?.model_name && (
+                      <span className="beat-row__keyboard">
+                        {style.keyboards.model_name}
                       </span>
-                    ))}
+                    )}
                   </div>
 
                   {style.notes && (
