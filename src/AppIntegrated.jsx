@@ -54,6 +54,7 @@ function AppIntegrated() {
   const [profiles, setProfiles] = useState([]);
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
+  const [selectedContributor, setSelectedContributor] = useState('All');
   const [librarySort, setLibrarySort] = useState('latest');
   const [activeView, setActiveView] = useState('library');
   const [user, setUser] = useState(null);
@@ -77,7 +78,7 @@ function AppIntegrated() {
   const isOnline = useOnlineStatus();
 
   useEffect(() => {
-    fetchSongs();
+    fetchSongs(false);
     fetchKeyboards();
   }, []);
 
@@ -85,6 +86,7 @@ function AppIntegrated() {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
         setUser(session.user);
+        fetchSongs(true);
         loadRole(session.user.id, session.user.email).finally(() => setAuthLoading(false));
       } else {
         setAuthLoading(false);
@@ -94,12 +96,15 @@ function AppIntegrated() {
     const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
       if (session?.user) {
         setUser(session.user);
+        fetchSongs(true);
         loadRole(session.user.id, session.user.email);
         setShowLoginForm(false);
       } else {
         setUser(null);
         setRole({ approved: false, admin: false });
         setShowAddForm(false);
+        setSelectedContributor('All');
+        fetchSongs(false);
         setActiveView('library');
       }
     });
@@ -172,10 +177,14 @@ function AppIntegrated() {
     loadProfiles();
   }
 
-  async function fetchSongs() {
+  async function fetchSongs(includeContributors = Boolean(user)) {
+    const songSelect = includeContributors
+      ? '*, contributor:profiles!songs_created_by_fkey(email), styles (*, keyboards (model_name)), song_audio (id)'
+      : '*, styles (*, keyboards (model_name)), song_audio (id)';
+
     const { data, error } = await supabase
       .from('songs')
-      .select('*, styles (*, keyboards (model_name)), song_audio (id)')
+      .select(songSelect)
       .order('song_name');
 
     if (error) {
@@ -298,6 +307,16 @@ function AppIntegrated() {
         .single();
 
       if (songErr) throw songErr;
+
+      if (!songData.created_by && user?.id) {
+        const { error: contributorErr } = await supabase
+          .from('songs')
+          .update({ created_by: user.id })
+          .eq('id', songData.id)
+          .is('created_by', null);
+
+        if (contributorErr) throw contributorErr;
+      }
 
       if (beatDetailsProvided) {
         const { error: styleErr } = await supabase.from('styles').insert([{
@@ -475,14 +494,35 @@ function AppIntegrated() {
     });
   }, [songs]);
 
+  const contributors = useMemo(() => {
+    const contributorOptions = songs.map(song => ({
+      value: song.created_by || '__unknown__',
+      label: song.contributor?.email || 'Unknown contributor'
+    }));
+
+    const uniqueContributors = new Map();
+    contributorOptions.forEach(contributor => {
+      if (!uniqueContributors.has(contributor.value)) {
+        uniqueContributors.set(contributor.value, contributor);
+      }
+    });
+
+    return [
+      { value: 'All', label: 'All contributors' },
+      ...[...uniqueContributors.values()].sort((a, b) => a.label.localeCompare(b.label))
+    ];
+  }, [songs]);
+
   const filteredSongs = useMemo(
     () => {
       const matchingSongs = songs.filter(song => {
         const matchesSearch = songMatchesSearch(song, search);
         const matchesCategory = selectedCategory === 'All'
           || (song.styles || []).some(style => style.keyboard_location === selectedCategory);
+        const matchesContributor = !user || selectedContributor === 'All'
+          || (selectedContributor === '__unknown__' ? !song.created_by : song.created_by === selectedContributor);
 
-        return matchesSearch && matchesCategory;
+        return matchesSearch && matchesCategory && matchesContributor;
       });
 
       return [...matchingSongs].sort((a, b) => {
@@ -494,7 +534,7 @@ function AppIntegrated() {
         return latestDiff || a.song_name.localeCompare(b.song_name);
       });
     },
-    [songs, search, selectedCategory, librarySort]
+    [songs, search, selectedCategory, selectedContributor, librarySort, user]
   );
 
   const recentAdditions = useMemo(() => (
@@ -676,6 +716,20 @@ function AppIntegrated() {
                 ))}
               </select>
             </label>
+            {user && (
+              <label style={{ display: 'flex', alignItems: 'center', gap: '6px', margin: 0, textTransform: 'none', letterSpacing: 0, color: '#64748b', fontSize: '0.78rem' }}>
+                Added by
+                <select
+                  value={selectedContributor}
+                  onChange={event => setSelectedContributor(event.target.value)}
+                  style={{ width: 'auto', minWidth: '160px', padding: '6px 8px', fontSize: '0.82rem' }}
+                >
+                  {contributors.map(contributor => (
+                    <option key={contributor.value} value={contributor.value}>{contributor.label}</option>
+                  ))}
+                </select>
+              </label>
+            )}
           </div>
         )}
 
