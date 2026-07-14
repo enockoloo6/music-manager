@@ -78,7 +78,12 @@ function SongCard({
               Lyrics
             </button>
           ) : role?.approved ? (
-            <button type="button" className="song-card__link-action" onClick={() => onEditLyrics?.(song)}>
+            <button
+              type="button"
+              className={`song-card__link-action${isEditingLyrics ? ' song-card__link-action--active' : ''}`}
+              onClick={() => onEditLyrics?.(song)}
+              aria-expanded={isEditingLyrics}
+            >
               Add Lyrics
             </button>
           ) : null}
@@ -90,7 +95,7 @@ function SongCard({
               onClick={() => setShowAudio(current => !current)}
               aria-expanded={showAudio}
             >
-              {showAudio ? 'Hide Audio' : 'Audio'}
+              {showAudio ? 'Hide Audio' : hasAudio ? 'Audio' : 'Add Audio'}
             </button>
           )}
 
