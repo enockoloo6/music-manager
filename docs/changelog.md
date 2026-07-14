@@ -159,7 +159,7 @@ Configurable App Title and Install Metadata
 
 App Settings RPC Fix
 
-Pending
+fffc084
 
 ---
 
