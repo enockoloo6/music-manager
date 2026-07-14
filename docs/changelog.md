@@ -121,6 +121,10 @@ Active Song Action Styling
 
 2b9543a
 
+Latest-First Library Sorting
+
+6121017
+
 ---
 
 # v1.4.0 Microphone Recording
