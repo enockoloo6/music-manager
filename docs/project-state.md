@@ -101,6 +101,11 @@ Implemented direction:
 * Optional beat details can be attached during song creation or added later from the saved song.
 * Default preferences live in Settings instead of the main library page.
 * Admin-only user management lives on an Admin page instead of the main library page.
+* Reports-only information moves to a Reports page instead of the main library page.
+* Category filters are collapsed until needed.
+* Song-card secondary actions are grouped so the primary song list stays compact.
+* Audio controls are opened on demand instead of rendering on every song card.
+* Logged-out users do not trigger audio permission errors.
 
 ---
 
@@ -131,6 +136,7 @@ Do not require keyboard, beat name, tempo, key, category, or beat notes to save 
 Only create a beat/style record when beat details are provided.
 Keep default settings outside the main library workflow.
 Keep admin management outside the main library workflow.
+Keep reports, secondary actions, and audio management outside the first-view song entry workflow.
 
 ---
 

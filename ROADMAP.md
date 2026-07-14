@@ -80,6 +80,10 @@ Current implementation scope:
 * A style/beat row is created only when optional beat details are supplied.
 * Default keyboard settings move to a dedicated Settings view.
 * Admin user management moves to an Admin-only view.
+* Reports move to a dedicated Reports view.
+* Category filters are collapsed until needed.
+* Song-card secondary actions and audio tools are shown on demand.
+* Logged-out audio permission noise is suppressed.
 
 ---
 
