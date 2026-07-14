@@ -117,8 +117,9 @@ Implemented direction:
 * Approved users see Add Lyrics when a song has no lyrics.
 * Lyrics Mode close action is prominent.
 * Song cards do not show beat count or lyrics status badges.
-* Beat rows show beat category attached to the beat name as `Beat(category)`.
+* Beat rows show Beat Category from `styles.keyboard_location` attached to the beat name as `Beat(category)`.
 * Beat row text uses the same visual weight, with keyboard model aligned separately on the right where space allows.
+* Keyboard model text remains smaller and subdued, matching the beat notes color.
 * Song count appears beside Add Song.
 * Search and category filtering share one control row.
 
