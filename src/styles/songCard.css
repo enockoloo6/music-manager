@@ -71,7 +71,9 @@
 }
 
 .beat-row__keyboard {
+  color: #7a8899;
   flex: 0 0 auto;
+  font-size: 0.79rem;
   margin-left: auto;
   text-align: right;
   white-space: nowrap;

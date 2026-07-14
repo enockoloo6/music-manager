@@ -25,7 +25,7 @@ function getAudioLoadMessage(err, user) {
   const lowerMessage = message.toLowerCase();
 
   if (!user) {
-    return 'Audio exists, but playback details may require login because audio storage is private.';
+    return 'Audio exists, but public playback is not enabled for this file yet.';
   }
 
   if (lowerMessage.includes('permission') || lowerMessage.includes('policy') || lowerMessage.includes('rls')) {

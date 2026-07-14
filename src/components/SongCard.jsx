@@ -11,13 +11,12 @@ function getFirstLyricLine(lyrics) {
 function beatMetaParts(style) {
   return [
     style.tempo ? `${style.tempo} BPM` : null,
-    style.musical_key ? `Key ${style.musical_key}` : null,
-    style.keyboard_location
+    style.musical_key ? `Key ${style.musical_key}` : null
   ].filter(Boolean);
 }
 
 function beatDisplayName(style) {
-  const category = style.location?.trim();
+  const category = style.keyboard_location?.trim();
   return category ? `${style.beat_name}(${category})` : style.beat_name;
 }
 

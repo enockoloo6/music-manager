@@ -661,7 +661,7 @@ function AppIntegrated() {
                 })}
                 style={{ width: 'auto' }}
               />
-              Add optional piano settings now
+              Add piano settings
             </label>
 
             {formData.includeBeat && (
