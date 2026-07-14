@@ -24,6 +24,7 @@ Implemented:
 * Piano settings are available behind an optional toggle.
 * A style/beat row is created only when optional beat details are supplied.
 * Default keyboard moved from the library page into Settings.
+* Admin user management moved from the library page into an Admin-only view.
 
 This starts the transition from beat-first entry to the documented song-centric workflow.
 
@@ -42,6 +43,10 @@ Song-First Add Flow
 Settings Defaults View
 
 d9aae1d
+
+Admin User Management View
+
+127faad
 
 ---
 
