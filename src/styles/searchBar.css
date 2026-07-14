@@ -1,8 +1,5 @@
 .search-bar {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-bottom: 18px;
+  min-width: 0;
 }
 
 .search-bar input {
@@ -14,7 +11,8 @@
   background: #fff;
 }
 
-.search-bar__meta {
-  font-size: 0.82rem;
-  color: #64748b;
+@media (max-width: 640px) {
+  .library-search-row {
+    grid-template-columns: 1fr !important;
+  }
 }

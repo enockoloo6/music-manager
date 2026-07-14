@@ -579,19 +579,24 @@ function AppIntegrated() {
         )}
 
         {(role.approved || role.admin) && activeView === 'library' && (
-          <div className="no-print" style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px', flexWrap: 'wrap' }}>
+          <div className="no-print" style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px', flexWrap: 'wrap' }}>
             <button onClick={() => { setShowAddForm(value => !value); if (!showAddForm) setFormData(current => ({ ...current, keyboard_id: defaultKeyboardId || current.keyboard_id })); }} style={{ background: showAddForm ? '#64748b' : '#5f9fbd', color: 'white', padding: '9px 18px', fontSize: '0.92rem', display: 'flex', alignItems: 'center', gap: '7px' }}>
               <span>{showAddForm ? '✕' : '➕'}</span>
               {showAddForm ? 'Close Form' : 'Add Song'}
             </button>
+            <span style={{ color: '#64748b', fontSize: '0.86rem', fontWeight: 700 }}>
+              {search.trim()
+                ? `${filteredSongs.length} of ${songs.length} song${songs.length === 1 ? '' : 's'}`
+                : `${songs.length} song${songs.length === 1 ? '' : 's'} in library`}
+            </span>
           </div>
         )}
 
         {activeView === 'library' && (
-          <>
-            <SearchBar value={search} onChange={setSearch} resultCount={filteredSongs.length} totalCount={songs.length} />
-            <details className="no-print" style={{ marginBottom: '12px' }}>
-              <summary style={{ cursor: 'pointer', color: '#1a237e', fontWeight: 800, fontSize: '0.88rem' }}>
+          <div className="library-search-row no-print" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) auto', alignItems: 'start', gap: '10px', marginBottom: '12px' }}>
+            <SearchBar value={search} onChange={setSearch} />
+            <details style={{ minWidth: '150px' }}>
+              <summary style={{ cursor: 'pointer', color: '#315a78', fontWeight: 800, fontSize: '0.88rem', padding: '12px 14px', border: '1px solid #cbd5e1', borderRadius: '12px', background: '#fff' }}>
                 Categories
               </summary>
               <CategoryFilters
@@ -600,7 +605,7 @@ function AppIntegrated() {
                 onSelect={setSelectedCategory}
               />
             </details>
-          </>
+          </div>
         )}
 
         {(role.approved || role.admin) && activeView === 'settings' && (

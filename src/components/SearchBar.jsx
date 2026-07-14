@@ -1,6 +1,4 @@
-import React from 'react';
-
-function SearchBar({ value, onChange, resultCount, totalCount }) {
+function SearchBar({ value, onChange }) {
   return (
     <div className="search-bar no-print">
       <input
@@ -8,11 +6,6 @@ function SearchBar({ value, onChange, resultCount, totalCount }) {
         value={value}
         onChange={e => onChange?.(e.target.value)}
       />
-      <div className="search-bar__meta">
-        {value?.trim()
-          ? `${resultCount} of ${totalCount} song${totalCount === 1 ? '' : 's'} matched`
-          : `${totalCount} song${totalCount === 1 ? '' : 's'} in library`}
-      </div>
     </div>
   );
 }
