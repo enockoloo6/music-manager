@@ -12,6 +12,7 @@ import SongCard from './components/SongCard';
 import VersionBadge from './components/VersionBadge';
 
 import useOnlineStatus from './hooks/useOnlineStatus';
+import { loadCachedValue, saveCachedValue } from './services/offlineCacheService';
 import { songMatchesSearch, updateSongLyrics } from './services/songLyricsService';
 
 import './styles/appFooter.css';
@@ -24,6 +25,11 @@ import './styles/audioAttachments.css';
 
 const SUPER_ADMIN_EMAIL = 'enockoloo6@gmail.com';
 const DEFAULT_APP_TITLE = 'Music Manager';
+const CACHE_KEYS = {
+  APP_TITLE: 'app-title',
+  KEYBOARDS: 'keyboards',
+  SONGS: 'songs'
+};
 
 const EMPTY_FORM = {
   song_name: '',
@@ -55,6 +61,7 @@ function AppIntegrated() {
   const [profiles, setProfiles] = useState([]);
   const [appTitle, setAppTitle] = useState(DEFAULT_APP_TITLE);
   const [savingAppTitle, setSavingAppTitle] = useState(false);
+  const [offlineCacheNotice, setOfflineCacheNotice] = useState('');
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [selectedContributor, setSelectedContributor] = useState('All');
@@ -173,11 +180,17 @@ function AppIntegrated() {
 
     if (error) {
       console.error('loadAppSettings error:', error.message);
+      const cachedTitle = loadCachedValue(CACHE_KEYS.APP_TITLE);
+      if (cachedTitle?.value) {
+        setAppTitle(cachedTitle.value);
+        setOfflineCacheNotice('Showing locally cached library data.');
+      }
       return;
     }
 
     if (data?.setting_value) {
       setAppTitle(data.setting_value);
+      saveCachedValue(CACHE_KEYS.APP_TITLE, data.setting_value);
     }
   }
 
@@ -200,6 +213,7 @@ function AppIntegrated() {
 
       if (error) throw error;
       setAppTitle(title);
+      saveCachedValue(CACHE_KEYS.APP_TITLE, title);
     } catch (err) {
       alert('App name update failed: ' + err.message);
     } finally {
@@ -240,10 +254,17 @@ function AppIntegrated() {
 
     if (error) {
       console.error('fetchSongs error:', error.message);
+      const cachedSongs = loadCachedValue(CACHE_KEYS.SONGS);
+      if (cachedSongs?.value) {
+        setSongs(cachedSongs.value);
+        setOfflineCacheNotice('Showing locally cached library data.');
+      }
       return;
     }
 
     setSongs(data || []);
+    saveCachedValue(CACHE_KEYS.SONGS, data || []);
+    setOfflineCacheNotice('');
   }
 
   async function fetchKeyboards() {
@@ -254,10 +275,16 @@ function AppIntegrated() {
 
     if (error) {
       console.error('fetchKeyboards error:', error.message);
+      const cachedKeyboards = loadCachedValue(CACHE_KEYS.KEYBOARDS);
+      if (cachedKeyboards?.value) {
+        setKeyboards(cachedKeyboards.value);
+        setOfflineCacheNotice('Showing locally cached library data.');
+      }
       return;
     }
 
     setKeyboards(data || []);
+    saveCachedValue(CACHE_KEYS.KEYBOARDS, data || []);
   }
 
   async function handleAuth(e) {
@@ -702,6 +729,11 @@ function AppIntegrated() {
 
       <div style={{ maxWidth: '900px', margin: '0 auto', padding: '20px 16px' }}>
         <OfflineBanner visible={!isOnline} />
+        {offlineCacheNotice && (
+          <div className="offline-banner no-print">
+            {offlineCacheNotice}
+          </div>
+        )}
 
         {!user && showLoginForm && (
           <div className="panel no-print" style={{ maxWidth: '370px', margin: '0 auto 20px', borderTop: '4px solid #1a237e' }}>
