@@ -113,6 +113,9 @@ Implemented direction:
 * Audio is visible as a primary song action next to Lyrics.
 * Audio links are shown only for songs that have audio.
 * Public users can see and play audio when a song has audio.
+* Lyrics links are shown only for songs that have lyrics.
+* Approved users see Add Lyrics when a song has no lyrics.
+* Lyrics Mode close action is prominent.
 * Song count appears beside Add Song.
 * Search and category filtering share one control row.
 
