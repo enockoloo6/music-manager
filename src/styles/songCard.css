@@ -23,15 +23,16 @@
   flex-wrap: wrap;
 }
 
-.song-card__actions button {
+.song-card__actions .song-card__link-action {
   border: none;
-  border-radius: 8px;
-  padding: 8px 10px;
+  border-radius: 0;
+  padding: 0;
   font-size: 0.8rem;
-  font-weight: 600;
-  background: #f6fbfd;
+  font-weight: 700;
+  background: transparent;
   color: #315a78;
-  border: 1px solid #b8d9e8;
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 .song-card__delete {
@@ -75,8 +76,8 @@
     width: 100%;
   }
 
-  .song-card__actions button {
-    flex: 1;
+  .song-card__actions .song-card__link-action {
+    flex: 0 0 auto;
   }
 
   .beat-row__summary {

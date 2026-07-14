@@ -163,7 +163,7 @@ function AppIntegrated() {
   async function fetchSongs() {
     const { data, error } = await supabase
       .from('songs')
-      .select('*, styles (*, keyboards (model_name))')
+      .select('*, styles (*, keyboards (model_name)), song_audio (id)')
       .order('song_name');
 
     if (error) {

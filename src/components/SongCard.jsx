@@ -38,6 +38,9 @@ function SongCard({
   const [showMore, setShowMore] = useState(false);
   const [showAudio, setShowAudio] = useState(false);
   const hasLyrics = Boolean(getFirstLyricLine(song.lyrics));
+  const hasAudio = (song.song_audio?.length || 0) > 0;
+  const canOpenAudio = hasAudio || canManageAudio;
+  const hasMoreActions = Boolean(role?.approved || role?.admin);
 
   const inputStyle = {
     padding: '6px 8px',
@@ -68,28 +71,31 @@ function SongCard({
         </div>
 
         <div className="song-card__actions no-print">
-          <button
-            type="button"
-            onClick={() => onOpenLyrics?.(song)}
-          >
+          <button type="button" className="song-card__link-action" onClick={() => onOpenLyrics?.(song)}>
             Lyrics
           </button>
 
-          <button
-            type="button"
-            onClick={() => setShowAudio(current => !current)}
-            aria-expanded={showAudio}
-          >
-            {showAudio ? 'Hide Audio' : 'Audio'}
-          </button>
+          {canOpenAudio && (
+            <button
+              type="button"
+              className="song-card__link-action"
+              onClick={() => setShowAudio(current => !current)}
+              aria-expanded={showAudio}
+            >
+              {showAudio ? 'Hide Audio' : 'Audio'}
+            </button>
+          )}
 
-          <button
-            type="button"
-            onClick={() => setShowMore(current => !current)}
-            aria-expanded={showMore}
-          >
-            More
-          </button>
+          {hasMoreActions && (
+            <button
+              type="button"
+              className="song-card__link-action"
+              onClick={() => setShowMore(current => !current)}
+              aria-expanded={showMore}
+            >
+              More
+            </button>
+          )}
         </div>
       </div>
 
