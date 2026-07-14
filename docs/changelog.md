@@ -146,6 +146,10 @@ Public Library Sorting Controls
 
 5624635
 
+Contributor Library Filter
+
+9316f65
+
 ---
 
 # v1.4.0 Microphone Recording
