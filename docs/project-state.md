@@ -121,6 +121,8 @@ Implemented direction:
 * Lyrics printing should include only the lyrics content and no blank app-layout pages.
 * Approved users can edit the song name inline from the song card.
 * Open song-card actions, such as Hide Audio, are visually stronger than inactive action links.
+* Audio follows the same empty-state pattern as lyrics: approved users see Add Audio when no audio exists.
+* Open inline song-card actions use the same active visual treatment across lyrics, audio, and More.
 * Library defaults to latest-added songs first, using the newest beat timestamp available for each song.
 * Compact library sort and category controls sit beside the song count.
 * Search no longer has a separate category tab beside it.

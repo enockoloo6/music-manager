@@ -50,6 +50,8 @@ Implemented:
 * Lyrics print output suppresses the rest of the app layout to avoid blank extra pages.
 * Approved users can edit song names inline from the song card.
 * Open song-card actions, such as Hide Audio, are visually emphasized for easier scanning.
+* Approved users now see Add Audio when a song has no audio.
+* Inline lyrics and audio actions share the same active visual treatment when open.
 * Library defaults to latest-added songs first, using the newest beat timestamp available for each song.
 * Added a compact sort control beside the song count.
 * Moved Category filtering beside the library sort control and removed the category tab beside search.
