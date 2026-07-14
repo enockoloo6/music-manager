@@ -71,8 +71,16 @@
 }
 
 @media print {
+  @page {
+    margin: 14mm;
+  }
+
   body * {
     visibility: hidden;
+  }
+
+  body.lyrics-mode-open .app-shell > :not(.lyrics-mode) {
+    display: none !important;
   }
 
   .lyrics-mode,
@@ -81,17 +89,19 @@
   }
 
   .lyrics-mode {
-    position: absolute;
+    position: static;
     inset: 0;
     display: block;
     background: #fff;
     color: #000;
+    min-height: 0;
   }
 
   .lyrics-mode__body {
     overflow: visible;
     height: auto;
     padding: 0;
+    display: block;
   }
 
   .no-print,
@@ -103,6 +113,7 @@
     max-width: none;
     page-break-inside: auto;
     break-inside: auto;
+    line-height: 1.55;
   }
 }
 

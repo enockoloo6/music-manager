@@ -30,6 +30,10 @@ function SongCard({
   saving,
   onDeleteSong,
   onDeleteBeat,
+  onStartSongEdit,
+  onCancelSongEdit,
+  onSaveSongEdit,
+  onEditSongNameChange,
   onStartEdit,
   onCancelEdit,
   onSaveEdit,
@@ -39,6 +43,8 @@ function SongCard({
   onSaveLyrics,
   user,
   canManageAudio,
+  isEditingSong,
+  editSongName,
   isEditingLyrics
 }) {
   const [showMore, setShowMore] = useState(false);
@@ -103,6 +109,15 @@ function SongCard({
 
       {showMore && (
         <div className="song-card__more no-print" style={{ display: 'flex', gap: '7px', flexWrap: 'wrap', padding: '9px 16px', borderBottom: '1px solid #eef2f7', background: '#f8fafc' }}>
+          {role?.approved && (
+            <button
+              type="button"
+              onClick={() => onStartSongEdit?.(song)}
+            >
+              Edit Song
+            </button>
+          )}
+
           {role?.approved && hasLyrics && (
             <button
               type="button"
@@ -122,6 +137,34 @@ function SongCard({
             </button>
           )}
         </div>
+      )}
+
+      {isEditingSong && (
+        <form
+          className="song-card__song-editor no-print"
+          onSubmit={event => {
+            event.preventDefault();
+            onSaveSongEdit?.(song.id);
+          }}
+        >
+          <div>
+            <label>Song Name</label>
+            <input
+              value={editSongName}
+              onChange={event => onEditSongNameChange?.(event.target.value)}
+              required
+            />
+          </div>
+
+          <div className="song-card__song-editor-actions">
+            <button type="submit" disabled={saving}>
+              {saving ? 'Saving...' : 'Save Song'}
+            </button>
+            <button type="button" onClick={onCancelSongEdit} disabled={saving}>
+              Cancel
+            </button>
+          </div>
+        </form>
       )}
 
       {isEditingLyrics && (

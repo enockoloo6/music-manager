@@ -58,6 +58,8 @@ function AppIntegrated() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [editData, setEditData] = useState({});
+  const [editingSongId, setEditingSongId] = useState(null);
+  const [editSongName, setEditSongName] = useState('');
   const [lyricsSong, setLyricsSong] = useState(null);
   const [editingLyricsSong, setEditingLyricsSong] = useState(null);
 
@@ -327,6 +329,42 @@ function AppIntegrated() {
     setEditData({});
   }
 
+  function startSongEdit(song) {
+    setEditingSongId(song.id);
+    setEditSongName(song.song_name || '');
+  }
+
+  function cancelSongEdit() {
+    setEditingSongId(null);
+    setEditSongName('');
+  }
+
+  async function saveSongEdit(songId) {
+    const nextName = editSongName.trim();
+
+    if (!nextName) {
+      alert('Please enter a song name.');
+      return;
+    }
+
+    setSaving(true);
+
+    try {
+      const { error } = await supabase
+        .from('songs')
+        .update({ song_name: nextName })
+        .eq('id', songId);
+
+      if (error) throw error;
+      cancelSongEdit();
+      await fetchSongs();
+    } catch (err) {
+      alert('Song update failed: ' + err.message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
   async function saveEdit(styleId) {
     if (!editData.keyboard_id) {
       alert('Please select a keyboard.');
@@ -389,18 +427,21 @@ function AppIntegrated() {
 
   function openSettingsView() {
     setShowAddForm(false);
+    cancelSongEdit();
     setEditingLyricsSong(null);
     setActiveView('settings');
   }
 
   function openAdminView() {
     setShowAddForm(false);
+    cancelSongEdit();
     setEditingLyricsSong(null);
     setActiveView('admin');
   }
 
   function openReportsView() {
     setShowAddForm(false);
+    cancelSongEdit();
     setEditingLyricsSong(null);
     setActiveView('reports');
   }
@@ -466,7 +507,7 @@ function AppIntegrated() {
   });
 
   return (
-    <div style={{ fontFamily: 'system-ui, sans-serif', color: '#222', minHeight: '100vh', background: '#f0f2f7' }}>
+    <div className="app-shell" style={{ fontFamily: 'system-ui, sans-serif', color: '#222', minHeight: '100vh', background: '#f0f2f7' }}>
       <style>{`
         @media print { .no-print { display: none !important; } }
         * { box-sizing: border-box; }
@@ -726,6 +767,10 @@ function AppIntegrated() {
               saving={saving}
               onDeleteSong={id => deleteEntry('songs', id)}
               onDeleteBeat={id => deleteEntry('styles', id)}
+              onStartSongEdit={startSongEdit}
+              onCancelSongEdit={cancelSongEdit}
+              onSaveSongEdit={saveSongEdit}
+              onEditSongNameChange={setEditSongName}
               onStartEdit={startEdit}
               onCancelEdit={cancelEdit}
               onSaveEdit={saveEdit}
@@ -735,6 +780,8 @@ function AppIntegrated() {
               onSaveLyrics={saveLyrics}
               user={user}
               canManageAudio={role?.approved}
+              isEditingSong={editingSongId === song.id}
+              editSongName={editingSongId === song.id ? editSongName : ''}
               isEditingLyrics={editingLyricsSong?.id === song.id}
             />
           ))}

@@ -45,6 +45,19 @@
   padding: 12px 16px;
 }
 
+.song-card__song-editor {
+  border-bottom: 1px solid #e8eef4;
+  display: grid;
+  gap: 10px;
+  padding: 12px 16px;
+}
+
+.song-card__song-editor-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
 .beat-row__summary {
   display: flex;
   align-items: center;

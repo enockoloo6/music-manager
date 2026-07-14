@@ -1,10 +1,27 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 
 function LyricsMode({ song, onClose }) {
   const [fontScale, setFontScale] = useState(1);
 
   const lyrics = song?.lyrics?.trim();
   const fontSize = useMemo(() => `${Math.round(1.55 * fontScale * 100) / 100}rem`, [fontScale]);
+
+  useEffect(() => {
+    document.body.classList.add('lyrics-mode-open');
+
+    function handleKeyDown(event) {
+      if (event.key === 'Escape') {
+        onClose?.();
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.body.classList.remove('lyrics-mode-open');
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [onClose]);
 
   if (!song) return null;
 
