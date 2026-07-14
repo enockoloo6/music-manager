@@ -38,6 +38,8 @@ Implemented:
 * Lyrics previews removed from song cards.
 * Audio is a primary action beside Lyrics.
 * Beat metadata is shown on one line where space allows, with mobile wrapping.
+* Song count moved beside Add Song.
+* Search and Categories now share one library control row, stacking on mobile.
 
 This starts the transition from beat-first entry to the documented song-centric workflow.
 
@@ -68,6 +70,10 @@ bfaa5c0
 Pastel Header Navigation
 
 bda332f
+
+Library Search Controls
+
+623354a
 
 ---
 
