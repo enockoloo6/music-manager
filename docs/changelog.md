@@ -68,6 +68,7 @@ Implemented:
 * Added beat preference fields for favorite/preferred beats and Worship/Praise use labels.
 * Added song duplication workflow for copying a song with its lyrics and beat settings.
 * Moved beat lists behind a Beats action so songs with many beats stay readable.
+* Public users see the beat-details action as More.
 * Beat details now use pipe separators and the subdued piano model color.
 * Audio recording now has a standard maximum duration, visible timer, and automatic stop.
 * Lyrics Mode close action is more visible.

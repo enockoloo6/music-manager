@@ -137,6 +137,7 @@ Implemented direction:
 * Mobile layout keeps the header, library filters, and song-card actions stacked without horizontal overflow.
 * Approved users can duplicate an existing song, including lyrics and beat settings, then edit the copy.
 * Songs can have multiple beats; beats open from a Beats action instead of always crowding the card.
+* Public users see that beat-details action as More.
 * Beats can be marked as favorite/preferred and labelled for Worship, Praise, or other use.
 * Search no longer has a separate category tab beside it.
 * Beat details use pipe separators and share the subdued piano model color.
