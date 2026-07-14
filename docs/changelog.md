@@ -140,6 +140,10 @@ Aligned Audio and Lyrics Actions
 
 f289130
 
+Public Library Sorting Controls
+
+5624635
+
 ---
 
 # v1.4.0 Microphone Recording
