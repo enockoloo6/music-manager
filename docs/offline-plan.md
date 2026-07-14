@@ -45,14 +45,16 @@ Possible cached data:
 - keyboards
 - default keyboard
 
-## Future PWA Support
+## Basic PWA Support
 
-Later the app can become installable using:
+The app can expose install metadata using:
 
 - web manifest
 - service worker
 - offline fallback
 - cached app shell
+
+This does not mean audio or edits are available offline.
 
 ## Future Audio Offline Support
 
@@ -84,3 +86,9 @@ v2.0.0+: offline and PWA support can become a major release.
 
 Do not start with offline editing.
 Start with safe read-only offline viewing first.
+
+Current status:
+
+- Offline audio caching is not implemented.
+- Offline save and later synchronization is not implemented.
+- Android install metadata is a separate step from full offline capability.

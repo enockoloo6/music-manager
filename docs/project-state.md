@@ -129,6 +129,10 @@ Implemented direction:
 * Song count uses compact wording, for example `38 songs`.
 * Logged-in users can filter songs by contributor email.
 * New songs store the profile id of the user who first added the song.
+* Admins can set the visible app title from Settings.
+* The default app title and Android install name should be `Music Manager`.
+* The header uses a music-focused mark instead of a piano-specific icon.
+* The app has basic install metadata for Android, but offline audio caching and offline save/sync are not implemented yet.
 * Search no longer has a separate category tab beside it.
 * Beat details use pipe separators and share the subdued piano model color.
 * Audio recording has a standard maximum duration with a visible timer and automatic stop.
