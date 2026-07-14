@@ -128,6 +128,10 @@ Latest-First Library Sorting
 
 6121017
 
+Library Filter and Recording Refinements
+
+26f9803
+
 ---
 
 # v1.4.0 Microphone Recording
