@@ -116,6 +116,9 @@ Implemented direction:
 * Lyrics links are shown only for songs that have lyrics.
 * Approved users see Add Lyrics when a song has no lyrics.
 * Lyrics Mode close action is prominent.
+* Song cards do not show beat count or lyrics status badges.
+* Beat rows show beat category beside the beat name in parentheses.
+* Beat row text uses the same visual weight, with keyboard model aligned separately on the right where space allows.
 * Song count appears beside Add Song.
 * Search and category filtering share one control row.
 
