@@ -106,6 +106,11 @@ Implemented direction:
 * Song-card secondary actions are grouped so the primary song list stays compact.
 * Audio controls are opened on demand instead of rendering on every song card.
 * Logged-out users do not trigger audio permission errors.
+* Main navigation lives in the header.
+* Song cards use a softer pastel blue treatment instead of dark blue headers.
+* Version and role labels stay visually quiet.
+* Lyrics previews are not shown on song cards because Lyrics opens the full view.
+* Audio is visible as a primary song action next to Lyrics.
 
 ---
 
@@ -137,6 +142,7 @@ Only create a beat/style record when beat details are provided.
 Keep default settings outside the main library workflow.
 Keep admin management outside the main library workflow.
 Keep reports, secondary actions, and audio management outside the first-view song entry workflow.
+Use pastel colors for content surfaces and reserve dark header color for global navigation only.
 
 ---
 
