@@ -28,6 +28,8 @@ const SUPER_ADMIN_EMAIL = 'enockoloo6@gmail.com';
 
 const EMPTY_FORM = {
   song_name: '',
+  lyrics: '',
+  includeBeat: false,
   beat_name: '',
   keyboard_id: '',
   tempo: '',
@@ -241,37 +243,64 @@ function AppIntegrated() {
   async function handleSubmit(e) {
     e.preventDefault();
 
-    if (!formData.keyboard_id) {
-      alert('Please select a keyboard.');
+    const songName = formData.song_name.trim();
+    const lyrics = formData.lyrics.trim();
+    const beatName = formData.beat_name.trim();
+    const beatDetailsProvided = formData.includeBeat || Boolean(
+      beatName
+      || formData.keyboard_id
+      || formData.tempo
+      || formData.key.trim()
+      || formData.location.trim()
+      || formData.notes.trim()
+    );
+
+    if (!songName) {
+      alert('Please enter a song name.');
+      return;
+    }
+
+    if (beatDetailsProvided && !beatName) {
+      alert('Please enter a beat name, or turn off optional piano settings.');
       return;
     }
 
     setSaving(true);
 
     try {
+      const songPayload = {
+        song_name: songName
+      };
+
+      if (lyrics) {
+        songPayload.lyrics = lyrics;
+      }
+
       const { data: songData, error: songErr } = await supabase
         .from('songs')
-        .upsert({ song_name: formData.song_name }, { onConflict: 'song_name' })
+        .upsert(songPayload, { onConflict: 'song_name' })
         .select()
         .single();
 
       if (songErr) throw songErr;
 
-      const { error: styleErr } = await supabase.from('styles').insert([{
-        song_id: songData.id,
-        keyboard_id: formData.keyboard_id,
-        beat_name: formData.beat_name,
-        keyboard_location: formData.location,
-        tempo: formData.tempo || null,
-        musical_key: formData.key,
-        notes: formData.notes
-      }]);
+      if (beatDetailsProvided) {
+        const { error: styleErr } = await supabase.from('styles').insert([{
+          song_id: songData.id,
+          keyboard_id: formData.keyboard_id || null,
+          beat_name: beatName,
+          keyboard_location: formData.location.trim() || null,
+          tempo: formData.tempo || null,
+          musical_key: formData.key.trim() || null,
+          notes: formData.notes.trim() || null
+        }]);
 
-      if (styleErr) throw styleErr;
+        if (styleErr) throw styleErr;
+      }
 
       setFormData({ ...EMPTY_FORM, keyboard_id: defaultKeyboardId });
       await fetchSongs();
-      alert('✅ Beat saved!');
+      alert(beatDetailsProvided ? '✅ Song and beat saved!' : '✅ Song saved!');
     } catch (err) {
       alert('Save failed: ' + err.message);
     } finally {
@@ -553,62 +582,85 @@ function AppIntegrated() {
 
             <button onClick={() => { setShowAddForm(value => !value); if (!showAddForm) setFormData(current => ({ ...current, keyboard_id: defaultKeyboardId || current.keyboard_id })); }} style={{ background: showAddForm ? '#455a64' : '#1a237e', color: 'white', padding: '9px 18px', fontSize: '0.92rem', display: 'flex', alignItems: 'center', gap: '7px' }}>
               <span>{showAddForm ? '✕' : '➕'}</span>
-              {showAddForm ? 'Close Form' : 'Add New Beat'}
+              {showAddForm ? 'Close Form' : 'Add Song'}
             </button>
           </div>
         )}
 
         {role.approved && showAddForm && (
           <form onSubmit={handleSubmit} className="panel no-print" style={{ marginBottom: '18px', borderTop: '4px solid #1a237e' }}>
-            <h3 style={{ margin: '0 0 14px', color: '#1a237e', fontSize: '1rem' }}>➕ Add New Beat</h3>
+            <h3 style={{ margin: '0 0 14px', color: '#1a237e', fontSize: '1rem' }}>➕ Add Song</h3>
 
-            <div className="form-grid">
-              <div>
-                <label>Song Name *</label>
-                <input placeholder="Type or pick existing song…" value={formData.song_name} onChange={e => setFormData({ ...formData, song_name: e.target.value })} list="song-datalist" required />
-                <datalist id="song-datalist">
-                  {songNameOptions.map(name => <option key={name} value={name} />)}
-                </datalist>
-                <span style={{ fontSize: '0.71rem', color: '#94a3b8' }}>Existing songs appear as you type</span>
-              </div>
-              <div>
-                <label>Keyboard *</label>
-                <select value={formData.keyboard_id} onChange={e => setFormData({ ...formData, keyboard_id: e.target.value })} required>
-                  <option value="">Select keyboard…</option>
-                  {keyboards.map(keyboard => <option key={keyboard.id} value={keyboard.id}>{keyboard.model_name}</option>)}
-                </select>
-              </div>
-            </div>
-
-            <div className="form-grid" style={{ marginTop: '10px' }}>
-              <div>
-                <label>Beat Name *</label>
-                <input placeholder="e.g. 8-Beat Modern" value={formData.beat_name} onChange={e => setFormData({ ...formData, beat_name: e.target.value })} required />
-              </div>
-              <div>
-                <label>Beat Category</label>
-                <input placeholder="e.g. Ballad, Country, Bank 3…" value={formData.location} onChange={e => setFormData({ ...formData, location: e.target.value })} />
-              </div>
-            </div>
-
-            <div className="form-grid" style={{ marginTop: '10px' }}>
-              <div>
-                <label>Tempo (BPM)</label>
-                <input placeholder="e.g. 92" type="number" value={formData.tempo} onChange={e => setFormData({ ...formData, tempo: e.target.value })} />
-              </div>
-              <div>
-                <label>Key</label>
-                <input placeholder="e.g. G, Bb, F#" value={formData.key} onChange={e => setFormData({ ...formData, key: e.target.value })} />
-              </div>
+            <div>
+              <label>Song Name *</label>
+              <input placeholder="Type or pick existing song…" value={formData.song_name} onChange={e => setFormData({ ...formData, song_name: e.target.value })} list="song-datalist" required />
+              <datalist id="song-datalist">
+                {songNameOptions.map(name => <option key={name} value={name} />)}
+              </datalist>
+              <span style={{ fontSize: '0.71rem', color: '#94a3b8' }}>Existing songs appear as you type</span>
             </div>
 
             <div style={{ marginTop: '10px' }}>
-              <label>Notes</label>
-              <textarea placeholder="Fill levels, variations, intro tips…" value={formData.notes} onChange={e => setFormData({ ...formData, notes: e.target.value })} style={{ minHeight: '68px', resize: 'vertical' }} />
+              <label>Lyrics</label>
+              <textarea placeholder="Paste lyrics here…" value={formData.lyrics} onChange={e => setFormData({ ...formData, lyrics: e.target.value })} style={{ minHeight: '130px', resize: 'vertical' }} />
             </div>
 
+            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '13px', textTransform: 'none', letterSpacing: 0, fontSize: '0.85rem', color: '#1a237e', cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={formData.includeBeat}
+                onChange={e => setFormData({
+                  ...formData,
+                  includeBeat: e.target.checked,
+                  keyboard_id: e.target.checked ? (formData.keyboard_id || defaultKeyboardId) : formData.keyboard_id
+                })}
+                style={{ width: 'auto' }}
+              />
+              Add optional piano settings now
+            </label>
+
+            {formData.includeBeat && (
+              <>
+                <div className="form-grid" style={{ marginTop: '10px' }}>
+                  <div>
+                    <label>Beat Name *</label>
+                    <input placeholder="e.g. 8-Beat Modern" value={formData.beat_name} onChange={e => setFormData({ ...formData, beat_name: e.target.value })} required={formData.includeBeat} />
+                  </div>
+                  <div>
+                    <label>Keyboard</label>
+                    <select value={formData.keyboard_id} onChange={e => setFormData({ ...formData, keyboard_id: e.target.value })}>
+                      <option value="">Select keyboard…</option>
+                      {keyboards.map(keyboard => <option key={keyboard.id} value={keyboard.id}>{keyboard.model_name}</option>)}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="form-grid" style={{ marginTop: '10px' }}>
+                  <div>
+                    <label>Beat Category</label>
+                    <input placeholder="e.g. Ballad, Country, Bank 3…" value={formData.location} onChange={e => setFormData({ ...formData, location: e.target.value })} />
+                  </div>
+                  <div>
+                    <label>Tempo (BPM)</label>
+                    <input placeholder="e.g. 92" type="number" value={formData.tempo} onChange={e => setFormData({ ...formData, tempo: e.target.value })} />
+                  </div>
+                </div>
+
+                <div className="form-grid" style={{ marginTop: '10px' }}>
+                  <div>
+                    <label>Key</label>
+                    <input placeholder="e.g. G, Bb, F#" value={formData.key} onChange={e => setFormData({ ...formData, key: e.target.value })} />
+                  </div>
+                  <div>
+                    <label>Beat Notes</label>
+                    <input placeholder="Fill levels, variations, intro tips…" value={formData.notes} onChange={e => setFormData({ ...formData, notes: e.target.value })} />
+                  </div>
+                </div>
+              </>
+            )}
+
             <button type="submit" disabled={saving} style={{ marginTop: '13px', width: '100%', background: '#1a237e', color: 'white', padding: '11px', fontSize: '0.97rem' }}>
-              {saving ? '⏳ Saving…' : '💾 Save to Library'}
+              {saving ? '⏳ Saving…' : '💾 Save Song'}
             </button>
           </form>
         )}
