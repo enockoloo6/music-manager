@@ -123,8 +123,8 @@ Implemented direction:
 * Audio follows the same empty-state pattern as lyrics: approved users see Add Audio when no audio exists.
 * Open inline song-card actions use the same active visual treatment across lyrics, audio, and More.
 * Library defaults to latest-added songs first, using the newest beat timestamp available for each song.
-* Compact library sort and category controls sit beside the song count.
-* Library sort and category controls are available to public users.
+* Compact library sort and category controls sit beside the song count for logged-in users.
+* Public users can sort and search the library, but Category filtering and song counts are hidden.
 * Song count uses compact wording, for example `38 songs`.
 * Logged-in users can filter songs by contributor email.
 * New songs store the profile id of the user who first added the song.
@@ -148,6 +148,9 @@ Implemented direction:
 * Song count appears beside Add Song.
 * Search and category filtering share one control row.
 * Invalid timestamp-like beat use values have been removed from live data and are hidden in the UI.
+* Public library filtering ignores stale category state after logout.
+* Mobile song names keep a bold visual weight matching desktop.
+* Save Recording is green after audio capture to make the save action easier to find.
 
 ---
 

@@ -115,6 +115,10 @@
 }
 
 @media (max-width: 768px) {
+  .song-card .song-title {
+    font-weight: 900 !important;
+  }
+
   .song-card__actions {
     width: 100%;
     gap: 10px;

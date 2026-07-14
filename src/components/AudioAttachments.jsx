@@ -255,7 +255,12 @@ export default function AudioAttachments({ song, user, canManage }) {
                 <span>Preview recording</span>
                 <audio controls src={recordingUrl} preload="metadata" />
                 <div className="audio-recorder__controls">
-                  <button type="button" onClick={saveRecording} disabled={savingRecording}>
+                  <button
+                    type="button"
+                    className="audio-recorder__save"
+                    onClick={saveRecording}
+                    disabled={savingRecording}
+                  >
                     ☁ Save Recording
                   </button>
                   <button type="button" onClick={discardRecording} disabled={savingRecording}>

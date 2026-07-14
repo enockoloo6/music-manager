@@ -78,6 +78,10 @@ Implemented:
 * Keyboard model is visually separated to the right of each beat row where space allows.
 * Keyboard model text is smaller and subdued, matching beat notes.
 * Logged-out audio load failures now say public playback is not enabled instead of implying login is the required fix.
+* Public users no longer see Category filtering or the library song count.
+* Public library filtering ignores stale category state after logout.
+* Mobile song titles keep a strong bold weight to match desktop scanning.
+* Save Recording is green after audio capture so the save action is easier to spot.
 
 Public audio visibility depends on applying the public read migration to the active Supabase project.
 The migration file exists at `supabase/migrations/20260714_public_audio_read_access.sql`; applying it requires Supabase CLI authentication or a Postgres admin connection string.

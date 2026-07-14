@@ -64,6 +64,16 @@
   width: fit-content;
 }
 
+.audio-recorder__save {
+  background: #15803d;
+  color: #fff;
+}
+
+.audio-recorder__save:hover {
+  background: #166534;
+  opacity: 1;
+}
+
 @media (max-width: 768px) {
   .audio-recorder__controls {
     flex-direction: column;

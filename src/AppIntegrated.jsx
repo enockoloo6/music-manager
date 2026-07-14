@@ -121,6 +121,7 @@ function AppIntegrated() {
         setUser(null);
         setRole({ approved: false, admin: false });
         setShowAddForm(false);
+        setSelectedCategory('All');
         setSelectedContributor('All');
         fetchSongs(false);
         setActiveView('library');
@@ -676,7 +677,8 @@ function AppIntegrated() {
     () => {
       const matchingSongs = songs.filter(song => {
         const matchesSearch = songMatchesSearch(song, search);
-        const matchesCategory = selectedCategory === 'All'
+        const matchesCategory = !user
+          || selectedCategory === 'All'
           || (song.styles || []).some(style => style.keyboard_location === selectedCategory);
         const matchesContributor = !user || selectedContributor === 'All'
           || (selectedContributor === '__unknown__' ? !song.created_by : song.created_by === selectedContributor);
@@ -852,11 +854,13 @@ function AppIntegrated() {
                 {showAddForm ? 'Close Form' : 'Add Song'}
               </button>
             )}
-            <span className="library-toolbar__count" style={{ color: '#64748b', fontSize: '0.86rem', fontWeight: 700 }}>
-              {search.trim()
-                ? `${filteredSongs.length} of ${songs.length} song${songs.length === 1 ? '' : 's'}`
-                : `${songs.length} song${songs.length === 1 ? '' : 's'}`}
-            </span>
+            {user && (
+              <span className="library-toolbar__count" style={{ color: '#64748b', fontSize: '0.86rem', fontWeight: 700 }}>
+                {search.trim()
+                  ? `${filteredSongs.length} of ${songs.length} song${songs.length === 1 ? '' : 's'}`
+                  : `${songs.length} song${songs.length === 1 ? '' : 's'}`}
+              </span>
+            )}
             <label className="library-toolbar__filter" style={{ display: 'flex', alignItems: 'center', gap: '6px', margin: 0, textTransform: 'none', letterSpacing: 0, color: '#64748b', fontSize: '0.78rem' }}>
               Sort
               <select
@@ -868,18 +872,20 @@ function AppIntegrated() {
                 <option value="name">Song name</option>
               </select>
             </label>
-            <label className="library-toolbar__filter" style={{ display: 'flex', alignItems: 'center', gap: '6px', margin: 0, textTransform: 'none', letterSpacing: 0, color: '#64748b', fontSize: '0.78rem' }}>
-              Category
-              <select
-                value={selectedCategory}
-                onChange={event => setSelectedCategory(event.target.value)}
-                style={{ width: 'auto', minWidth: '130px', padding: '6px 8px', fontSize: '0.82rem' }}
-              >
-                {categories.map(category => (
-                  <option key={category} value={category}>{category}</option>
-                ))}
-              </select>
-            </label>
+            {user && (
+              <label className="library-toolbar__filter" style={{ display: 'flex', alignItems: 'center', gap: '6px', margin: 0, textTransform: 'none', letterSpacing: 0, color: '#64748b', fontSize: '0.78rem' }}>
+                Category
+                <select
+                  value={selectedCategory}
+                  onChange={event => setSelectedCategory(event.target.value)}
+                  style={{ width: 'auto', minWidth: '130px', padding: '6px 8px', fontSize: '0.82rem' }}
+                >
+                  {categories.map(category => (
+                    <option key={category} value={category}>{category}</option>
+                  ))}
+                </select>
+              </label>
+            )}
             {user && (
               <label className="library-toolbar__filter library-toolbar__filter--wide" style={{ display: 'flex', alignItems: 'center', gap: '6px', margin: 0, textTransform: 'none', letterSpacing: 0, color: '#64748b', fontSize: '0.78rem' }}>
                 Added by
