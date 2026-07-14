@@ -135,6 +135,9 @@ Implemented direction:
 * The header uses a music-focused mark instead of a piano-specific icon.
 * The app has basic install metadata for Android and a read-only local cache for library data, but offline audio caching and offline save/sync are not implemented yet.
 * Mobile layout keeps the header, library filters, and song-card actions stacked without horizontal overflow.
+* Approved users can duplicate an existing song, including lyrics and beat settings, then edit the copy.
+* Songs can have multiple beats; beats open from a Beats action instead of always crowding the card.
+* Beats can be marked as favorite/preferred and labelled for Worship, Praise, or other use.
 * Search no longer has a separate category tab beside it.
 * Beat details use pipe separators and share the subdued piano model color.
 * Audio recording has a standard maximum duration with a visible timer and automatic stop.
