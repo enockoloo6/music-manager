@@ -41,6 +41,8 @@ const EMPTY_FORM = {
   tempo: '',
   key: '',
   location: '',
+  beat_use: '',
+  is_favorite: false,
   notes: ''
 };
 
@@ -403,6 +405,8 @@ function AppIntegrated() {
           keyboard_id: formData.keyboard_id || null,
           beat_name: beatName,
           keyboard_location: formData.location.trim() || null,
+          style_category: formData.beat_use.trim() || null,
+          is_favorite: Boolean(formData.is_favorite),
           tempo: formData.tempo || null,
           musical_key: formData.key.trim() || null,
           notes: formData.notes.trim() || null
@@ -427,6 +431,8 @@ function AppIntegrated() {
       beat_name: style.beat_name || '',
       keyboard_id: style.keyboard_id || '',
       location: style.keyboard_location || '',
+      beat_use: style.style_category || '',
+      is_favorite: Boolean(style.is_favorite),
       tempo: style.tempo || '',
       key: style.musical_key || '',
       notes: style.notes || ''
@@ -487,6 +493,8 @@ function AppIntegrated() {
         beat_name: editData.beat_name,
         keyboard_id: editData.keyboard_id,
         keyboard_location: editData.location,
+        style_category: editData.beat_use || null,
+        is_favorite: Boolean(editData.is_favorite),
         tempo: editData.tempo || null,
         musical_key: editData.key,
         notes: editData.notes
@@ -497,6 +505,78 @@ function AppIntegrated() {
       await fetchSongs();
     } catch (err) {
       alert('Update failed: ' + err.message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function duplicateSong(song) {
+    if (!role.approved) return;
+
+    const baseName = `${song.song_name} Copy`;
+    const existingNames = new Set(songs.map(item => item.song_name));
+    let nextName = baseName;
+    let copyNumber = 2;
+
+    while (existingNames.has(nextName)) {
+      nextName = `${baseName} ${copyNumber}`;
+      copyNumber += 1;
+    }
+
+    const requestedName = window.prompt('Duplicate song as:', nextName);
+    const songName = requestedName?.trim();
+    if (!songName) return;
+
+    if (existingNames.has(songName)) {
+      alert('A song with that name already exists.');
+      return;
+    }
+
+    setSaving(true);
+
+    try {
+      const { data: duplicatedSong, error: songErr } = await supabase
+        .from('songs')
+        .insert({
+          song_name: songName,
+          lyrics: song.lyrics || null,
+          composer: song.composer || null,
+          theme: song.theme || null,
+          scripture_reference: song.scripture_reference || null,
+          default_key: song.default_key || null,
+          default_tempo: song.default_tempo || null,
+          song_notes: song.song_notes || null,
+          created_by: user?.id || null
+        })
+        .select('id')
+        .single();
+
+      if (songErr) throw songErr;
+
+      const beatCopies = (song.styles || []).map(style => ({
+        song_id: duplicatedSong.id,
+        keyboard_id: style.keyboard_id || null,
+        beat_name: style.beat_name,
+        keyboard_location: style.keyboard_location || null,
+        style_category: style.style_category || null,
+        is_favorite: Boolean(style.is_favorite),
+        tempo: style.tempo || null,
+        musical_key: style.musical_key || null,
+        notes: style.notes || null
+      }));
+
+      if (beatCopies.length > 0) {
+        const { error: beatsErr } = await supabase
+          .from('styles')
+          .insert(beatCopies);
+
+        if (beatsErr) throw beatsErr;
+      }
+
+      await fetchSongs();
+      alert('✅ Song duplicated. You can edit the copy now.');
+    } catch (err) {
+      alert('Duplicate failed: ' + err.message);
     } finally {
       setSaving(false);
     }
@@ -916,6 +996,27 @@ function AppIntegrated() {
                     <input placeholder="e.g. G, Bb, F#" value={formData.key} onChange={e => setFormData({ ...formData, key: e.target.value })} />
                   </div>
                   <div>
+                    <label>Beat Use</label>
+                    <select value={formData.beat_use} onChange={e => setFormData({ ...formData, beat_use: e.target.value })}>
+                      <option value="">Not specified</option>
+                      <option value="Worship">Worship</option>
+                      <option value="Praise">Praise</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="form-grid" style={{ marginTop: '10px' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', textTransform: 'none', letterSpacing: 0 }}>
+                    <input
+                      type="checkbox"
+                      checked={formData.is_favorite}
+                      onChange={e => setFormData({ ...formData, is_favorite: e.target.checked })}
+                      style={{ width: 'auto' }}
+                    />
+                    Preferred beat
+                  </label>
+                  <div>
                     <label>Beat Notes</label>
                     <input placeholder="Fill levels, variations, intro tips…" value={formData.notes} onChange={e => setFormData({ ...formData, notes: e.target.value })} />
                   </div>
@@ -946,6 +1047,7 @@ function AppIntegrated() {
               saving={saving}
               onDeleteSong={id => deleteEntry('songs', id)}
               onDeleteBeat={id => deleteEntry('styles', id)}
+              onDuplicateSong={duplicateSong}
               onStartSongEdit={startSongEdit}
               onCancelSongEdit={cancelSongEdit}
               onSaveSongEdit={saveSongEdit}

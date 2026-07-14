@@ -102,6 +102,10 @@
   color: #a8b3c2;
 }
 
+.beat-row__meta--favorite {
+  font-weight: 700;
+}
+
 .beat-row__keyboard {
   flex: 0 0 auto;
   font-size: 0.79rem;

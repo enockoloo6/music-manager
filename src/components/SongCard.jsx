@@ -11,6 +11,7 @@ function getFirstLyricLine(lyrics) {
 
 function beatMetaParts(style) {
   return [
+    style.style_category || null,
     style.tempo ? `${style.tempo} BPM` : null,
     style.musical_key ? `Key ${style.musical_key}` : null
   ].filter(Boolean);
@@ -30,6 +31,7 @@ function SongCard({
   saving,
   onDeleteSong,
   onDeleteBeat,
+  onDuplicateSong,
   onStartSongEdit,
   onCancelSongEdit,
   onSaveSongEdit,
@@ -49,8 +51,10 @@ function SongCard({
 }) {
   const [showMore, setShowMore] = useState(false);
   const [showAudio, setShowAudio] = useState(false);
+  const [showBeats, setShowBeats] = useState(false);
   const hasLyrics = Boolean(getFirstLyricLine(song.lyrics));
   const hasAudio = (song.song_audio?.length || 0) > 0;
+  const hasBeats = (song.styles?.length || 0) > 0;
   const canOpenAudio = hasAudio || canManageAudio;
   const hasMoreActions = Boolean(role?.approved || role?.admin);
 
@@ -99,6 +103,17 @@ function SongCard({
             </button>
           )}
 
+          {hasBeats && (
+            <button
+              type="button"
+              className={`song-card__link-action${showBeats ? ' song-card__link-action--active' : ''}`}
+              onClick={() => setShowBeats(current => !current)}
+              aria-expanded={showBeats}
+            >
+              {showBeats ? 'Hide Beats' : 'Beats'}
+            </button>
+          )}
+
           {hasMoreActions && (
             <button
               type="button"
@@ -120,6 +135,16 @@ function SongCard({
               onClick={() => onStartSongEdit?.(song)}
             >
               Edit Song
+            </button>
+          )}
+
+          {role?.approved && (
+            <button
+              type="button"
+              onClick={() => onDuplicateSong?.(song)}
+              disabled={saving}
+            >
+              Duplicate Song
             </button>
           )}
 
@@ -191,6 +216,7 @@ function SongCard({
         />
       )}
 
+      {showBeats && (
       <div>
         {song.styles?.length > 0 ? (
           song.styles.map((style, idx) => (
@@ -335,6 +361,48 @@ function SongCard({
                     </div>
                   </div>
 
+                  <div
+                    className="form-grid"
+                    style={{ marginTop: '8px' }}
+                  >
+                    <div>
+                      <label>Beat Use</label>
+                      <select
+                        style={{
+                          ...inputStyle,
+                          padding: '6px 8px'
+                        }}
+                        value={editData.beat_use}
+                        onChange={e =>
+                          onEditDataChange?.({
+                            ...editData,
+                            beat_use: e.target.value
+                          })
+                        }
+                      >
+                        <option value="">Not specified</option>
+                        <option value="Worship">Worship</option>
+                        <option value="Praise">Praise</option>
+                        <option value="Other">Other</option>
+                      </select>
+                    </div>
+
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', textTransform: 'none', letterSpacing: 0 }}>
+                      <input
+                        type="checkbox"
+                        checked={Boolean(editData.is_favorite)}
+                        onChange={e =>
+                          onEditDataChange?.({
+                            ...editData,
+                            is_favorite: e.target.checked
+                          })
+                        }
+                        style={{ width: 'auto' }}
+                      />
+                      Preferred beat
+                    </label>
+                  </div>
+
                   <div style={{ marginTop: '8px' }}>
                     <label>Notes</label>
 
@@ -383,6 +451,14 @@ function SongCard({
                   <div className="beat-row__summary">
                     <div className="beat-row__details">
                       <span className="beat-row__name">{beatDisplayName(style)}</span>
+                      {style.is_favorite && (
+                        <>
+                          <span className="beat-row__separator">|</span>
+                          <span className="beat-row__meta beat-row__meta--favorite">
+                            Preferred
+                          </span>
+                        </>
+                      )}
                       {beatMetaParts(style).map(part => (
                         <React.Fragment key={part}>
                           <span className="beat-row__separator">|</span>
@@ -461,6 +537,7 @@ function SongCard({
           </p>
         )}
       </div>
+      )}
     </div>
   );
 }
