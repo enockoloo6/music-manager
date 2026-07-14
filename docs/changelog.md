@@ -153,6 +153,10 @@ Contributor Library Filter
 
 9316f65
 
+Configurable App Title and Install Metadata
+
+0c69183
+
 ---
 
 # v1.4.0 Microphone Recording
