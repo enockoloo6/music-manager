@@ -46,6 +46,9 @@ Implemented:
 * Lyrics links appear only when a song has lyrics.
 * Approved users see Add Lyrics when a song has no lyrics.
 * Add/Edit Lyrics opens inline on the selected song card instead of above the library list.
+* Lyrics Mode closes with Escape.
+* Lyrics print output suppresses the rest of the app layout to avoid blank extra pages.
+* Approved users can edit song names inline from the song card.
 * Lyrics Mode close action is more visible.
 * Song cards no longer show beat count or lyrics status badges.
 * Beat category from `styles.keyboard_location` now appears attached to the beat name as `Beat(category)`.

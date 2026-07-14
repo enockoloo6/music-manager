@@ -117,6 +117,9 @@ Implemented direction:
 * Approved users see Add Lyrics when a song has no lyrics.
 * Add/Edit Lyrics opens inside the selected song card, beside the song context, not as a separate panel above the library list.
 * Lyrics Mode close action is prominent.
+* Lyrics Mode can be closed with Escape.
+* Lyrics printing should include only the lyrics content and no blank app-layout pages.
+* Approved users can edit the song name inline from the song card.
 * Song cards do not show beat count or lyrics status badges.
 * Beat rows show Beat Category from `styles.keyboard_location` attached to the beat name as `Beat(category)`.
 * Beat row text uses the same visual weight, with keyboard model aligned separately on the right where space allows.
