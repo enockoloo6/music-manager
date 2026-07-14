@@ -32,6 +32,12 @@ Implemented:
 * Audio tools load only when opened for a song.
 * Logged-out users no longer query audio metadata from song cards.
 * Global Print action removed from the header; Lyrics Mode keeps its print action.
+* Main navigation moved into the header.
+* Version and role labels reduced to quiet status badges.
+* Song headers changed from dark blue to pastel blue.
+* Lyrics previews removed from song cards.
+* Audio is a primary action beside Lyrics.
+* Beat metadata is shown on one line where space allows, with mobile wrapping.
 
 This starts the transition from beat-first entry to the documented song-centric workflow.
 
@@ -58,6 +64,10 @@ Admin User Management View
 Library Cleanup
 
 bfaa5c0
+
+Pastel Header Navigation
+
+bda332f
 
 ---
 
