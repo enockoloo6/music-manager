@@ -2,6 +2,44 @@
 
 ---
 
+# v1.5.0 Song Foundation
+
+Status:
+Started
+
+Date:
+July 2026
+
+---
+
+## Added
+
+### Song-First Add Flow
+
+Implemented:
+
+* Add form now starts with Song Name.
+* Lyrics can be entered in the initial add flow.
+* Songs can be saved without keyboard or beat details.
+* Piano settings are available behind an optional toggle.
+* A style/beat row is created only when optional beat details are supplied.
+
+This starts the transition from beat-first entry to the documented song-centric workflow.
+
+---
+
+## Commits
+
+Documentation Sync
+
+4674f63
+
+Song-First Add Flow
+
+3424320
+
+---
+
 # v1.4.0 Microphone Recording
 
 Status:
@@ -185,4 +223,3 @@ Audio Diagnostic Improvements
 Documentation Synchronization
 
 f5bc391be5d1ef2d9ae96e52cf6fdb73938dd67f
-
