@@ -49,6 +49,7 @@ Implemented:
 * Lyrics Mode closes with Escape.
 * Lyrics print output suppresses the rest of the app layout to avoid blank extra pages.
 * Approved users can edit song names inline from the song card.
+* Open song-card actions, such as Hide Audio, are visually emphasized for easier scanning.
 * Lyrics Mode close action is more visible.
 * Song cards no longer show beat count or lyrics status badges.
 * Beat category from `styles.keyboard_location` now appears attached to the beat name as `Beat(category)`.
