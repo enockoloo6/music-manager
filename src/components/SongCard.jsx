@@ -86,7 +86,7 @@ function SongCard({
           {canOpenAudio && (
             <button
               type="button"
-              className="song-card__link-action"
+              className={`song-card__link-action${showAudio ? ' song-card__link-action--active' : ''}`}
               onClick={() => setShowAudio(current => !current)}
               aria-expanded={showAudio}
             >
@@ -97,7 +97,7 @@ function SongCard({
           {hasMoreActions && (
             <button
               type="button"
-              className="song-card__link-action"
+              className={`song-card__link-action${showMore ? ' song-card__link-action--active' : ''}`}
               onClick={() => setShowMore(current => !current)}
               aria-expanded={showMore}
             >

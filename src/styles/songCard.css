@@ -35,6 +35,15 @@
   text-underline-offset: 3px;
 }
 
+.song-card__actions .song-card__link-action--active {
+  background: #315a78;
+  border-radius: 7px;
+  color: #fff;
+  font-size: 0.92rem;
+  padding: 6px 10px;
+  text-decoration: none;
+}
+
 .song-card__delete {
   background: #fee2e2 !important;
   color: #b91c1c !important;
