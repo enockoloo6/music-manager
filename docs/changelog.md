@@ -110,6 +110,10 @@ Inline Lyrics Editor
 
 8d4f30f
 
+Lyrics Mode and Song Editing Fixes
+
+48a56fc
+
 ---
 
 # v1.4.0 Microphone Recording
