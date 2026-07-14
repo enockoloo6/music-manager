@@ -20,7 +20,7 @@ function LyricsMode({ song, onClose }) {
           <button type="button" onClick={() => setFontScale(current => Math.max(0.8, current - 0.1))}>A−</button>
           <button type="button" onClick={() => setFontScale(current => Math.min(1.8, current + 0.1))}>A+</button>
           <button type="button" onClick={() => window.print()}>Print</button>
-          <button type="button" onClick={onClose}>Close</button>
+          <button type="button" className="lyrics-mode__close" onClick={onClose}>Close</button>
         </div>
       </div>
 

@@ -71,9 +71,15 @@ function SongCard({
         </div>
 
         <div className="song-card__actions no-print">
-          <button type="button" className="song-card__link-action" onClick={() => onOpenLyrics?.(song)}>
-            Lyrics
-          </button>
+          {hasLyrics ? (
+            <button type="button" className="song-card__link-action" onClick={() => onOpenLyrics?.(song)}>
+              Lyrics
+            </button>
+          ) : role?.approved ? (
+            <button type="button" className="song-card__link-action" onClick={() => onEditLyrics?.(song)}>
+              Add Lyrics
+            </button>
+          ) : null}
 
           {canOpenAudio && (
             <button
@@ -101,7 +107,7 @@ function SongCard({
 
       {showMore && (
         <div className="song-card__more no-print" style={{ display: 'flex', gap: '7px', flexWrap: 'wrap', padding: '9px 16px', borderBottom: '1px solid #eef2f7', background: '#f8fafc' }}>
-          {role?.approved && (
+          {role?.approved && hasLyrics && (
             <button
               type="button"
               onClick={() => onEditLyrics?.(song)}
