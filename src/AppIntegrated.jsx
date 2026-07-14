@@ -9,6 +9,7 @@ import LyricsMode from './components/LyricsMode';
 import OfflineBanner from './components/OfflineBanner';
 import RecentAdditions from './components/RecentAdditions';
 import SearchBar from './components/SearchBar';
+import SettingsPage from './components/SettingsPage';
 import SongCard from './components/SongCard';
 import VersionBadge from './components/VersionBadge';
 
@@ -44,6 +45,7 @@ function AppIntegrated() {
   const [profiles, setProfiles] = useState([]);
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
+  const [activeView, setActiveView] = useState('library');
   const [user, setUser] = useState(null);
   const [role, setRole] = useState({ approved: false, admin: false });
   const [authMode, setAuthMode] = useState('login');
@@ -86,6 +88,7 @@ function AppIntegrated() {
         setUser(null);
         setRole({ approved: false, admin: false });
         setShowAddForm(false);
+        setActiveView('library');
       }
     });
 
@@ -381,6 +384,16 @@ function AppIntegrated() {
     }
   }
 
+  function openLibraryView() {
+    setActiveView('library');
+  }
+
+  function openSettingsView() {
+    setShowAddForm(false);
+    setEditingLyricsSong(null);
+    setActiveView('settings');
+  }
+
   const songNameOptions = useMemo(
     () => [...new Set(songs.map(song => song.song_name))].sort(),
     [songs]
@@ -561,33 +574,55 @@ function AppIntegrated() {
           </div>
         )}
 
-        <SearchBar value={search} onChange={setSearch} resultCount={filteredSongs.length} totalCount={songs.length} />
-        <CategoryFilters
-          categories={categories}
-          selectedCategory={selectedCategory}
-          onSelect={setSelectedCategory}
-        />
-        <RecentAdditions items={recentAdditions} />
-        <LibraryStats songs={songs} keyboards={keyboards} />
-
         {role.approved && (
           <div className="no-print" style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px', flexWrap: 'wrap' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '7px', background: '#fff', border: '1px solid #e2e8f0', borderRadius: '7px', padding: '5px 10px', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
-              <span style={{ fontSize: '0.78rem', fontWeight: '700', color: '#4a5568', whiteSpace: 'nowrap' }}>🎹 Default:</span>
-              <select value={defaultKeyboardId} onChange={e => updateDefaultKeyboard(e.target.value)} style={{ border: 'none', background: 'transparent', fontSize: '0.85rem', color: '#1a237e', fontWeight: '600', padding: '2px 4px', cursor: 'pointer', maxWidth: '200px' }}>
-                <option value="">— set default —</option>
-                {keyboards.map(keyboard => <option key={keyboard.id} value={keyboard.id}>{keyboard.model_name}</option>)}
-              </select>
-            </div>
-
-            <button onClick={() => { setShowAddForm(value => !value); if (!showAddForm) setFormData(current => ({ ...current, keyboard_id: defaultKeyboardId || current.keyboard_id })); }} style={{ background: showAddForm ? '#455a64' : '#1a237e', color: 'white', padding: '9px 18px', fontSize: '0.92rem', display: 'flex', alignItems: 'center', gap: '7px' }}>
-              <span>{showAddForm ? '✕' : '➕'}</span>
-              {showAddForm ? 'Close Form' : 'Add Song'}
+            <button
+              type="button"
+              onClick={openLibraryView}
+              style={{ background: activeView === 'library' ? '#1a237e' : '#fff', color: activeView === 'library' ? '#fff' : '#1a237e', border: '1px solid #cfd8e3', padding: '9px 14px', fontSize: '0.9rem' }}
+            >
+              Library
             </button>
+
+            <button
+              type="button"
+              onClick={openSettingsView}
+              style={{ background: activeView === 'settings' ? '#1a237e' : '#fff', color: activeView === 'settings' ? '#fff' : '#1a237e', border: '1px solid #cfd8e3', padding: '9px 14px', fontSize: '0.9rem' }}
+            >
+              Settings
+            </button>
+
+            {activeView === 'library' && (
+              <button onClick={() => { setShowAddForm(value => !value); if (!showAddForm) setFormData(current => ({ ...current, keyboard_id: defaultKeyboardId || current.keyboard_id })); }} style={{ background: showAddForm ? '#455a64' : '#1a237e', color: 'white', padding: '9px 18px', fontSize: '0.92rem', display: 'flex', alignItems: 'center', gap: '7px' }}>
+                <span>{showAddForm ? '✕' : '➕'}</span>
+                {showAddForm ? 'Close Form' : 'Add Song'}
+              </button>
+            )}
           </div>
         )}
 
-        {role.approved && showAddForm && (
+        {activeView === 'library' && (
+          <>
+            <SearchBar value={search} onChange={setSearch} resultCount={filteredSongs.length} totalCount={songs.length} />
+            <CategoryFilters
+              categories={categories}
+              selectedCategory={selectedCategory}
+              onSelect={setSelectedCategory}
+            />
+            <RecentAdditions items={recentAdditions} />
+            <LibraryStats songs={songs} keyboards={keyboards} />
+          </>
+        )}
+
+        {role.approved && activeView === 'settings' && (
+          <SettingsPage
+            defaultKeyboardId={defaultKeyboardId}
+            keyboards={keyboards}
+            onDefaultKeyboardChange={updateDefaultKeyboard}
+          />
+        )}
+
+        {role.approved && activeView === 'library' && showAddForm && (
           <form onSubmit={handleSubmit} className="panel no-print" style={{ marginBottom: '18px', borderTop: '4px solid #1a237e' }}>
             <h3 style={{ margin: '0 0 14px', color: '#1a237e', fontSize: '1rem' }}>➕ Add Song</h3>
 
@@ -665,12 +700,13 @@ function AppIntegrated() {
           </form>
         )}
 
-        {editingLyricsSong && (
+        {activeView === 'library' && editingLyricsSong && (
           <div className="panel" style={{ borderTop: '4px solid #1a237e' }}>
             <LyricsEditor song={editingLyricsSong} saving={saving} onCancel={() => setEditingLyricsSong(null)} onSave={saveLyrics} />
           </div>
         )}
 
+        {activeView === 'library' && (
         <div>
           {songs.length === 0 && (
             <p style={{ color: '#aaa', textAlign: 'center', marginTop: '30px' }}>No songs in the library yet.</p>
@@ -698,6 +734,7 @@ function AppIntegrated() {
             />
           ))}
         </div>
+        )}
 
         <AppFooter />
       </div>
