@@ -50,6 +50,8 @@ Implemented:
 * Lyrics print output suppresses the rest of the app layout to avoid blank extra pages.
 * Approved users can edit song names inline from the song card.
 * Open song-card actions, such as Hide Audio, are visually emphasized for easier scanning.
+* Library defaults to latest-added songs first, using the newest beat timestamp available for each song.
+* Added a compact sort control beside the song count.
 * Lyrics Mode close action is more visible.
 * Song cards no longer show beat count or lyrics status badges.
 * Beat category from `styles.keyboard_location` now appears attached to the beat name as `Beat(category)`.

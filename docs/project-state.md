@@ -121,6 +121,8 @@ Implemented direction:
 * Lyrics printing should include only the lyrics content and no blank app-layout pages.
 * Approved users can edit the song name inline from the song card.
 * Open song-card actions, such as Hide Audio, are visually stronger than inactive action links.
+* Library defaults to latest-added songs first, using the newest beat timestamp available for each song.
+* A compact library sort control sits beside the song count.
 * Song cards do not show beat count or lyrics status badges.
 * Beat rows show Beat Category from `styles.keyboard_location` attached to the beat name as `Beat(category)`.
 * Beat row text uses the same visual weight, with keyboard model aligned separately on the right where space allows.
