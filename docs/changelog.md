@@ -55,6 +55,7 @@ Implemented:
 
 Public audio visibility depends on applying the public read migration to the active Supabase project.
 The migration file exists at `supabase/migrations/20260714_public_audio_read_access.sql`; applying it requires Supabase CLI authentication or a Postgres admin connection string.
+Applied to Supabase project `gqmhpgujemdcgrtczche`; anon read verification returned one readable `music_manager.song_audio` row.
 
 This starts the transition from beat-first entry to the documented song-centric workflow.
 
