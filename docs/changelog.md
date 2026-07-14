@@ -188,6 +188,10 @@ Song Duplication and Beat Preferences
 
 91ffad6
 
+Public Beat Details Label
+
+3845235
+
 ---
 
 # v1.4.0 Microphone Recording
