@@ -54,6 +54,7 @@ Implemented:
 * Logged-out audio load failures now say public playback is not enabled instead of implying login is the required fix.
 
 Public audio visibility depends on applying the public read migration to the active Supabase project.
+The migration file exists at `supabase/migrations/20260714_public_audio_read_access.sql`; applying it requires Supabase CLI authentication or a Postgres admin connection string.
 
 This starts the transition from beat-first entry to the documented song-centric workflow.
 
@@ -100,6 +101,10 @@ Lyrics Action Refinements
 Song Card Beat Display
 
 5505f13
+
+Inline Lyrics Editor
+
+8d4f30f
 
 ---
 
