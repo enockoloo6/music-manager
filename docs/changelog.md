@@ -64,6 +64,7 @@ Implemented:
 * Added Android-friendly install metadata and a music-focused app mark.
 * Added a read-only local cache foundation for songs, keyboards, and app title.
 * Confirmed offline audio caching and offline save/sync are still future work.
+* Tightened mobile layout for the header, library filters, and song-card actions.
 * Beat details now use pipe separators and the subdued piano model color.
 * Audio recording now has a standard maximum duration, visible timer, and automatic stop.
 * Lyrics Mode close action is more visible.

@@ -134,6 +134,7 @@ Implemented direction:
 * The default app title and Android install name should be `Music Manager`.
 * The header uses a music-focused mark instead of a piano-specific icon.
 * The app has basic install metadata for Android and a read-only local cache for library data, but offline audio caching and offline save/sync are not implemented yet.
+* Mobile layout keeps the header, library filters, and song-card actions stacked without horizontal overflow.
 * Search no longer has a separate category tab beside it.
 * Beat details use pipe separators and share the subdued piano model color.
 * Audio recording has a standard maximum duration with a visible timer and automatic stop.
