@@ -640,16 +640,18 @@ function AppIntegrated() {
           </div>
         )}
 
-        {(role.approved || role.admin) && activeView === 'library' && (
+        {activeView === 'library' && (
           <div className="no-print" style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px', flexWrap: 'wrap' }}>
-            <button onClick={() => { setShowAddForm(value => !value); if (!showAddForm) setFormData(current => ({ ...current, keyboard_id: defaultKeyboardId || current.keyboard_id })); }} style={{ background: showAddForm ? '#64748b' : '#5f9fbd', color: 'white', padding: '9px 18px', fontSize: '0.92rem', display: 'flex', alignItems: 'center', gap: '7px' }}>
-              <span>{showAddForm ? '✕' : '➕'}</span>
-              {showAddForm ? 'Close Form' : 'Add Song'}
-            </button>
+            {(role.approved || role.admin) && (
+              <button onClick={() => { setShowAddForm(value => !value); if (!showAddForm) setFormData(current => ({ ...current, keyboard_id: defaultKeyboardId || current.keyboard_id })); }} style={{ background: showAddForm ? '#64748b' : '#5f9fbd', color: 'white', padding: '9px 18px', fontSize: '0.92rem', display: 'flex', alignItems: 'center', gap: '7px' }}>
+                <span>{showAddForm ? '✕' : '➕'}</span>
+                {showAddForm ? 'Close Form' : 'Add Song'}
+              </button>
+            )}
             <span style={{ color: '#64748b', fontSize: '0.86rem', fontWeight: 700 }}>
               {search.trim()
                 ? `${filteredSongs.length} of ${songs.length} song${songs.length === 1 ? '' : 's'}`
-                : `${songs.length} song${songs.length === 1 ? '' : 's'} in library`}
+                : `${songs.length} song${songs.length === 1 ? '' : 's'}`}
             </span>
             <label style={{ display: 'flex', alignItems: 'center', gap: '6px', margin: 0, textTransform: 'none', letterSpacing: 0, color: '#64748b', fontSize: '0.78rem' }}>
               Sort
