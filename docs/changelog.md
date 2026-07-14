@@ -40,6 +40,9 @@ Implemented:
 * Beat metadata is shown on one line where space allows, with mobile wrapping.
 * Song count moved beside Add Song.
 * Search and Categories now share one library control row, stacking on mobile.
+* Audio links appear for public users only when a song has audio.
+* Approved users can still open Audio for songs without audio to upload recordings.
+* Added public read migration for `music_manager.song_audio` metadata and `music-manager-audio` storage objects.
 
 This starts the transition from beat-first entry to the documented song-centric workflow.
 
@@ -74,6 +77,10 @@ bda332f
 Library Search Controls
 
 623354a
+
+Public Audio Links
+
+6df6921
 
 ---
 
