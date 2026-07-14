@@ -23,6 +23,7 @@ Implemented:
 * Songs can be saved without keyboard or beat details.
 * Piano settings are available behind an optional toggle.
 * A style/beat row is created only when optional beat details are supplied.
+* Default keyboard moved from the library page into Settings.
 
 This starts the transition from beat-first entry to the documented song-centric workflow.
 
@@ -37,6 +38,10 @@ Documentation Sync
 Song-First Add Flow
 
 3424320
+
+Settings Defaults View
+
+d9aae1d
 
 ---
 
