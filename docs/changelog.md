@@ -115,6 +115,10 @@ Lyrics Mode and Song Editing Fixes
 
 48a56fc
 
+Active Song Action Styling
+
+2b9543a
+
 ---
 
 # v1.4.0 Microphone Recording
