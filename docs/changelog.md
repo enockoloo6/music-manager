@@ -163,6 +163,14 @@ App Settings RPC Fix
 
 fffc084
 
+Contributor Backfill and Offline Cache Scope
+
+129e0a8
+
+Read-Only Offline Cache
+
+184d811
+
 ---
 
 # v1.4.0 Microphone Recording
