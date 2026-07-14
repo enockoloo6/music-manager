@@ -78,6 +78,7 @@ Current implementation scope:
 * Piano/beat settings are optional.
 * Saving a song must not require keyboard selection.
 * A style/beat row is created only when optional beat details are supplied.
+* Default keyboard settings move to a dedicated Settings view.
 
 ---
 

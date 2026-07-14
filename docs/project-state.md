@@ -99,6 +99,7 @@ Implemented direction:
 * Piano settings remain available as optional beat details.
 * A song can be saved without a beat.
 * Optional beat details can be attached during song creation or added later from the saved song.
+* Default preferences live in Settings instead of the main library page.
 
 ---
 
@@ -127,6 +128,7 @@ Immediate implementation rule:
 
 Do not require keyboard, beat name, tempo, key, category, or beat notes to save a song.
 Only create a beat/style record when beat details are provided.
+Keep default settings outside the main library workflow.
 
 ---
 
