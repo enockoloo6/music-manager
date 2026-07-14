@@ -134,6 +134,10 @@ Library Filter and Recording Refinements
 
 26f9803
 
+Aligned Audio and Lyrics Actions
+
+f289130
+
 ---
 
 # v1.4.0 Microphone Recording
