@@ -31,6 +31,16 @@
   font-weight: 600;
 }
 
+.audio-recorder__limit,
+.audio-recorder__notice {
+  color: #64748b;
+  font-size: 0.82rem;
+}
+
+.audio-recorder__notice {
+  font-weight: 600;
+}
+
 .audio-recorder__error {
   color: #b91c1c;
 }

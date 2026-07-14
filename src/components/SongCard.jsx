@@ -18,7 +18,7 @@ function beatMetaParts(style) {
 
 function beatDisplayName(style) {
   const category = style.keyboard_location?.trim();
-  return category ? `${style.beat_name}(${category})` : style.beat_name;
+  return category ? `${style.beat_name} (${category})` : style.beat_name;
 }
 
 function SongCard({
@@ -379,9 +379,12 @@ function SongCard({
                     <div className="beat-row__details">
                       <span className="beat-row__name">{beatDisplayName(style)}</span>
                       {beatMetaParts(style).map(part => (
-                        <span key={part} className="beat-row__meta">
-                          {part}
-                        </span>
+                        <React.Fragment key={part}>
+                          <span className="beat-row__separator">|</span>
+                          <span className="beat-row__meta">
+                            {part}
+                          </span>
+                        </React.Fragment>
                       ))}
                     </div>
 

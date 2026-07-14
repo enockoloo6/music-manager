@@ -3,7 +3,6 @@ import { supabase } from './supabaseClient';
 
 import AdminPage from './components/AdminPage';
 import AppFooter from './components/AppFooter';
-import CategoryFilters from './components/CategoryFilters';
 import LyricsMode from './components/LyricsMode';
 import OfflineBanner from './components/OfflineBanner';
 import ReportsPage from './components/ReportsPage';
@@ -16,7 +15,6 @@ import useOnlineStatus from './hooks/useOnlineStatus';
 import { songMatchesSearch, updateSongLyrics } from './services/songLyricsService';
 
 import './styles/appFooter.css';
-import './styles/categoryFilters.css';
 import './styles/lyricsEditor.css';
 import './styles/lyricsMode.css';
 import './styles/offlineBanner.css';
@@ -664,22 +662,24 @@ function AppIntegrated() {
                 <option value="name">Song name</option>
               </select>
             </label>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '6px', margin: 0, textTransform: 'none', letterSpacing: 0, color: '#64748b', fontSize: '0.78rem' }}>
+              Category
+              <select
+                value={selectedCategory}
+                onChange={event => setSelectedCategory(event.target.value)}
+                style={{ width: 'auto', minWidth: '130px', padding: '6px 8px', fontSize: '0.82rem' }}
+              >
+                {categories.map(category => (
+                  <option key={category} value={category}>{category}</option>
+                ))}
+              </select>
+            </label>
           </div>
         )}
 
         {activeView === 'library' && (
-          <div className="library-search-row no-print" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) auto', alignItems: 'start', gap: '10px', marginBottom: '12px' }}>
+          <div className="library-search-row no-print" style={{ marginBottom: '12px' }}>
             <SearchBar value={search} onChange={setSearch} />
-            <details style={{ minWidth: '150px' }}>
-              <summary style={{ cursor: 'pointer', color: '#315a78', fontWeight: 800, fontSize: '0.88rem', padding: '12px 14px', border: '1px solid #cbd5e1', borderRadius: '12px', background: '#fff' }}>
-                Categories
-              </summary>
-              <CategoryFilters
-                categories={categories}
-                selectedCategory={selectedCategory}
-                onSelect={setSelectedCategory}
-              />
-            </details>
           </div>
         )}
 

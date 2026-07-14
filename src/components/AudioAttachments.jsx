@@ -1,6 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { deleteSongAudio, fetchSongAudio, uploadSongAudio } from '../services/songAudioService';
 
+const MAX_RECORDING_SECONDS = 300;
+
 function getPreferredAudioMimeType() {
   if (typeof MediaRecorder === 'undefined') return '';
 
@@ -35,6 +37,12 @@ function getAudioLoadMessage(err, user) {
   return message;
 }
 
+function formatRecordingTime(seconds) {
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = seconds % 60;
+  return `${minutes}:${String(remainingSeconds).padStart(2, '0')}`;
+}
+
 export default function AudioAttachments({ song, user, canManage }) {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -45,10 +53,26 @@ export default function AudioAttachments({ song, user, canManage }) {
   const [recordedBlob, setRecordedBlob] = useState(null);
   const [recordingUrl, setRecordingUrl] = useState('');
   const [recordingError, setRecordingError] = useState('');
+  const [recordingNotice, setRecordingNotice] = useState('');
+  const [recordingSeconds, setRecordingSeconds] = useState(0);
 
   const recorderRef = useRef(null);
   const streamRef = useRef(null);
   const chunksRef = useRef([]);
+  const recordingIntervalRef = useRef(null);
+  const recordingTimeoutRef = useRef(null);
+
+  function clearRecordingTimers() {
+    if (recordingIntervalRef.current) {
+      window.clearInterval(recordingIntervalRef.current);
+      recordingIntervalRef.current = null;
+    }
+
+    if (recordingTimeoutRef.current) {
+      window.clearTimeout(recordingTimeoutRef.current);
+      recordingTimeoutRef.current = null;
+    }
+  }
 
   async function load() {
     if (!song?.id) return;
@@ -71,6 +95,7 @@ export default function AudioAttachments({ song, user, canManage }) {
 
   useEffect(() => {
     return () => {
+      clearRecordingTimers();
       if (recordingUrl) URL.revokeObjectURL(recordingUrl);
       streamRef.current?.getTracks?.().forEach(track => track.stop());
     };
@@ -100,6 +125,8 @@ export default function AudioAttachments({ song, user, canManage }) {
 
   async function startRecording() {
     setRecordingError('');
+    setRecordingNotice('');
+    setRecordingSeconds(0);
     setRecordedBlob(null);
     if (recordingUrl) URL.revokeObjectURL(recordingUrl);
     setRecordingUrl('');
@@ -134,8 +161,16 @@ export default function AudioAttachments({ song, user, canManage }) {
 
       recorder.start();
       setRecording(true);
+      recordingIntervalRef.current = window.setInterval(() => {
+        setRecordingSeconds(current => Math.min(current + 1, MAX_RECORDING_SECONDS));
+      }, 1000);
+      recordingTimeoutRef.current = window.setTimeout(() => {
+        setRecordingNotice(`Recording stopped at the ${formatRecordingTime(MAX_RECORDING_SECONDS)} maximum.`);
+        stopRecording();
+      }, MAX_RECORDING_SECONDS * 1000);
     } catch (err) {
       setRecordingError(err.message || 'Unable to access microphone.');
+      clearRecordingTimers();
       streamRef.current?.getTracks?.().forEach(track => track.stop());
       streamRef.current = null;
       recorderRef.current = null;
@@ -143,6 +178,7 @@ export default function AudioAttachments({ song, user, canManage }) {
   }
 
   function stopRecording() {
+    clearRecordingTimers();
     const recorder = recorderRef.current;
     if (recorder && recorder.state !== 'inactive') {
       recorder.stop();
@@ -155,6 +191,8 @@ export default function AudioAttachments({ song, user, canManage }) {
     if (recordingUrl) URL.revokeObjectURL(recordingUrl);
     setRecordingUrl('');
     setRecordingError('');
+    setRecordingNotice('');
+    setRecordingSeconds(0);
   }
 
   async function saveRecording() {
@@ -195,12 +233,21 @@ export default function AudioAttachments({ song, user, canManage }) {
               <button type="button" onClick={startRecording} disabled={recording || uploading || savingRecording}>
                 🎙 Start Recording
               </button>
-              <button type="button" onClick={stopRecording} disabled={!recording}>
+              <button type="button" onClick={() => stopRecording()} disabled={!recording}>
                 ⏹ Stop Recording
               </button>
             </div>
 
-            {recording && <div className="audio-recorder__status">Recording…</div>}
+            <div className="audio-recorder__limit">
+              Max recording time: {formatRecordingTime(MAX_RECORDING_SECONDS)}
+            </div>
+
+            {recording && (
+              <div className="audio-recorder__status">
+                Recording {formatRecordingTime(recordingSeconds)} / {formatRecordingTime(MAX_RECORDING_SECONDS)}
+              </div>
+            )}
+            {recordingNotice && <div className="audio-recorder__notice">{recordingNotice}</div>}
             {recordingError && <div className="audio-recorder__error">{recordingError}</div>}
 
             {recordingUrl && (
