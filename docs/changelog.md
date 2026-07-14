@@ -45,6 +45,7 @@ Implemented:
 * Added public read migration for `music_manager.song_audio` metadata and `music-manager-audio` storage objects.
 * Lyrics links appear only when a song has lyrics.
 * Approved users see Add Lyrics when a song has no lyrics.
+* Add/Edit Lyrics opens inline on the selected song card instead of above the library list.
 * Lyrics Mode close action is more visible.
 * Song cards no longer show beat count or lyrics status badges.
 * Beat category from `styles.keyboard_location` now appears attached to the beat name as `Beat(category)`.
