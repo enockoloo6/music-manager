@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { supabase } from './supabaseClient';
 
+import AdminPage from './components/AdminPage';
 import AppFooter from './components/AppFooter';
 import CategoryFilters from './components/CategoryFilters';
 import LibraryStats from './components/LibraryStats';
@@ -394,6 +395,12 @@ function AppIntegrated() {
     setActiveView('settings');
   }
 
+  function openAdminView() {
+    setShowAddForm(false);
+    setEditingLyricsSong(null);
+    setActiveView('admin');
+  }
+
   const songNameOptions = useMemo(
     () => [...new Set(songs.map(song => song.song_name))].sort(),
     [songs]
@@ -543,38 +550,7 @@ function AppIntegrated() {
           </div>
         )}
 
-        {role.admin && (
-          <div className="panel no-print" style={{ borderLeft: '4px solid #c62828', marginBottom: '18px' }}>
-            <h3 style={{ marginTop: 0, color: '#b71c1c', marginBottom: '6px' }}>👑 Admin Control Panel</h3>
-            <p style={{ fontSize: '0.81rem', color: '#666', margin: '0 0 12px' }}>
-              <strong>Approve</strong> — lets a user add/edit beats. <strong>Make Admin</strong> — grants full admin rights.
-            </p>
-            {profiles.length === 0 && <p style={{ color: '#aaa', fontSize: '0.88rem' }}>No user profiles found.</p>}
-            {profiles.map(profile => (
-              <div key={profile.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: '1px solid #fbe9e7', gap: '12px', flexWrap: 'wrap' }}>
-                <div>
-                  <span style={{ fontSize: '0.88rem' }}>{profile.email}</span>
-                  {isSuperAdmin(profile.email)
-                    ? <span style={{ marginLeft: 8, fontSize: '0.68rem', background: '#b71c1c', color: 'white', padding: '2px 7px', borderRadius: 10 }}>PROTECTED</span>
-                    : <span style={{ marginLeft: 8, fontSize: '0.68rem', color: '#999' }}>{profile.is_admin ? '• Admin' : profile.is_approved ? '• Approved' : '• Pending'}</span>
-                  }
-                </div>
-                {!isSuperAdmin(profile.email) && (
-                  <div style={{ display: 'flex', gap: '5px' }}>
-                    <button onClick={() => toggleStatus(profile.id, 'is_approved', profile.is_approved)} style={{ fontSize: '0.72rem', background: profile.is_approved ? '#ef6c00' : '#2e7d32', color: 'white', padding: '4px 10px' }}>
-                      {profile.is_approved ? 'Revoke' : 'Approve'}
-                    </button>
-                    <button onClick={() => toggleStatus(profile.id, 'is_admin', profile.is_admin)} style={{ fontSize: '0.72rem', background: profile.is_admin ? '#455a64' : '#4527a0', color: 'white', padding: '4px 10px' }}>
-                      {profile.is_admin ? 'Remove Admin' : 'Make Admin'}
-                    </button>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-
-        {role.approved && (
+        {(role.approved || role.admin) && (
           <div className="no-print" style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px', flexWrap: 'wrap' }}>
             <button
               type="button"
@@ -591,6 +567,16 @@ function AppIntegrated() {
             >
               Settings
             </button>
+
+            {role.admin && (
+              <button
+                type="button"
+                onClick={openAdminView}
+                style={{ background: activeView === 'admin' ? '#1a237e' : '#fff', color: activeView === 'admin' ? '#fff' : '#1a237e', border: '1px solid #cfd8e3', padding: '9px 14px', fontSize: '0.9rem' }}
+              >
+                Admin
+              </button>
+            )}
 
             {activeView === 'library' && (
               <button onClick={() => { setShowAddForm(value => !value); if (!showAddForm) setFormData(current => ({ ...current, keyboard_id: defaultKeyboardId || current.keyboard_id })); }} style={{ background: showAddForm ? '#455a64' : '#1a237e', color: 'white', padding: '9px 18px', fontSize: '0.92rem', display: 'flex', alignItems: 'center', gap: '7px' }}>
@@ -614,11 +600,19 @@ function AppIntegrated() {
           </>
         )}
 
-        {role.approved && activeView === 'settings' && (
+        {(role.approved || role.admin) && activeView === 'settings' && (
           <SettingsPage
             defaultKeyboardId={defaultKeyboardId}
             keyboards={keyboards}
             onDefaultKeyboardChange={updateDefaultKeyboard}
+          />
+        )}
+
+        {role.admin && activeView === 'admin' && (
+          <AdminPage
+            profiles={profiles}
+            isSuperAdmin={isSuperAdmin}
+            onToggleStatus={toggleStatus}
           />
         )}
 
