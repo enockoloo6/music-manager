@@ -9,9 +9,13 @@ function getFirstLyricLine(lyrics) {
     .find(Boolean) || '';
 }
 
+function isDisplayableBeatUse(value) {
+  return ['Worship', 'Praise', 'Other'].includes(value);
+}
+
 function beatMetaParts(style) {
   return [
-    style.style_category || null,
+    isDisplayableBeatUse(style.style_category) ? style.style_category : null,
     style.tempo ? `${style.tempo} BPM` : null,
     style.musical_key ? `Key ${style.musical_key}` : null
   ].filter(Boolean);
