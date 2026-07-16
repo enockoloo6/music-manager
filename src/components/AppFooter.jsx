@@ -1,4 +1,3 @@
-import React from 'react';
 import VersionBadge from './VersionBadge';
 
 function AppFooter() {

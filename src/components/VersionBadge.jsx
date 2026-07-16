@@ -1,4 +1,3 @@
-import React from 'react';
 import { APP_RELEASE_NAME, APP_VERSION } from '../appVersion';
 
 function VersionBadge() {

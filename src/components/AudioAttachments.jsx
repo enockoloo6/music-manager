@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { deleteSongAudio, fetchSongAudio, uploadSongAudio } from '../services/songAudioService';
 
 const MAX_RECORDING_SECONDS = 300;
@@ -74,7 +74,7 @@ export default function AudioAttachments({ song, user, canManage }) {
     }
   }
 
-  async function load() {
+  const load = useCallback(async () => {
     if (!song?.id) return;
     setLoading(true);
     setLoadError('');
@@ -87,11 +87,11 @@ export default function AudioAttachments({ song, user, canManage }) {
     } finally {
       setLoading(false);
     }
-  }
+  }, [song?.id, user]);
 
   useEffect(() => {
-    load();
-  }, [song?.id, user?.id]);
+    void Promise.resolve().then(load);
+  }, [load]);
 
   useEffect(() => {
     return () => {

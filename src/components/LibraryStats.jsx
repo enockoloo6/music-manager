@@ -1,5 +1,3 @@
-import React from 'react';
-
 function StatItem({ icon, label, value }) {
   return (
     <div className="library-stats__item">

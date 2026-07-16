@@ -1,5 +1,3 @@
-import React from 'react';
-
 function AudioPlaceholder() {
   return (
     <div className="audio-placeholder">

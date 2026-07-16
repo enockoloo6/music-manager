@@ -1,11 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import { useState } from 'react';
 
-function LyricsEditor({ song, saving = false, onCancel, onSave }) {
+function LyricsEditorForm({ song, saving, onCancel, onSave }) {
   const [lyrics, setLyrics] = useState(song?.lyrics || '');
-
-  useEffect(() => {
-    setLyrics(song?.lyrics || '');
-  }, [song]);
 
   if (!song) return null;
 
@@ -38,6 +34,18 @@ function LyricsEditor({ song, saving = false, onCancel, onSave }) {
         </button>
       </div>
     </form>
+  );
+}
+
+function LyricsEditor({ song, saving = false, onCancel, onSave }) {
+  return (
+    <LyricsEditorForm
+      key={`${song?.id || 'empty'}:${song?.lyrics || ''}`}
+      song={song}
+      saving={saving}
+      onCancel={onCancel}
+      onSave={onSave}
+    />
   );
 }
 

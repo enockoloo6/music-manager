@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { Fragment, useState } from 'react';
 import AudioAttachments from './AudioAttachments';
 import LyricsEditor from './LyricsEditor';
 
@@ -465,12 +465,12 @@ function SongCard({
                         </>
                       )}
                       {beatMetaParts(style).map(part => (
-                        <React.Fragment key={part}>
+                        <Fragment key={part}>
                           <span className="beat-row__separator">|</span>
                           <span className="beat-row__meta">
                             {part}
                           </span>
-                        </React.Fragment>
+                        </Fragment>
                       ))}
                     </div>
 

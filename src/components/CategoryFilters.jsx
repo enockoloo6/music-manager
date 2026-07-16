@@ -1,5 +1,3 @@
-import React from 'react';
-
 function CategoryFilters({ categories = [], selectedCategory = 'All', onSelect }) {
   if (!categories.length) return null;
 

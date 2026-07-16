@@ -1,5 +1,3 @@
-import React from 'react';
-
 function OfflineBanner({ visible }) {
   if (!visible) return null;
 

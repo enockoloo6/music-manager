@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { supabase } from './supabaseClient';
 
 import AdminPage from './components/AdminPage';
@@ -58,6 +58,14 @@ function getSongLatestTimestamp(song) {
   );
 }
 
+function RoleBadge({ text, color }) {
+  return (
+    <span style={{ background: color, color: '#fff', padding: '1px 6px', borderRadius: '10px', fontSize: '0.62rem', marginLeft: '4px', fontWeight: 600, opacity: 0.85 }}>
+      {text}
+    </span>
+  );
+}
+
 function AppIntegrated() {
   const [songs, setSongs] = useState([]);
   const [keyboards, setKeyboards] = useState([]);
@@ -94,6 +102,8 @@ function AppIntegrated() {
     fetchSongs(false);
     fetchKeyboards();
     loadAppSettings();
+    // Initial bootstrapping runs once; auth-specific refreshes happen in the auth listener.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -129,6 +139,8 @@ function AppIntegrated() {
     });
 
     return () => listener.subscription.unsubscribe();
+    // Register the auth listener once for the lifetime of this component.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function loadRole(userId, userEmail) {
@@ -715,12 +727,6 @@ function AppIntegrated() {
 
   const isSuperAdmin = emailAddress => emailAddress === SUPER_ADMIN_EMAIL;
 
-  const Badge = ({ text, color }) => (
-    <span style={{ background: color, color: '#fff', padding: '1px 6px', borderRadius: '10px', fontSize: '0.62rem', marginLeft: '4px', fontWeight: 600, opacity: 0.85 }}>
-      {text}
-    </span>
-  );
-
   const navButtonStyle = view => ({
     background: activeView === view ? 'rgba(255,255,255,0.22)' : 'transparent',
     color: '#fff',
@@ -773,9 +779,9 @@ function AppIntegrated() {
           <span className="app-header__title" style={{ color: '#fff', fontWeight: '800', fontSize: '1.18rem', letterSpacing: '0.02em' }}>{appTitle}</span>
           <VersionBadge />
           {user && !authLoading && (
-            role.admin ? <Badge text="ADMIN" color="#c62828" /> :
-            role.approved ? <Badge text="APPROVED" color="#2e7d32" /> :
-            <Badge text="PENDING" color="#e65100" />
+            role.admin ? <RoleBadge text="ADMIN" color="#c62828" /> :
+            role.approved ? <RoleBadge text="APPROVED" color="#2e7d32" /> :
+            <RoleBadge text="PENDING" color="#e65100" />
           )}
         </div>
 
