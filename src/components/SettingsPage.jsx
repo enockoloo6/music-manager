@@ -1,3 +1,5 @@
+import VersionBadge from './VersionBadge';
+
 function SettingsPage({
   appTitle = 'Music Manager',
   defaultKeyboardId = '',
@@ -55,6 +57,13 @@ function SettingsPage({
               </option>
             ))}
           </select>
+        </div>
+
+        <div>
+          <label>App Version</label>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <VersionBadge variant="settings" />
+          </div>
         </div>
       </div>
     </section>

@@ -82,6 +82,11 @@ Implemented:
 * Public library filtering ignores stale category state after logout.
 * Mobile song titles keep a strong bold weight to match desktop scanning.
 * Save Recording is green after audio capture so the save action is easier to spot.
+* Added a logged-in Manual view with quick usage guidance.
+* Moved the app version badge from the header into Settings.
+* Missing Lyrics and Audio actions now use amber emphasis so incomplete song details are easier to spot.
+* Song card headers and outlines use a deeper blue treatment for better visibility.
+* Lyrics Mode song titles are larger, bolder, and higher contrast.
 
 Public audio visibility depends on applying the public read migration to the active Supabase project.
 The migration file exists at `supabase/migrations/20260714_public_audio_read_access.sql`; applying it requires Supabase CLI authentication or a Postgres admin connection string.

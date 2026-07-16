@@ -105,6 +105,10 @@ Verify:
 * Duplicate Song copies lyrics and beat settings.
 * Multiple beats can be managed from the Beats or More action.
 * Favorite/preferred and Worship/Praise/Other beat labels can be saved.
+* Manual view opens for logged-in users.
+* App version appears in Settings.
+* Missing Lyrics and Audio actions are visibly emphasized.
+* Song card background and Lyrics Mode title remain easy to see.
 
 ---
 

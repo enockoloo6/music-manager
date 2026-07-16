@@ -28,7 +28,11 @@
 
 .lyrics-mode__topbar h1 {
   margin: 0;
-  font-size: 1.3rem;
+  color: #ffffff;
+  font-size: 1.55rem;
+  font-weight: 900;
+  line-height: 1.15;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.35);
 }
 
 .lyrics-mode__topbar button {

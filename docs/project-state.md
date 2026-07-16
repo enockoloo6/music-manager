@@ -151,6 +151,11 @@ Implemented direction:
 * Public library filtering ignores stale category state after logout.
 * Mobile song names keep a bold visual weight matching desktop.
 * Save Recording is green after audio capture to make the save action easier to find.
+* Logged-in users can open a Manual view from the header for quick usage guidance.
+* The app version is shown in Settings instead of the primary header.
+* Missing Lyrics and Audio actions use amber emphasis to make incomplete song details easier to spot.
+* Song card headers and outlines use a deeper blue treatment so the song background is more visible.
+* Lyrics Mode displays the song title with stronger contrast and visual weight.
 
 ---
 

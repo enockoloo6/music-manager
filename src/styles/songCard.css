@@ -1,5 +1,11 @@
 .song-card {
+  border-color: #9ec7df;
+  box-shadow: 0 1px 6px rgba(49, 90, 120, 0.14);
   overflow: hidden;
+}
+
+.song-card .song-card__header {
+  background: #c8e4f3;
 }
 
 .song-card__header {
@@ -33,6 +39,19 @@
   color: #315a78;
   text-decoration: underline;
   text-underline-offset: 3px;
+}
+
+.song-card__actions .song-card__link-action--needed {
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  color: #8a4b00;
+  padding: 0;
+  text-decoration: underline;
+  text-decoration-color: #f2b84b;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+  box-shadow: none;
 }
 
 .song-card__actions .song-card__link-action--active {
@@ -116,7 +135,9 @@
 
 @media (max-width: 768px) {
   .song-card .song-title {
+    font-size: 1.14rem;
     font-weight: 900 !important;
+    line-height: 1.18;
   }
 
   .song-card__actions {

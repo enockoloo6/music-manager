@@ -78,7 +78,7 @@ function SongCard({
     <div className="card song-card">
       <div className="card-header song-card__header">
         <div className="song-card__title-wrap">
-          <span className="song-title">{song.song_name}</span>
+          <strong className="song-title">{song.song_name}</strong>
         </div>
 
         <div className="song-card__actions no-print">
@@ -89,7 +89,7 @@ function SongCard({
           ) : role?.approved ? (
             <button
               type="button"
-              className={`song-card__link-action${isEditingLyrics ? ' song-card__link-action--active' : ''}`}
+              className={`song-card__link-action song-card__link-action--needed${isEditingLyrics ? ' song-card__link-action--active' : ''}`}
               onClick={() => onEditLyrics?.(song)}
               aria-expanded={isEditingLyrics}
             >
@@ -100,7 +100,7 @@ function SongCard({
           {canOpenAudio && (
             <button
               type="button"
-              className={`song-card__link-action${showAudio ? ' song-card__link-action--active' : ''}`}
+              className={`song-card__link-action${hasAudio ? '' : ' song-card__link-action--needed'}${showAudio ? ' song-card__link-action--active' : ''}`}
               onClick={() => setShowAudio(current => !current)}
               aria-expanded={showAudio}
             >

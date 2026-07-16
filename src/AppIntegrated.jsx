@@ -4,12 +4,12 @@ import { supabase } from './supabaseClient';
 import AdminPage from './components/AdminPage';
 import AppFooter from './components/AppFooter';
 import LyricsMode from './components/LyricsMode';
+import ManualPage from './components/ManualPage';
 import OfflineBanner from './components/OfflineBanner';
 import ReportsPage from './components/ReportsPage';
 import SearchBar from './components/SearchBar';
 import SettingsPage from './components/SettingsPage';
 import SongCard from './components/SongCard';
-import VersionBadge from './components/VersionBadge';
 
 import useOnlineStatus from './hooks/useOnlineStatus';
 import { loadCachedValue, saveCachedValue } from './services/offlineCacheService';
@@ -18,6 +18,7 @@ import { songMatchesSearch, updateSongLyrics } from './services/songLyricsServic
 import './styles/appFooter.css';
 import './styles/lyricsEditor.css';
 import './styles/lyricsMode.css';
+import './styles/manualPage.css';
 import './styles/offlineBanner.css';
 import './styles/searchBar.css';
 import './styles/songCard.css';
@@ -648,6 +649,13 @@ function AppIntegrated() {
     setActiveView('reports');
   }
 
+  function openManualView() {
+    setShowAddForm(false);
+    cancelSongEdit();
+    setEditingLyricsSong(null);
+    setActiveView('manual');
+  }
+
   const songNameOptions = useMemo(
     () => [...new Set(songs.map(song => song.song_name))].sort(),
     [songs]
@@ -752,7 +760,7 @@ function AppIntegrated() {
         label { font-size: 0.76rem; font-weight: 700; color: #4a5568; display: block; margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.03em; }
         .card { border: 1px solid #e2e8f0; border-radius: 11px; overflow: hidden; background: white; margin-bottom: 13px; box-shadow: 0 1px 5px rgba(0,0,0,0.07); }
         .card-header { background: #dceff8; padding: 11px 16px; display: flex; justify-content: space-between; align-items: center; }
-        .song-title { font-size: 1.08rem; font-weight: 800; color: #17324d; letter-spacing: 0.01em; }
+        .song-title { display: inline-block; font-size: 1.08rem; font-weight: 900; color: #17324d; letter-spacing: 0.01em; line-height: 1.2; }
         .beat-count-badge { background: rgba(23,50,77,0.1); color: #315a78; font-size: 0.7rem; padding: 2px 8px; border-radius: 10px; margin-left: 8px; }
         .beat-row { padding: 11px 16px; border-bottom: 1px solid #f0f4f8; }
         .beat-row:last-child { border-bottom: none; }
@@ -777,7 +785,6 @@ function AppIntegrated() {
         <div className="app-header__brand" style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
           <span className="app-header__mark" style={{ fontSize: '1.5rem' }}>♫</span>
           <span className="app-header__title" style={{ color: '#fff', fontWeight: '800', fontSize: '1.18rem', letterSpacing: '0.02em' }}>{appTitle}</span>
-          <VersionBadge />
           {user && !authLoading && (
             role.admin ? <RoleBadge text="ADMIN" color="#c62828" /> :
             role.approved ? <RoleBadge text="APPROVED" color="#2e7d32" /> :
@@ -803,6 +810,11 @@ function AppIntegrated() {
                 </button>
               )}
             </>
+          )}
+          {user && !authLoading && (
+            <button type="button" onClick={openManualView} style={navButtonStyle('manual')}>
+              Manual
+            </button>
           )}
           {user ? (
             <button onClick={() => supabase.auth.signOut()} style={{ background: '#c62828', color: 'white', padding: '7px 14px', fontSize: '0.83rem' }}>
@@ -941,6 +953,10 @@ function AppIntegrated() {
             songs={songs}
             keyboards={keyboards}
           />
+        )}
+
+        {user && !authLoading && activeView === 'manual' && (
+          <ManualPage isAdmin={role.admin} />
         )}
 
         {role.approved && activeView === 'library' && showAddForm && (
