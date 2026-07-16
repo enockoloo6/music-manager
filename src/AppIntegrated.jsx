@@ -783,7 +783,7 @@ function AppIntegrated() {
 
       <div className="app-header" style={{ background: 'linear-gradient(90deg,#0d1b6e 0%,#1a237e 100%)', padding: '12px 22px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap', boxShadow: '0 2px 8px rgba(0,0,0,0.2)' }}>
         <div className="app-header__brand" style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-          <span className="app-header__mark" style={{ fontSize: '1.5rem' }}>♫</span>
+          <span className="app-header__mark" style={{ color: '#fff', display: 'inline-flex', alignItems: 'center', fontSize: '1.85rem', fontWeight: 900, lineHeight: 1, textShadow: '0 2px 8px rgba(0,0,0,0.35)' }}>♫</span>
           <span className="app-header__title" style={{ color: '#fff', fontWeight: '800', fontSize: '1.18rem', letterSpacing: '0.02em' }}>{appTitle}</span>
           {user && !authLoading && (
             role.admin ? <RoleBadge text="ADMIN" color="#c62828" /> :

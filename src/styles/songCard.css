@@ -23,6 +23,11 @@
   flex-wrap: wrap;
 }
 
+.song-card .song-title {
+  color: #102f4a !important;
+  font-weight: 900 !important;
+}
+
 .song-card__actions {
   display: flex;
   gap: 8px;
@@ -134,10 +139,12 @@
 }
 
 @media (max-width: 768px) {
-  .song-card .song-title {
-    font-size: 1.14rem;
+  .card.song-card .song-card__header .song-card__title-wrap .song-title {
+    color: #102f4a !important;
+    font-size: 1.2rem !important;
     font-weight: 900 !important;
     line-height: 1.18;
+    text-shadow: 0 0 0 #102f4a;
   }
 
   .song-card__actions {
