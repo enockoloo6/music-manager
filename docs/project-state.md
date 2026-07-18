@@ -102,6 +102,8 @@ Implemented direction:
 * Admin-only user management lives on an Admin page instead of the main library page.
 * Reports-only information moves to a Reports page instead of the main library page.
 * Category filters are collapsed until needed.
+* Library search stays visible, while Sort, Category, and Added by controls are tucked behind a Filters toggle.
+* Add Song sits after Search and opens the add form directly below its button with filters out of the way.
 * Song-card secondary actions are grouped so the primary song list stays compact.
 * Audio controls are opened on demand instead of rendering on every song card.
 * Logged-out users do not trigger audio permission errors.
@@ -117,11 +119,15 @@ Implemented direction:
 * Add/Edit Lyrics opens inside the selected song card, beside the song context, not as a separate panel above the library list.
 * Lyrics Mode close action is prominent.
 * Lyrics Mode can be closed with Escape.
+* Mobile back closes Lyrics Mode and returns to the library before the browser/app can leave the page.
+* Lyrics Mode loads the song's playable audio attachment and keeps a compact audio player visible while lyrics are read.
 * Lyrics printing should include only the lyrics content and no blank app-layout pages.
 * Approved users can edit the song name inline from the song card.
 * Open song-card actions, such as Hide Audio, are visually stronger than inactive action links.
 * Audio follows the same empty-state pattern as lyrics: approved users see Add Audio when no audio exists.
 * Open inline song-card actions use the same active visual treatment across lyrics, audio, and More.
+* Opening one song-card section closes the other open sections on that card so Lyrics, Audio, Beats, and More do not compete.
+* Duplicate, hide/show, delete song, remove beat, delete audio, and Mark Presented use app-owned modals instead of browser prompts or confirms.
 * Library defaults to latest-added songs first, using the newest beat timestamp available for each song.
 * Compact library sort and category controls sit beside the song count for logged-in users.
 * Public users can sort and search the library, but Category filtering and song counts are hidden.
@@ -129,12 +135,15 @@ Implemented direction:
 * Logged-in users can filter songs by contributor email.
 * New songs store the profile id of the user who first added the song.
 * Existing songs are backfilled to `ngoziredorcas@gmail.com` as contributor.
+* Approved users see a minimal light-blue Song Steward greeting with their display name, auto-rotating KJV encouragement verse, hide control, and a warm heart marker.
 * Admins can set the visible app title from Settings.
+* Admin user-management actions visually distinguish calm approval from pastel dangerous revoke/remove-admin actions and sensitive admin grants.
 * The default app title and Android install name should be `Music Manager`.
 * The header uses a music-focused mark instead of a piano-specific icon.
-* The app has basic install metadata for Android and a read-only local cache for library data, but offline audio caching and offline save/sync are not implemented yet.
+* The app has basic install metadata for Android, a read-only local cache for library data, and IndexedDB audio caching for offline playback after online access.
 * Mobile layout keeps the header, library filters, and song-card actions stacked without horizontal overflow.
 * Approved users can duplicate an existing song, including lyrics and beat settings, then edit the copy.
+* Song duplication lets users choose which parts to copy: lyrics, beat settings, song metadata, and presentation planning.
 * Songs can have multiple beats; beats open from a Beats action instead of always crowding the card.
 * Public users see that beat-details action as More.
 * Beats can be marked as favorite/preferred and labelled for Worship, Praise, or other use.
@@ -153,9 +162,21 @@ Implemented direction:
 * Save Recording is green after audio capture to make the save action easier to find.
 * Logged-in users can open a Manual view from the header for quick usage guidance.
 * The app version is shown in Settings instead of the primary header.
-* Missing Lyrics and Audio actions use amber emphasis to make incomplete song details easier to spot.
+* Missing Lyrics and Audio actions remain link-style actions with a softer visible color emphasis.
 * Song card headers and outlines use a deeper blue treatment so the song background is more visible.
 * Lyrics Mode displays the song title with stronger contrast and visual weight.
+* Admins can highlight songs so they receive a muted warm card treatment in the library.
+* Admins can hide songs from non-admin library views without deleting them.
+* Admins can mark songs with a presentation date, visible from the song More panel only when the song is highlighted.
+* Presentation planning stores the admin who last updated the planning state.
+* Approved users and admins can mark songs as presented from an in-app modal, creating dated presentation-history rows.
+* Highlighted songs with overdue presentation dates trigger an in-app reminder modal until marked presented, with Remind Later quieting it for the day.
+* Logged-in users can open Song Stats from a song More panel to see presentation count and dates.
+* Song More actions keep Delete Song last after edit, duplicate, lyrics, Mark Presented, and Song Stats actions.
+* Reports show most-presented songs so the team can see repeated favorites over time.
+* Highlighted songs display first in the library, ordered by earliest presentation date before the normal library sort is applied.
+* Public highlighted songs use a single More action that opens presentation and beat details together, avoiding duplicate More links.
+* `enockoloo6@gmail.com` is treated as the protected account, receives a PROTECTED badge, and remains approved/admin even if profile flags are stale.
 
 ---
 
@@ -187,7 +208,8 @@ Only create a beat/style record when beat details are provided.
 Keep default settings outside the main library workflow.
 Keep admin management outside the main library workflow.
 Keep reports, secondary actions, and audio management outside the first-view song entry workflow.
-Use pastel colors for content surfaces and reserve dark header color for global navigation only.
+Use a soft blue and light-blue theme for content surfaces and reserve dark header color for global navigation only.
+Use song-level planning flags for visibility, highlighting, and presentation scheduling instead of duplicating songs.
 
 ---
 
@@ -216,10 +238,10 @@ Only incremental refactoring.
 ## Offline Audio and Sync
 
 Read-only local cache exists for library data.
+Audio files are saved in IndexedDB for offline playback after online access. On Wi-Fi the app saves audio without a data warning; on mobile or unknown network types, it shows the estimated audio size before saving.
 
 Not implemented yet:
 
-* Offline audio file caching
 * Offline song, lyric, beat, or audio edits
 * Save queue and later synchronization
 

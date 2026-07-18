@@ -1,4 +1,5 @@
 import LibraryStats from './LibraryStats';
+import MostPresentedSongs from './MostPresentedSongs';
 import RecentAdditions from './RecentAdditions';
 
 function ReportsPage({ recentAdditions = [], songs = [], keyboards = [] }) {
@@ -10,6 +11,7 @@ function ReportsPage({ recentAdditions = [], songs = [], keyboards = [] }) {
         </h2>
 
         <LibraryStats songs={songs} keyboards={keyboards} />
+        <MostPresentedSongs songs={songs} />
         <RecentAdditions items={recentAdditions} />
       </div>
     </section>

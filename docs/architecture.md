@@ -11,6 +11,13 @@ Current relationships:
 Song
 ├─ Lyrics
 ├─ Audio
+├─ Planning flags
+│  ├─ Highlighted
+│  ├─ Hidden
+│  └─ Presentation date
+├─ Presentation history
+│  ├─ Presented date
+│  └─ Marked by
 └─ Styles / Beats
    ├─ Keyboard
    ├─ Tempo
@@ -20,6 +27,8 @@ Song
    └─ Worship/Praise/Other use label
 
 Beats are optional attachments. A song can exist before lyrics, audio, or beat details are added.
+Song visibility, highlighting, and presentation scheduling live on the song record because they describe the song as a library item, not an individual beat.
+Presentation history lives in `music_manager.song_presentations` because a song can be presented repeatedly on different dates.
 
 ---
 
@@ -126,11 +135,13 @@ Current behavior:
 * Songs without audio hide the audio action for public users.
 * Approved users can add audio inline when a song has no audio.
 * Audio recording uses a standard maximum duration with a visible timer.
+* Audio files can be saved in IndexedDB for offline playback after online access.
+* Mobile or unknown network types show an estimated data warning before saving offline audio.
 
 Future:
 
-* Optional offline audio caching
 * More detailed recording metadata
+* Offline audio cache management controls
 
 Audio playback policy to be reviewed.
 

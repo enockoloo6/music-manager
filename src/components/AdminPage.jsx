@@ -4,13 +4,14 @@ function AdminPage({
   onToggleStatus
 }) {
   return (
-    <section className="panel no-print" style={{ borderLeft: '4px solid #c62828', marginBottom: '18px' }}>
-      <h2 style={{ margin: '0 0 8px', color: '#b71c1c', fontSize: '1.05rem' }}>
+    <section className="panel no-print" style={{ borderLeft: '4px solid #315a78', marginBottom: '18px' }}>
+      <h2 style={{ margin: '0 0 8px', color: '#102f4a', fontSize: '1.05rem' }}>
         Admin
       </h2>
 
       <p style={{ fontSize: '0.81rem', color: '#666', margin: '0 0 12px' }}>
         <strong>Approve</strong> lets a user add and edit. <strong>Make Admin</strong> grants user management.
+        Revoke and admin changes are sensitive actions. The protected account cannot be demoted or removed here.
       </p>
 
       {profiles.length === 0 && (
@@ -35,7 +36,7 @@ function AdminPage({
               justifyContent: 'space-between',
               alignItems: 'center',
               padding: '9px 0',
-              borderBottom: '1px solid #fbe9e7',
+              borderBottom: '1px solid #e8eef4',
               gap: '12px',
               flexWrap: 'wrap'
             }}
@@ -43,9 +44,11 @@ function AdminPage({
             <div>
               <span style={{ fontSize: '0.88rem' }}>{profile.email}</span>
               {protectedUser ? (
-                <span style={{ marginLeft: 8, fontSize: '0.68rem', background: '#b71c1c', color: 'white', padding: '2px 7px', borderRadius: 10 }}>
-                  PROTECTED
-                </span>
+                <>
+                  <span style={{ marginLeft: 8, fontSize: '0.68rem', background: '#c8e4f3', color: '#102f4a', padding: '2px 7px', borderRadius: 10, fontWeight: 900 }}>
+                    PROTECTED
+                  </span>
+                </>
               ) : (
                 <span style={{ marginLeft: 8, fontSize: '0.68rem', color: '#999' }}>
                   {statusText}
@@ -54,11 +57,12 @@ function AdminPage({
             </div>
 
             {!protectedUser && (
-              <div style={{ display: 'flex', gap: '5px' }}>
+              <div className="admin-user-actions">
                 <button
                   type="button"
                   onClick={() => onToggleStatus?.(profile.id, 'is_approved', profile.is_approved)}
-                  style={{ fontSize: '0.72rem', background: profile.is_approved ? '#ef6c00' : '#2e7d32', color: 'white', padding: '4px 10px' }}
+                  className={profile.is_approved ? 'admin-user-actions__button admin-user-actions__button--danger' : 'admin-user-actions__button admin-user-actions__button--approve'}
+                  title={profile.is_approved ? 'Remove this user access to add and edit songs' : 'Allow this user to add and edit songs'}
                 >
                   {profile.is_approved ? 'Revoke' : 'Approve'}
                 </button>
@@ -66,7 +70,8 @@ function AdminPage({
                 <button
                   type="button"
                   onClick={() => onToggleStatus?.(profile.id, 'is_admin', profile.is_admin)}
-                  style={{ fontSize: '0.72rem', background: profile.is_admin ? '#455a64' : '#4527a0', color: 'white', padding: '4px 10px' }}
+                  className={profile.is_admin ? 'admin-user-actions__button admin-user-actions__button--danger' : 'admin-user-actions__button admin-user-actions__button--admin'}
+                  title={profile.is_admin ? 'Remove user management powers from this user' : 'Grant user management powers to this user'}
                 >
                   {profile.is_admin ? 'Remove Admin' : 'Make Admin'}
                 </button>

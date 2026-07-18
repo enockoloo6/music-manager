@@ -23,7 +23,7 @@ This means the app can show the last saved copy of songs, lyrics, keyboards, and
 
 Status:
 
-Implemented as a foundation. The app currently keeps read-only cached library data available locally after online use.
+Implemented as a foundation. The app currently keeps read-only cached library data available locally after online use, and saves audio files in IndexedDB for offline playback after online access.
 
 ## Why Read-Only First
 
@@ -58,19 +58,21 @@ The app can expose install metadata using:
 - offline fallback
 - cached app shell
 
-This does not mean audio or edits are available offline.
+Audio can be available offline after it has been saved locally. Edits are not available offline.
 
 Current app name and install metadata use `Music Manager`.
 
-## Future Audio Offline Support
+## Audio Offline Support
 
-Audio files can become large, so do not cache all audio automatically.
+Audio files can become large, so mobile or unknown network types get an estimated data warning before saving. On Wi-Fi, the app saves audio for offline playback without the data warning.
 
-Better approach:
+Implemented:
 
-- user marks selected songs as available offline
-- only selected audio files are cached
-- show cache size/status
+- library-wide audio preparation after online song sync
+- selected song audio caching when opened
+- Lyrics Mode audio caching and offline fallback
+- IndexedDB blob storage
+- estimated cache size before mobile or unknown data use
 
 ## Future Files
 
@@ -96,6 +98,6 @@ Start with safe read-only offline viewing first.
 Current status:
 
 - Read-only cache for songs, lyrics, keyboards, and app title is implemented using browser storage.
-- Offline audio caching is not implemented.
+- Offline audio playback cache is implemented.
 - Offline save and later synchronization is not implemented.
 - Android install metadata is a separate step from full offline capability.

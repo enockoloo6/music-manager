@@ -120,7 +120,7 @@ Implemented:
 * Inline Add Lyrics and Add Audio actions for approved users
 * Latest-added sorting, category filtering, and contributor filtering
 * Configurable app title and Android install name: Music Manager
-* Read-only local cache foundation
+* Read-only local cache foundation with IndexedDB audio caching for offline playback
 * Song duplication
 * Multiple beat support with favorite/preferred and Worship/Praise/Other labels
 * Public beat-details action labelled More
@@ -135,8 +135,8 @@ Recent commits:
 
 # Known Issues
 
-Offline audio caching and offline edit synchronization are not implemented.
-The current offline work is read-only cache support for library data.
+Offline audio playback cache is implemented after online access.
+Offline edit synchronization is not implemented.
 
 ---
 
@@ -157,11 +157,10 @@ Not full lyrics previews or status badges.
 # High Priority Roadmap
 
 1. Finish full regression testing
-2. Improve offline audio caching design
-3. Add offline save and sync queue
-4. Continue extracting AppIntegrated.jsx
-5. Extend Reports and audit views
-6. Polish microphone recording on mobile
+2. Add offline save and sync queue
+3. Continue extracting AppIntegrated.jsx
+4. Extend Reports and audit views
+5. Polish microphone recording on mobile
 
 ---
 
@@ -174,6 +173,7 @@ Lyrics
 Beats
 Keyboards
 Categories
+Audio files
 
 should remain available offline.
 
@@ -185,7 +185,7 @@ Preferred stack:
 
 Current implementation:
 
-Read-only local cache foundation only. Audio files and offline edits are future work.
+Read-only local cache foundation with IndexedDB audio caching. Offline edits are future work.
 
 ---
 

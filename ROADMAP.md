@@ -39,6 +39,7 @@ Cache:
 * Beats
 * Keyboards
 * Categories
+* Audio files after online access
 
 Technology:
 
@@ -55,7 +56,6 @@ Works Offline
 
 Current limitations:
 
-* Audio files are not cached offline.
 * Offline edits are not queued or synchronized.
 
 ---
@@ -144,3 +144,9 @@ Beats
 Practice
 
 platform rather than a simple beat repository.
+
+---
+
+## Future Todo
+
+* Offline playlists from cached songs, with background playback while the app is open or minimized where the browser allows it. Use Media Session controls for lock-screen playback. Fully closed-app playlist continuation is not reliable in a browser/PWA and would require a native Android app for stronger support.

@@ -52,6 +52,16 @@ export async function fetchSongAudio(songId) {
   return attachSignedUrls(data || []);
 }
 
+export async function fetchAllSongAudio() {
+  const { data, error } = await supabase
+    .from('song_audio')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (error) throw error;
+  return attachSignedUrls(data || []);
+}
+
 export async function uploadSongAudio({ songId, file, userId }) {
   requireSongId(songId);
 

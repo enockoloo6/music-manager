@@ -26,6 +26,20 @@ function beatDisplayName(style) {
   return category ? `${style.beat_name} (${category})` : style.beat_name;
 }
 
+function formatPresentationDate(value) {
+  if (!value) return '';
+
+  const date = new Date(`${value}T00:00:00`);
+  if (Number.isNaN(date.getTime())) return value;
+
+  return date.toLocaleDateString(undefined, {
+    weekday: 'short',
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric'
+  });
+}
+
 function SongCard({
   song,
   role,
@@ -36,6 +50,10 @@ function SongCard({
   onDeleteSong,
   onDeleteBeat,
   onDuplicateSong,
+  onMarkPresented,
+  onOpenSongStats,
+  onRequestSongVisibilityChange,
+  onUpdateSongPlanning,
   onStartSongEdit,
   onCancelSongEdit,
   onSaveSongEdit,
@@ -59,9 +77,19 @@ function SongCard({
   const hasLyrics = Boolean(getFirstLyricLine(song.lyrics));
   const hasAudio = (song.song_audio?.length || 0) > 0;
   const hasBeats = (song.styles?.length || 0) > 0;
+  const hasPresentationDate = Boolean(song.is_highlighted && song.presentation_date);
+  const presentationCount = song.song_presentations?.length || 0;
+  const canManageSong = Boolean(role?.approved || role?.admin);
   const canOpenAudio = hasAudio || canManageAudio;
-  const hasMoreActions = Boolean(role?.approved || role?.admin);
-  const beatsActionLabel = role?.approved || role?.admin ? 'Beats' : 'More';
+  const hasPublicDetails = !canManageSong && Boolean(hasBeats || hasPresentationDate);
+  const hasMoreActions = Boolean(canManageSong || hasPublicDetails);
+  const showPublicDetails = hasPublicDetails && showMore;
+  const cardClasses = [
+    'card',
+    'song-card',
+    song.is_highlighted ? 'song-card--highlighted' : '',
+    song.is_hidden ? 'song-card--hidden' : ''
+  ].filter(Boolean).join(' ');
 
   const inputStyle = {
     padding: '6px 8px',
@@ -74,23 +102,83 @@ function SongCard({
     margin: 0
   };
 
+  function openLyricsEditor() {
+    setShowMore(false);
+    setShowAudio(false);
+    setShowBeats(false);
+    onEditLyrics?.(song);
+  }
+
+  function openLyricsMode() {
+    setShowMore(false);
+    setShowAudio(false);
+    setShowBeats(false);
+    onOpenLyrics?.(song);
+  }
+
+  function toggleAudio() {
+    setShowAudio(current => {
+      const nextOpen = !current;
+      if (nextOpen) {
+        setShowMore(false);
+        setShowBeats(false);
+        onEditLyrics?.(null);
+      }
+      return nextOpen;
+    });
+  }
+
+  function toggleBeats() {
+    setShowBeats(current => {
+      const nextOpen = !current;
+      if (nextOpen) {
+        setShowMore(false);
+        setShowAudio(false);
+        onEditLyrics?.(null);
+      }
+      return nextOpen;
+    });
+  }
+
+  function toggleMore() {
+    setShowMore(current => {
+      const nextOpen = !current;
+      if (nextOpen) {
+        setShowAudio(false);
+        setShowBeats(false);
+        onEditLyrics?.(null);
+      }
+      return nextOpen;
+    });
+  }
+
   return (
-    <div className="card song-card">
+    <div className={cardClasses}>
       <div className="card-header song-card__header">
         <div className="song-card__title-wrap">
           <strong className="song-title">{song.song_name}</strong>
+          {song.is_highlighted && (
+            <span className="song-card__status song-card__status--highlighted">
+              Highlighted
+            </span>
+          )}
+          {song.is_hidden && role?.admin && (
+            <span className="song-card__status song-card__status--hidden">
+              Hidden
+            </span>
+          )}
         </div>
 
         <div className="song-card__actions no-print">
           {hasLyrics ? (
-            <button type="button" className="song-card__link-action" onClick={() => onOpenLyrics?.(song)}>
+            <button type="button" className="song-card__link-action" onClick={openLyricsMode}>
               Lyrics
             </button>
           ) : role?.approved ? (
             <button
               type="button"
               className={`song-card__link-action song-card__link-action--needed${isEditingLyrics ? ' song-card__link-action--active' : ''}`}
-              onClick={() => onEditLyrics?.(song)}
+              onClick={openLyricsEditor}
               aria-expanded={isEditingLyrics}
             >
               Add Lyrics
@@ -101,21 +189,21 @@ function SongCard({
             <button
               type="button"
               className={`song-card__link-action${hasAudio ? '' : ' song-card__link-action--needed'}${showAudio ? ' song-card__link-action--active' : ''}`}
-              onClick={() => setShowAudio(current => !current)}
+              onClick={toggleAudio}
               aria-expanded={showAudio}
             >
               {showAudio ? 'Hide Audio' : hasAudio ? 'Audio' : 'Add Audio'}
             </button>
           )}
 
-          {hasBeats && (
+          {hasBeats && canManageSong && (
             <button
               type="button"
               className={`song-card__link-action${showBeats ? ' song-card__link-action--active' : ''}`}
-              onClick={() => setShowBeats(current => !current)}
+              onClick={toggleBeats}
               aria-expanded={showBeats}
             >
-              {showBeats ? `Hide ${beatsActionLabel}` : beatsActionLabel}
+              {showBeats ? 'Hide Beats' : 'Beats'}
             </button>
           )}
 
@@ -123,53 +211,120 @@ function SongCard({
             <button
               type="button"
               className={`song-card__link-action${showMore ? ' song-card__link-action--active' : ''}`}
-              onClick={() => setShowMore(current => !current)}
+              onClick={toggleMore}
               aria-expanded={showMore}
             >
-              More
+              {showMore ? 'Hide More' : 'More'}
             </button>
           )}
         </div>
       </div>
 
-      {showMore && (
-        <div className="song-card__more no-print" style={{ display: 'flex', gap: '7px', flexWrap: 'wrap', padding: '9px 16px', borderBottom: '1px solid #eef2f7', background: '#f8fafc' }}>
-          {role?.approved && (
-            <button
-              type="button"
-              onClick={() => onStartSongEdit?.(song)}
-            >
-              Edit Song
-            </button>
-          )}
-
-          {role?.approved && (
-            <button
-              type="button"
-              onClick={() => onDuplicateSong?.(song)}
-              disabled={saving}
-            >
-              Duplicate Song
-            </button>
-          )}
-
-          {role?.approved && hasLyrics && (
-            <button
-              type="button"
-              onClick={() => onEditLyrics?.(song)}
-            >
-              Edit Lyrics
-            </button>
+      {showMore && (canManageSong || hasPresentationDate) && (
+        <div className="song-card__more no-print">
+          {hasPresentationDate && (
+            <div className="song-card__presentation">
+              <span className="song-card__presentation-label">Presentation</span>
+              <strong>{formatPresentationDate(song.presentation_date)}</strong>
+              {song.presentation_owner?.email && (
+                <span>Marked by {song.presentation_owner.email}</span>
+              )}
+            </div>
           )}
 
           {role?.admin && (
-            <button
-              type="button"
-              onClick={() => onDeleteSong?.(song.id)}
-              className="song-card__delete"
-            >
-              Delete Song
-            </button>
+            <div className="song-card__planning">
+              <label>
+                <input
+                  type="checkbox"
+                  checked={Boolean(song.is_highlighted)}
+                  onChange={event => onUpdateSongPlanning?.(song.id, { is_highlighted: event.target.checked })}
+                  disabled={saving}
+                />
+                Highlight song
+              </label>
+
+              <label>
+                <input
+                  type="checkbox"
+                  checked={Boolean(song.is_hidden)}
+                  onChange={event => onRequestSongVisibilityChange?.(song, event.target.checked)}
+                  disabled={saving}
+                />
+                Hide from library
+              </label>
+
+              <label>
+                Presentation date
+                <input
+                  type="date"
+                  value={song.presentation_date || ''}
+                  onChange={event => onUpdateSongPlanning?.(song.id, { presentation_date: event.target.value })}
+                  disabled={saving}
+                />
+              </label>
+            </div>
+          )}
+
+          {canManageSong && (
+            <div className="song-card__more-actions">
+              {role?.approved && (
+                <button
+                  type="button"
+                  onClick={() => onStartSongEdit?.(song)}
+                >
+                  Edit Song
+                </button>
+              )}
+
+              {role?.approved && (
+                <button
+                  type="button"
+                  onClick={() => onDuplicateSong?.(song)}
+                  disabled={saving}
+                >
+                  Duplicate Song
+                </button>
+              )}
+
+              {role?.approved && hasLyrics && (
+                <button
+                  type="button"
+                  onClick={openLyricsEditor}
+                >
+                  Edit Lyrics
+                </button>
+              )}
+
+              {canManageSong && (
+                <button
+                  type="button"
+                  onClick={() => onMarkPresented?.(song)}
+                  disabled={saving}
+                >
+                  Mark Presented
+                </button>
+              )}
+
+              {canManageSong && (
+                <button
+                  type="button"
+                  onClick={() => onOpenSongStats?.(song)}
+                >
+                  Song Stats{presentationCount ? ` (${presentationCount})` : ''}
+                </button>
+              )}
+
+              {role?.admin && (
+                <button
+                  type="button"
+                  onClick={() => onDeleteSong?.(song)}
+                  className="song-card__delete"
+                >
+                  Delete Song
+                </button>
+              )}
+            </div>
           )}
         </div>
       )}
@@ -221,7 +376,7 @@ function SongCard({
         />
       )}
 
-      {showBeats && (
+      {(showBeats || showPublicDetails) && (
       <div>
         {song.styles?.length > 0 ? (
           song.styles.map((style, idx) => (
@@ -518,7 +673,7 @@ function SongCard({
 
                         <button
                           type="button"
-                          onClick={() => onDeleteBeat?.(style.id)}
+                          onClick={() => onDeleteBeat?.(style)}
                         >
                           Remove Beat
                         </button>

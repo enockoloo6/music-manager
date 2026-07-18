@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { supabase } from './supabaseClient';
+import { fetchAllSongAudio } from './services/songAudioService';
 
 import AdminPage from './components/AdminPage';
 import AppFooter from './components/AppFooter';
@@ -9,9 +10,16 @@ import OfflineBanner from './components/OfflineBanner';
 import ReportsPage from './components/ReportsPage';
 import SearchBar from './components/SearchBar';
 import SettingsPage from './components/SettingsPage';
+import SongStatsPage from './components/SongStatsPage';
 import SongCard from './components/SongCard';
 
 import useOnlineStatus from './hooks/useOnlineStatus';
+import {
+  buildAudioCacheEstimate,
+  cacheAudioFile,
+  getUncachedAudioItems,
+  shouldAskBeforeAudioCache
+} from './services/offlineAudioCacheService';
 import { loadCachedValue, saveCachedValue } from './services/offlineCacheService';
 import { songMatchesSearch, updateSongLyrics } from './services/songLyricsService';
 
@@ -32,6 +40,28 @@ const CACHE_KEYS = {
   KEYBOARDS: 'keyboards',
   SONGS: 'songs'
 };
+const DISMISSED_OVERDUE_PRESENTATIONS_KEY = 'music-manager-dismissed-overdue-presentations';
+const DISMISSED_OFFLINE_AUDIO_PROMPT_KEY = 'music-manager-dismissed-offline-audio-prompt';
+
+function todayDateString() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function loadDismissedOverduePresentations() {
+  if (typeof window === 'undefined') return [];
+
+  try {
+    const storedValue = window.localStorage.getItem(DISMISSED_OVERDUE_PRESENTATIONS_KEY);
+    return storedValue ? JSON.parse(storedValue) : [];
+  } catch {
+    return [];
+  }
+}
+
+function hasDismissedOfflineAudioPrompt() {
+  if (typeof window === 'undefined') return false;
+  return window.sessionStorage.getItem(DISMISSED_OFFLINE_AUDIO_PROMPT_KEY) === '1';
+}
 
 const EMPTY_FORM = {
   song_name: '',
@@ -47,6 +77,29 @@ const EMPTY_FORM = {
   notes: ''
 };
 
+const STEWARD_VERSES = [
+  {
+    text: 'Be ye stedfast, unmoveable, always abounding in the work of the Lord.',
+    reference: '1 Corinthians 15:58'
+  },
+  {
+    text: 'And whatsoever ye do, do it heartily, as to the Lord.',
+    reference: 'Colossians 3:23'
+  },
+  {
+    text: 'God is not unrighteous to forget your work and labour of love.',
+    reference: 'Hebrews 6:10'
+  },
+  {
+    text: 'Let us not be weary in well doing: for in due season we shall reap.',
+    reference: 'Galatians 6:9'
+  },
+  {
+    text: 'Serve the Lord with gladness: come before his presence with singing.',
+    reference: 'Psalm 100:2'
+  }
+];
+
 function getSongLatestTimestamp(song) {
   const styleTimes = (song.styles || [])
     .map(style => style.created_at ? new Date(style.created_at).getTime() : 0)
@@ -59,11 +112,188 @@ function getSongLatestTimestamp(song) {
   );
 }
 
+function getPresentationTimestamp(song) {
+  if (!song.presentation_date) return Number.POSITIVE_INFINITY;
+
+  const timestamp = new Date(`${song.presentation_date}T00:00:00`).getTime();
+  return Number.isNaN(timestamp) ? Number.POSITIVE_INFINITY : timestamp;
+}
+
+function getPresentationKey(song) {
+  return `${song.id}:${song.presentation_date || ''}:${todayDateString()}`;
+}
+
+function songWasPresentedOn(song, presentationDate) {
+  return (song.song_presentations || []).some(presentation => presentation.presented_on === presentationDate);
+}
+
 function RoleBadge({ text, color }) {
   return (
     <span style={{ background: color, color: '#fff', padding: '1px 6px', borderRadius: '10px', fontSize: '0.62rem', marginLeft: '4px', fontWeight: 600, opacity: 0.85 }}>
       {text}
     </span>
+  );
+}
+
+function getDisplayName(emailAddress) {
+  const localPart = emailAddress?.split('@')[0] || 'Song Steward';
+  return localPart
+    .replace(/[._-]+/g, ' ')
+    .replace(/\d+/g, '')
+    .trim()
+    .split(' ')
+    .filter(Boolean)
+    .map(part => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+    .join(' ') || 'Song Steward';
+}
+
+function formatFriendlyDate(value) {
+  if (!value) return 'No date';
+
+  const date = new Date(`${value}T00:00:00`);
+  if (Number.isNaN(date.getTime())) return value;
+
+  return date.toLocaleDateString(undefined, {
+    weekday: 'short',
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric'
+  });
+}
+
+function PresentationPromptModal({
+  song,
+  mode = 'manual',
+  saving = false,
+  onConfirm,
+  onDismiss
+}) {
+  if (!song) return null;
+
+  const defaultDate = song.presentation_date || todayDateString();
+  const isOverdue = mode === 'overdue';
+
+  return (
+    <div className="presentation-modal no-print" role="dialog" aria-modal="true" aria-labelledby="presentation-modal-title">
+      <div className="presentation-modal__panel">
+        <div>
+          <span className="presentation-modal__eyebrow">
+            {isOverdue ? 'Presentation reminder' : 'Mark presented'}
+          </span>
+          <h2 id="presentation-modal-title">{song.song_name}</h2>
+          <p>
+            {isOverdue
+              ? `This highlighted song was due on ${formatFriendlyDate(song.presentation_date)}. Was it presented?`
+              : 'Choose the date this song was presented.'}
+          </p>
+        </div>
+
+        <form
+          onSubmit={event => {
+            event.preventDefault();
+            const formData = new FormData(event.currentTarget);
+            onConfirm?.(String(formData.get('presentedOn') || defaultDate));
+          }}
+        >
+          <label>
+            Presented date
+            <input type="date" name="presentedOn" defaultValue={defaultDate} required />
+          </label>
+
+          <div className="presentation-modal__actions">
+            <button type="submit" disabled={saving}>
+              {saving ? 'Saving...' : 'Yes, Mark Presented'}
+            </button>
+            <button type="button" onClick={onDismiss} disabled={saving}>
+              {isOverdue ? 'Remind Later' : 'Cancel'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function ActionModal({
+  modal,
+  saving = false,
+  onCancel,
+  onConfirm
+}) {
+  if (!modal) return null;
+
+  const hasInput = Boolean(modal.inputLabel);
+  const checkboxOptions = modal.checkboxOptions || [];
+
+  return (
+    <div className="app-modal no-print" role="dialog" aria-modal="true" aria-labelledby="app-modal-title">
+      <form
+        className="app-modal__panel"
+        onSubmit={event => {
+          event.preventDefault();
+          const formData = new FormData(event.currentTarget);
+          const checkedOptions = Object.fromEntries(
+            checkboxOptions.map(option => [option.name, formData.get(option.name) === 'on'])
+          );
+
+          onConfirm?.({
+            inputValue: hasInput ? String(formData.get('modalInput') || '') : undefined,
+            checkedOptions
+          });
+        }}
+      >
+        <div>
+          <span className="app-modal__eyebrow">{modal.eyebrow || 'Please confirm'}</span>
+          <h2 id="app-modal-title">{modal.title}</h2>
+          {modal.message && <p>{modal.message}</p>}
+        </div>
+
+        {hasInput && (
+          <label>
+            {modal.inputLabel}
+            <input
+              name="modalInput"
+              defaultValue={modal.inputValue || ''}
+              required={modal.inputRequired !== false}
+              autoFocus
+            />
+          </label>
+        )}
+
+        {checkboxOptions.length > 0 && (
+          <div className="app-modal__checks" aria-label={modal.checkboxLabel || 'Options'}>
+            {modal.checkboxLabel && <span>{modal.checkboxLabel}</span>}
+            {checkboxOptions.map(option => (
+              <label key={option.name}>
+                <input
+                  type="checkbox"
+                  name={option.name}
+                  defaultChecked={option.defaultChecked !== false}
+                  disabled={option.disabled}
+                />
+                <span>
+                  <strong>{option.label}</strong>
+                  {option.description && <small>{option.description}</small>}
+                </span>
+              </label>
+            ))}
+          </div>
+        )}
+
+        <div className="app-modal__actions">
+          <button
+            type="submit"
+            className={modal.danger ? 'app-modal__danger' : ''}
+            disabled={saving}
+          >
+            {saving ? 'Working...' : modal.confirmText || 'Confirm'}
+          </button>
+          <button type="button" onClick={onCancel} disabled={saving}>
+            {modal.cancelText || 'Cancel'}
+          </button>
+        </div>
+      </form>
+    </div>
   );
 }
 
@@ -79,8 +309,9 @@ function AppIntegrated() {
   const [selectedContributor, setSelectedContributor] = useState('All');
   const [librarySort, setLibrarySort] = useState('latest');
   const [activeView, setActiveView] = useState('library');
+  const [statsSong, setStatsSong] = useState(null);
   const [user, setUser] = useState(null);
-  const [role, setRole] = useState({ approved: false, admin: false });
+  const [role, setRole] = useState({ approved: false, admin: false, owner: false });
   const [authMode, setAuthMode] = useState('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -90,12 +321,24 @@ function AppIntegrated() {
   const [defaultKeyboardId, setDefaultKeyboardId] = useState('');
   const [showLoginForm, setShowLoginForm] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
+  const [actionModal, setActionModal] = useState(null);
   const [editingId, setEditingId] = useState(null);
   const [editData, setEditData] = useState({});
   const [editingSongId, setEditingSongId] = useState(null);
   const [editSongName, setEditSongName] = useState('');
   const [lyricsSong, setLyricsSong] = useState(null);
   const [editingLyricsSong, setEditingLyricsSong] = useState(null);
+  const [presentationPromptSong, setPresentationPromptSong] = useState(null);
+  const [dismissedOverduePresentationKeys, setDismissedOverduePresentationKeys] = useState(loadDismissedOverduePresentations);
+  const [offlineAudioPrompt, setOfflineAudioPrompt] = useState(null);
+  const [offlineAudioSaving, setOfflineAudioSaving] = useState(false);
+  const [offlineAudioNotice, setOfflineAudioNotice] = useState('');
+  const [stewardVerseState, setStewardVerseState] = useState(() => ({
+    index: Math.floor(Math.random() * STEWARD_VERSES.length),
+    previous: []
+  }));
+  const [hideStewardPanel, setHideStewardPanel] = useState(false);
 
   const isOnline = useOnlineStatus();
 
@@ -130,7 +373,7 @@ function AppIntegrated() {
         setShowLoginForm(false);
       } else {
         setUser(null);
-        setRole({ approved: false, admin: false });
+        setRole({ approved: false, admin: false, owner: false });
         setShowAddForm(false);
         setSelectedCategory('All');
         setSelectedContributor('All');
@@ -148,16 +391,18 @@ function AppIntegrated() {
     try {
       const { data: profile, error } = await supabase
         .from('profiles')
-        .select('is_approved, is_admin, default_keyboard_id')
+        .select('is_approved, is_admin, is_super_admin, default_keyboard_id')
         .eq('id', userId)
         .maybeSingle();
 
       if (error) throw error;
 
       if (profile) {
+        const protectedOwner = userEmail === SUPER_ADMIN_EMAIL;
         const nextRole = {
-          approved: Boolean(profile.is_approved),
-          admin: Boolean(profile.is_admin)
+          approved: protectedOwner || Boolean(profile.is_approved),
+          admin: protectedOwner || Boolean(profile.is_admin),
+          owner: protectedOwner || Boolean(profile.is_super_admin)
         };
 
         setRole(nextRole);
@@ -169,17 +414,19 @@ function AppIntegrated() {
           setFormData(current => ({ ...current, keyboard_id: keyboardId }));
         }
       } else {
+        const protectedOwner = userEmail === SUPER_ADMIN_EMAIL;
         await supabase.from('profiles').insert({
           id: userId,
           email: userEmail,
-          is_approved: false,
-          is_admin: false
+          is_approved: protectedOwner,
+          is_admin: protectedOwner,
+          is_super_admin: protectedOwner
         });
-        setRole({ approved: false, admin: false });
+        setRole({ approved: protectedOwner, admin: protectedOwner, owner: protectedOwner });
       }
     } catch (err) {
       console.error('loadRole error:', err.message);
-      setRole({ approved: false, admin: false });
+      setRole({ approved: false, admin: false, owner: false });
     }
   }
 
@@ -259,14 +506,143 @@ function AppIntegrated() {
     loadProfiles();
   }
 
-  async function fetchSongs(includeContributors = Boolean(user)) {
-    const songSelect = includeContributors
-      ? '*, contributor:profiles!songs_created_by_fkey(email), styles (*, keyboards (model_name)), song_audio (id)'
-      : '*, styles (*, keyboards (model_name)), song_audio (id)';
+  async function updateSongPlanning(songId, updates) {
+    if (!role.admin) return;
 
+    setSaving(true);
+
+    try {
+      const payload = {
+        presentation_owner_id: user?.id || null,
+        presentation_marked_at: new Date().toISOString()
+      };
+
+      if (Object.prototype.hasOwnProperty.call(updates, 'is_highlighted')) {
+        payload.is_highlighted = Boolean(updates.is_highlighted);
+      }
+
+      if (Object.prototype.hasOwnProperty.call(updates, 'is_hidden')) {
+        payload.is_hidden = Boolean(updates.is_hidden);
+      }
+
+      if (Object.prototype.hasOwnProperty.call(updates, 'presentation_date')) {
+        payload.presentation_date = updates.presentation_date || null;
+      }
+
+      const { error } = await supabase
+        .from('songs')
+        .update(payload)
+        .eq('id', songId);
+
+      if (error) throw error;
+      await fetchSongs(true);
+    } catch (err) {
+      alert('Song planning update failed: ' + err.message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function requestSongVisibilityChange(song, nextHidden) {
+    setActionModal({
+      type: 'songVisibility',
+      song,
+      nextHidden,
+      eyebrow: nextHidden ? 'Hide song' : 'Show song',
+      title: nextHidden ? `Hide ${song.song_name}?` : `Show ${song.song_name}?`,
+      message: nextHidden
+        ? 'Hidden songs stay saved, but non-admin users will not see them in the library.'
+        : 'This song will return to the normal library view for users.',
+      confirmText: nextHidden ? 'Hide Song' : 'Show Song'
+    });
+  }
+
+  async function markSongPresented(song, presentedDate, options = {}) {
+    if (!(role.approved || role.admin) || !user) return;
+
+    const { showSuccess = true } = options;
+    const presentedOn = presentedDate?.trim();
+
+    if (!presentedOn) return false;
+
+    setSaving(true);
+
+    try {
+      const { error } = await supabase
+        .from('song_presentations')
+        .insert({
+          song_id: song.id,
+          presented_on: presentedOn,
+          presented_by: user.id
+        });
+
+      if (error) throw error;
+      await fetchSongs(true);
+      if (showSuccess) {
+        alert('Song marked as presented.');
+      }
+      return true;
+    } catch (err) {
+      if (err.message?.includes('duplicate key')) {
+        alert('This song is already marked as presented for that date.');
+      } else {
+        alert('Mark presented failed: ' + err.message);
+      }
+      return false;
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function saveLibraryAudioOffline(items, { showNotice = true } = {}) {
+    if (!items?.length) return;
+
+    setOfflineAudioSaving(true);
+    setOfflineAudioNotice('');
+
+    try {
+      for (const item of items) {
+        await cacheAudioFile(item);
+      }
+
+      if (showNotice) {
+        setOfflineAudioNotice('Audio saved for offline playback.');
+      }
+      setOfflineAudioPrompt(null);
+    } catch (err) {
+      console.error('offline library audio cache failed:', err);
+      setOfflineAudioNotice('Some audio could not be saved for offline playback.');
+    } finally {
+      setOfflineAudioSaving(false);
+    }
+  }
+
+  async function prepareLibraryAudioOffline() {
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) return;
+
+    try {
+      const allAudio = await fetchAllSongAudio();
+      const uncachedAudio = await getUncachedAudioItems(allAudio);
+      if (uncachedAudio.length === 0) return;
+
+      const estimate = buildAudioCacheEstimate(uncachedAudio);
+      if (shouldAskBeforeAudioCache()) {
+        if (!hasDismissedOfflineAudioPrompt()) {
+          setOfflineAudioPrompt(estimate);
+        }
+        return;
+      }
+
+      await saveLibraryAudioOffline(uncachedAudio, { showNotice: false });
+    } catch (err) {
+      console.error('offline audio preparation failed:', err);
+    }
+  }
+
+  async function fetchSongs(includeContributors = Boolean(user)) {
     const { data, error } = await supabase
       .from('songs')
-      .select(songSelect)
+      .select('*, styles (*, keyboards (model_name)), song_audio (id)')
       .order('song_name');
 
     if (error) {
@@ -279,9 +655,67 @@ function AppIntegrated() {
       return;
     }
 
-    setSongs(data || []);
-    saveCachedValue(CACHE_KEYS.SONGS, data || []);
+    let nextSongs = data || [];
+    let presentationRows = [];
+
+    if (includeContributors && nextSongs.length > 0) {
+      const songIds = nextSongs.map(song => song.id);
+      const { data: presentationsData, error: presentationsError } = await supabase
+        .from('song_presentations')
+        .select('*')
+        .in('song_id', songIds)
+        .order('presented_on', { ascending: false });
+
+      if (!presentationsError) {
+        presentationRows = presentationsData || [];
+      }
+
+      const profileIds = [
+        ...new Set(
+          [
+            ...nextSongs.flatMap(song => [song.created_by, song.presentation_owner_id]),
+            ...presentationRows.map(presentation => presentation.presented_by)
+          ]
+            .filter(Boolean)
+        )
+      ];
+
+      let profileById = new Map();
+
+      if (profileIds.length > 0) {
+        const { data: profileRows, error: profileError } = await supabase
+          .from('profiles')
+          .select('id, email')
+          .in('id', profileIds);
+
+        if (!profileError) {
+          profileById = new Map((profileRows || []).map(profile => [profile.id, profile]));
+        }
+      }
+
+      const presentationsBySongId = new Map();
+      presentationRows.forEach(presentation => {
+        const enrichedPresentation = {
+          ...presentation,
+          presenter: profileById.get(presentation.presented_by) || null
+        };
+        const songPresentations = presentationsBySongId.get(presentation.song_id) || [];
+        songPresentations.push(enrichedPresentation);
+        presentationsBySongId.set(presentation.song_id, songPresentations);
+      });
+
+      nextSongs = nextSongs.map(song => ({
+        ...song,
+        contributor: profileById.get(song.created_by) || null,
+        presentation_owner: profileById.get(song.presentation_owner_id) || null,
+        song_presentations: presentationsBySongId.get(song.id) || []
+      }));
+    }
+
+    setSongs(nextSongs);
+    saveCachedValue(CACHE_KEYS.SONGS, nextSongs);
     setOfflineCacheNotice('');
+    void prepareLibraryAudioOffline();
   }
 
   async function fetchKeyboards() {
@@ -345,7 +779,7 @@ function AppIntegrated() {
       return;
     }
 
-    setRole({ approved: true, admin: true });
+    setRole({ approved: true, admin: true, owner: user.email === SUPER_ADMIN_EMAIL });
     loadProfiles();
     alert('✅ You are now admin!');
   }
@@ -353,10 +787,34 @@ function AppIntegrated() {
   async function deleteEntry(table, id) {
     if (!role.approved) return;
 
-    if (window.confirm('Are you sure you want to delete this?')) {
-      await supabase.from(table).delete().eq('id', id);
-      fetchSongs();
-    }
+    await supabase.from(table).delete().eq('id', id);
+    fetchSongs();
+  }
+
+  function requestDeleteSong(song) {
+    setActionModal({
+      type: 'deleteEntry',
+      table: 'songs',
+      id: song.id,
+      eyebrow: 'Delete song',
+      title: `Delete ${song.song_name}?`,
+      message: 'This removes the song and its attached beat details. This cannot be undone.',
+      confirmText: 'Delete Song',
+      danger: true
+    });
+  }
+
+  function requestDeleteBeat(style) {
+    setActionModal({
+      type: 'deleteEntry',
+      table: 'styles',
+      id: style.id,
+      eyebrow: 'Remove beat',
+      title: `Remove ${style.beat_name}?`,
+      message: 'This removes only this beat from the song.',
+      confirmText: 'Remove Beat',
+      danger: true
+    });
   }
 
   async function handleSubmit(e) {
@@ -524,9 +982,7 @@ function AppIntegrated() {
     }
   }
 
-  async function duplicateSong(song) {
-    if (!role.approved) return;
-
+  function getDuplicateSongName(song) {
     const baseName = `${song.song_name} Copy`;
     const existingNames = new Set(songs.map(item => item.song_name));
     let nextName = baseName;
@@ -537,7 +993,60 @@ function AppIntegrated() {
       copyNumber += 1;
     }
 
-    const requestedName = window.prompt('Duplicate song as:', nextName);
+    return nextName;
+  }
+
+  function requestDuplicateSong(song) {
+    setActionModal({
+      type: 'duplicateSong',
+      song,
+      eyebrow: 'Duplicate song',
+      title: `Duplicate ${song.song_name}`,
+      message: 'Choose what should be copied into the new song. Anything unchecked will start empty.',
+      inputLabel: 'New song name',
+      inputValue: getDuplicateSongName(song),
+      checkboxLabel: 'Copy into the new song',
+      checkboxOptions: [
+        {
+          name: 'copyLyrics',
+          label: 'Lyrics',
+          description: song.lyrics?.trim() ? 'Copy saved lyrics.' : 'No lyrics saved yet.',
+          defaultChecked: Boolean(song.lyrics?.trim()),
+          disabled: !song.lyrics?.trim()
+        },
+        {
+          name: 'copyBeats',
+          label: 'Beat settings',
+          description: (song.styles || []).length > 0 ? `Copy ${song.styles.length} beat setting${song.styles.length === 1 ? '' : 's'}.` : 'No beats saved yet.',
+          defaultChecked: (song.styles || []).length > 0,
+          disabled: (song.styles || []).length === 0
+        },
+        {
+          name: 'copySongDetails',
+          label: 'Song notes and metadata',
+          description: 'Copy composer, theme, scripture, default key/tempo, and notes.'
+        },
+        {
+          name: 'copyPlanning',
+          label: 'Highlight and presentation plan',
+          description: 'Copy highlighted status and planned presentation date.',
+          defaultChecked: false
+        }
+      ],
+      confirmText: 'Duplicate Song'
+    });
+  }
+
+  async function duplicateSong(song, requestedName, options = {}) {
+    if (!role.approved) return;
+
+    const {
+      copyLyrics = false,
+      copyBeats = false,
+      copySongDetails = true,
+      copyPlanning = false
+    } = options;
+    const existingNames = new Set(songs.map(item => item.song_name));
     const songName = requestedName?.trim();
     if (!songName) return;
 
@@ -553,13 +1062,18 @@ function AppIntegrated() {
         .from('songs')
         .insert({
           song_name: songName,
-          lyrics: song.lyrics || null,
-          composer: song.composer || null,
-          theme: song.theme || null,
-          scripture_reference: song.scripture_reference || null,
-          default_key: song.default_key || null,
-          default_tempo: song.default_tempo || null,
-          song_notes: song.song_notes || null,
+          lyrics: copyLyrics ? (song.lyrics || null) : null,
+          composer: copySongDetails ? (song.composer || null) : null,
+          theme: copySongDetails ? (song.theme || null) : null,
+          scripture_reference: copySongDetails ? (song.scripture_reference || null) : null,
+          default_key: copySongDetails ? (song.default_key || null) : null,
+          default_tempo: copySongDetails ? (song.default_tempo || null) : null,
+          song_notes: copySongDetails ? (song.song_notes || null) : null,
+          is_highlighted: copyPlanning ? Boolean(song.is_highlighted) : false,
+          is_hidden: false,
+          presentation_date: copyPlanning ? (song.presentation_date || null) : null,
+          presentation_owner_id: copyPlanning ? (user?.id || null) : null,
+          presentation_marked_at: copyPlanning && song.presentation_date ? new Date().toISOString() : null,
           created_by: user?.id || null
         })
         .select('id')
@@ -567,7 +1081,7 @@ function AppIntegrated() {
 
       if (songErr) throw songErr;
 
-      const beatCopies = (song.styles || []).map(style => ({
+      const beatCopies = copyBeats ? (song.styles || []).map(style => ({
         song_id: duplicatedSong.id,
         keyboard_id: style.keyboard_id || null,
         beat_name: style.beat_name,
@@ -577,7 +1091,7 @@ function AppIntegrated() {
         tempo: style.tempo || null,
         musical_key: style.musical_key || null,
         notes: style.notes || null
-      }));
+      })) : [];
 
       if (beatCopies.length > 0) {
         const { error: beatsErr } = await supabase
@@ -588,12 +1102,33 @@ function AppIntegrated() {
       }
 
       await fetchSongs();
-      alert('✅ Song duplicated. You can edit the copy now.');
     } catch (err) {
       alert('Duplicate failed: ' + err.message);
     } finally {
       setSaving(false);
     }
+  }
+
+  async function handleActionModalConfirm(modalResult) {
+    if (!actionModal) return;
+
+    const modal = actionModal;
+    const inputValue = typeof modalResult === 'string' ? modalResult : modalResult?.inputValue;
+    const checkedOptions = modalResult?.checkedOptions || {};
+
+    if (modal.type === 'duplicateSong') {
+      await duplicateSong(modal.song, inputValue, checkedOptions);
+    }
+
+    if (modal.type === 'deleteEntry') {
+      await deleteEntry(modal.table, modal.id);
+    }
+
+    if (modal.type === 'songVisibility') {
+      await updateSongPlanning(modal.song.id, { is_hidden: modal.nextHidden });
+    }
+
+    setActionModal(null);
   }
 
   async function saveLyrics(song, lyrics) {
@@ -625,6 +1160,7 @@ function AppIntegrated() {
   }
 
   function openLibraryView() {
+    setStatsSong(null);
     setActiveView('library');
   }
 
@@ -656,13 +1192,42 @@ function AppIntegrated() {
     setActiveView('manual');
   }
 
+  function openSongStats(song) {
+    setShowAddForm(false);
+    cancelSongEdit();
+    setEditingLyricsSong(null);
+    setStatsSong(song);
+    setActiveView('songStats');
+  }
+
+  const visibleSongsForUser = useMemo(
+    () => songs.filter(song => role.admin || !song.is_hidden),
+    [songs, role.admin]
+  );
+
+  const overduePresentationSong = useMemo(() => {
+    if (!user || !(role.approved || role.admin) || presentationPromptSong) return null;
+
+    const today = todayDateString();
+
+    return visibleSongsForUser.find(song => {
+      if (!song.is_highlighted || !song.presentation_date) return false;
+      if (song.presentation_date >= today) return false;
+      if (songWasPresentedOn(song, song.presentation_date)) return false;
+      return !dismissedOverduePresentationKeys.includes(getPresentationKey(song));
+    }) || null;
+  }, [visibleSongsForUser, user, role.approved, role.admin, presentationPromptSong, dismissedOverduePresentationKeys]);
+
+  const activePresentationPromptSong = presentationPromptSong || overduePresentationSong;
+  const presentationPromptMode = presentationPromptSong ? 'manual' : 'overdue';
+
   const songNameOptions = useMemo(
-    () => [...new Set(songs.map(song => song.song_name))].sort(),
-    [songs]
+    () => [...new Set(visibleSongsForUser.map(song => song.song_name))].sort(),
+    [visibleSongsForUser]
   );
 
   const categories = useMemo(() => {
-    const categoryNames = songs
+    const categoryNames = visibleSongsForUser
       .flatMap(song => song.styles || [])
       .map(style => style.keyboard_location?.trim())
       .filter(Boolean);
@@ -672,10 +1237,10 @@ function AppIntegrated() {
       if (b === 'All') return 1;
       return a.localeCompare(b);
     });
-  }, [songs]);
+  }, [visibleSongsForUser]);
 
   const contributors = useMemo(() => {
-    const contributorOptions = songs.map(song => ({
+    const contributorOptions = visibleSongsForUser.map(song => ({
       value: song.created_by || '__unknown__',
       label: song.contributor?.email || 'Unknown contributor'
     }));
@@ -691,11 +1256,11 @@ function AppIntegrated() {
       { value: 'All', label: 'All contributors' },
       ...[...uniqueContributors.values()].sort((a, b) => a.label.localeCompare(b.label))
     ];
-  }, [songs]);
+  }, [visibleSongsForUser]);
 
   const filteredSongs = useMemo(
     () => {
-      const matchingSongs = songs.filter(song => {
+      const matchingSongs = visibleSongsForUser.filter(song => {
         const matchesSearch = songMatchesSearch(song, search);
         const matchesCategory = !user
           || selectedCategory === 'All'
@@ -707,6 +1272,15 @@ function AppIntegrated() {
       });
 
       return [...matchingSongs].sort((a, b) => {
+        if (a.is_highlighted !== b.is_highlighted) {
+          return a.is_highlighted ? -1 : 1;
+        }
+
+        if (a.is_highlighted && b.is_highlighted) {
+          const presentationDiff = getPresentationTimestamp(a) - getPresentationTimestamp(b);
+          if (presentationDiff) return presentationDiff;
+        }
+
         if (librarySort === 'name') {
           return a.song_name.localeCompare(b.song_name);
         }
@@ -715,8 +1289,56 @@ function AppIntegrated() {
         return latestDiff || a.song_name.localeCompare(b.song_name);
       });
     },
-    [songs, search, selectedCategory, selectedContributor, librarySort, user]
+    [visibleSongsForUser, search, selectedCategory, selectedContributor, librarySort, user]
   );
+
+  const showContributorPanel = Boolean(user && role.approved && activeView === 'library' && !hideStewardPanel);
+  const stewardVerse = STEWARD_VERSES[stewardVerseState.index];
+  const activeStatsSong = statsSong
+    ? songs.find(song => song.id === statsSong.id) || statsSong
+    : null;
+
+  useEffect(() => {
+    if (!showContributorPanel) return undefined;
+
+    const intervalId = window.setInterval(() => {
+      setStewardVerseState(current => {
+        const nextIndex = (current.index + 1) % STEWARD_VERSES.length;
+        const previous = [
+          current.index,
+          ...current.previous.filter(index => index !== current.index)
+        ].slice(0, 3);
+
+        return { index: nextIndex, previous };
+      });
+    }, 10000);
+
+    return () => window.clearInterval(intervalId);
+  }, [showContributorPanel]);
+
+  function dismissOverduePresentation(song) {
+    if (!song) {
+      setPresentationPromptSong(null);
+      return;
+    }
+
+    if (presentationPromptSong) {
+      setPresentationPromptSong(null);
+      return;
+    }
+
+    const nextKeys = [...new Set([...dismissedOverduePresentationKeys, getPresentationKey(song)])];
+    setDismissedOverduePresentationKeys(nextKeys);
+    window.localStorage.setItem(DISMISSED_OVERDUE_PRESENTATIONS_KEY, JSON.stringify(nextKeys));
+  }
+
+  async function confirmPresentedFromModal(song, presentedOn) {
+    const success = await markSongPresented(song, presentedOn, { showSuccess: presentationPromptMode === 'manual' });
+
+    if (success) {
+      dismissOverduePresentation(song);
+    }
+  }
 
   const recentAdditions = useMemo(() => (
     songs
@@ -786,9 +1408,10 @@ function AppIntegrated() {
           <span className="app-header__mark" style={{ color: '#fff', display: 'inline-flex', alignItems: 'center', fontSize: '1.85rem', fontWeight: 900, lineHeight: 1, textShadow: '0 2px 8px rgba(0,0,0,0.35)' }}>♫</span>
           <span className="app-header__title" style={{ color: '#fff', fontWeight: '800', fontSize: '1.18rem', letterSpacing: '0.02em' }}>{appTitle}</span>
           {user && !authLoading && (
+            role.owner ? <RoleBadge text="PROTECTED" color="#5f9fbd" /> :
             role.admin ? <RoleBadge text="ADMIN" color="#c62828" /> :
             role.approved ? <RoleBadge text="APPROVED" color="#2e7d32" /> :
-            <RoleBadge text="PENDING" color="#e65100" />
+            <RoleBadge text="PENDING" color="#64748b" />
           )}
         </div>
 
@@ -835,6 +1458,11 @@ function AppIntegrated() {
             {offlineCacheNotice}
           </div>
         )}
+        {offlineAudioNotice && (
+          <div className="offline-banner no-print">
+            {offlineAudioNotice}
+          </div>
+        )}
 
         {!user && showLoginForm && (
           <div className="panel no-print" style={{ maxWidth: '370px', margin: '0 auto 20px', borderTop: '4px solid #1a237e' }}>
@@ -855,48 +1483,101 @@ function AppIntegrated() {
         )}
 
         {user && !authLoading && !role.approved && !role.admin && (
-          <div className="no-print" style={{ background: '#fff8e1', border: '2px dashed #ffa000', padding: '13px 18px', borderRadius: '9px', marginBottom: '16px' }}>
+          <div className="no-print" style={{ background: '#eef6ff', border: '2px dashed #7fb7d8', padding: '13px 18px', borderRadius: '9px', marginBottom: '16px' }}>
             <strong>⚠️ Your account is pending approval.</strong>
             <p style={{ margin: '5px 0 8px', fontSize: '0.87rem' }}>If you are the first user and no admin exists yet:</p>
-            <button onClick={claimAdminBootstrap} style={{ background: '#ffa000', color: 'white', padding: '7px 16px', fontSize: '0.85rem' }}>
+            <button onClick={claimAdminBootstrap} style={{ background: '#315a78', color: 'white', padding: '7px 16px', fontSize: '0.85rem' }}>
               🔑 Claim Admin Access
             </button>
+          </div>
+        )}
+
+        {role.owner && activeView === 'admin' && (
+          <section className="panel no-print owner-panel">
+            <div>
+              <span className="owner-panel__eyebrow">Protected owner account</span>
+              <h2>Enock's Music Manager</h2>
+              <p>
+                This account is protected. It stays approved, keeps admin access, and cannot be changed from user management.
+              </p>
+            </div>
+          </section>
+        )}
+
+        {showContributorPanel && (
+          <section className="panel no-print contributor-panel">
+            <div>
+              <h2>God bless you {getDisplayName(user.email)} <span aria-hidden="true">❤</span></h2>
+              <p key={stewardVerse.reference} className="contributor-panel__verse">
+                {stewardVerse.text}
+              </p>
+              <strong className="contributor-panel__reference">{stewardVerse.reference} KJV</strong>
+            </div>
+
+            <button
+              type="button"
+              className="contributor-panel__hide"
+              onClick={() => setHideStewardPanel(true)}
+              aria-label="Hide Song Steward encouragement"
+              title="Hide this encouragement"
+            >
+              ×
+            </button>
+          </section>
+        )}
+
+        {activeView === 'library' && (
+          <div className="library-search-row no-print" style={{ marginBottom: '12px' }}>
+            <SearchBar value={search} onChange={setSearch} />
           </div>
         )}
 
         {activeView === 'library' && (
           <div className="library-toolbar no-print" style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px', flexWrap: 'wrap' }}>
             {(role.approved || role.admin) && (
-              <button onClick={() => { setShowAddForm(value => !value); if (!showAddForm) setFormData(current => ({ ...current, keyboard_id: defaultKeyboardId || current.keyboard_id })); }} style={{ background: showAddForm ? '#64748b' : '#5f9fbd', color: 'white', padding: '9px 18px', fontSize: '0.92rem', display: 'flex', alignItems: 'center', gap: '7px' }}>
+              <button onClick={() => { setShowAddForm(value => !value); if (!showAddForm) { setShowFilters(false); setFormData(current => ({ ...current, keyboard_id: defaultKeyboardId || current.keyboard_id })); } }} style={{ background: showAddForm ? '#64748b' : '#5f9fbd', color: 'white', padding: '9px 18px', fontSize: '0.92rem', display: 'flex', alignItems: 'center', gap: '7px' }}>
                 <span>{showAddForm ? '✕' : '➕'}</span>
                 {showAddForm ? 'Close Form' : 'Add Song'}
               </button>
             )}
+
+            <button
+              type="button"
+              onClick={() => setShowFilters(current => !current)}
+              className="library-toolbar__filter-toggle"
+              aria-expanded={showFilters}
+            >
+              {showFilters ? 'Hide Filters' : 'Filters'}
+            </button>
+
             {user && (
               <span className="library-toolbar__count" style={{ color: '#64748b', fontSize: '0.86rem', fontWeight: 700 }}>
                 {search.trim()
-                  ? `${filteredSongs.length} of ${songs.length} song${songs.length === 1 ? '' : 's'}`
-                  : `${songs.length} song${songs.length === 1 ? '' : 's'}`}
+                  ? `${filteredSongs.length} of ${visibleSongsForUser.length} song${visibleSongsForUser.length === 1 ? '' : 's'}`
+                  : `${visibleSongsForUser.length} song${visibleSongsForUser.length === 1 ? '' : 's'}`}
               </span>
             )}
-            <label className="library-toolbar__filter" style={{ display: 'flex', alignItems: 'center', gap: '6px', margin: 0, textTransform: 'none', letterSpacing: 0, color: '#64748b', fontSize: '0.78rem' }}>
+          </div>
+        )}
+
+        {activeView === 'library' && showFilters && !showAddForm && (
+          <div className="library-filters-panel no-print">
+            <label className="library-toolbar__filter">
               Sort
               <select
                 value={librarySort}
                 onChange={event => setLibrarySort(event.target.value)}
-                style={{ width: 'auto', minWidth: '130px', padding: '6px 8px', fontSize: '0.82rem' }}
               >
                 <option value="latest">Latest added</option>
                 <option value="name">Song name</option>
               </select>
             </label>
             {user && (
-              <label className="library-toolbar__filter" style={{ display: 'flex', alignItems: 'center', gap: '6px', margin: 0, textTransform: 'none', letterSpacing: 0, color: '#64748b', fontSize: '0.78rem' }}>
+              <label className="library-toolbar__filter">
                 Category
                 <select
                   value={selectedCategory}
                   onChange={event => setSelectedCategory(event.target.value)}
-                  style={{ width: 'auto', minWidth: '130px', padding: '6px 8px', fontSize: '0.82rem' }}
                 >
                   {categories.map(category => (
                     <option key={category} value={category}>{category}</option>
@@ -905,12 +1586,11 @@ function AppIntegrated() {
               </label>
             )}
             {user && (
-              <label className="library-toolbar__filter library-toolbar__filter--wide" style={{ display: 'flex', alignItems: 'center', gap: '6px', margin: 0, textTransform: 'none', letterSpacing: 0, color: '#64748b', fontSize: '0.78rem' }}>
+              <label className="library-toolbar__filter library-toolbar__filter--wide">
                 Added by
                 <select
                   value={selectedContributor}
                   onChange={event => setSelectedContributor(event.target.value)}
-                  style={{ width: 'auto', minWidth: '160px', padding: '6px 8px', fontSize: '0.82rem' }}
                 >
                   {contributors.map(contributor => (
                     <option key={contributor.value} value={contributor.value}>{contributor.label}</option>
@@ -918,12 +1598,6 @@ function AppIntegrated() {
                 </select>
               </label>
             )}
-          </div>
-        )}
-
-        {activeView === 'library' && (
-          <div className="library-search-row no-print" style={{ marginBottom: '12px' }}>
-            <SearchBar value={search} onChange={setSearch} />
           </div>
         )}
 
@@ -957,6 +1631,13 @@ function AppIntegrated() {
 
         {user && !authLoading && activeView === 'manual' && (
           <ManualPage isAdmin={role.admin} />
+        )}
+
+        {user && !authLoading && activeView === 'songStats' && (
+          <SongStatsPage
+            song={activeStatsSong}
+            onBack={openLibraryView}
+          />
         )}
 
         {role.approved && activeView === 'library' && showAddForm && (
@@ -1060,7 +1741,7 @@ function AppIntegrated() {
 
         {activeView === 'library' && (
         <div>
-          {songs.length === 0 && (
+          {visibleSongsForUser.length === 0 && (
             <p style={{ color: '#aaa', textAlign: 'center', marginTop: '30px' }}>No songs in the library yet.</p>
           )}
 
@@ -1073,9 +1754,13 @@ function AppIntegrated() {
               editData={editData}
               keyboards={keyboards}
               saving={saving}
-              onDeleteSong={id => deleteEntry('songs', id)}
-              onDeleteBeat={id => deleteEntry('styles', id)}
-              onDuplicateSong={duplicateSong}
+              onDeleteSong={requestDeleteSong}
+              onDeleteBeat={requestDeleteBeat}
+              onDuplicateSong={requestDuplicateSong}
+              onMarkPresented={setPresentationPromptSong}
+              onOpenSongStats={openSongStats}
+              onRequestSongVisibilityChange={requestSongVisibilityChange}
+              onUpdateSongPlanning={updateSongPlanning}
               onStartSongEdit={startSongEdit}
               onCancelSongEdit={cancelSongEdit}
               onSaveSongEdit={saveSongEdit}
@@ -1101,6 +1786,53 @@ function AppIntegrated() {
       </div>
 
       {lyricsSong && <LyricsMode song={lyricsSong} onClose={() => setLyricsSong(null)} />}
+      <PresentationPromptModal
+        song={activePresentationPromptSong}
+        mode={presentationPromptMode}
+        saving={saving}
+        onConfirm={presentedOn => confirmPresentedFromModal(activePresentationPromptSong, presentedOn)}
+        onDismiss={() => dismissOverduePresentation(activePresentationPromptSong)}
+      />
+      <ActionModal
+        modal={actionModal}
+        saving={saving}
+        onCancel={() => setActionModal(null)}
+        onConfirm={handleActionModalConfirm}
+      />
+      {offlineAudioPrompt && (
+        <div className="app-modal no-print" role="dialog" aria-modal="true" aria-labelledby="offline-audio-title">
+          <div className="app-modal__panel">
+            <div>
+              <span className="app-modal__eyebrow">Offline audio</span>
+              <h2 id="offline-audio-title">Save audio for offline use?</h2>
+              <p>
+                To make audio work offline, the app needs to save {offlineAudioPrompt.items.length} audio file
+                {offlineAudioPrompt.items.length === 1 ? '' : 's'} on this device. Estimated mobile data: {offlineAudioPrompt.label}.
+              </p>
+            </div>
+
+            <div className="app-modal__actions">
+              <button
+                type="button"
+                onClick={() => saveLibraryAudioOffline(offlineAudioPrompt.items)}
+                disabled={offlineAudioSaving}
+              >
+                {offlineAudioSaving ? 'Saving...' : 'Save Offline'}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  window.sessionStorage.setItem(DISMISSED_OFFLINE_AUDIO_PROMPT_KEY, '1');
+                  setOfflineAudioPrompt(null);
+                }}
+                disabled={offlineAudioSaving}
+              >
+                Not Now
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

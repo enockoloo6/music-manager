@@ -8,7 +8,7 @@ v1.1.0
 
 - Allow lyrics to be pasted and stored per song.
 - Make lyrics readable during singing.
-- Support future audio playback integration.
+- Support audio playback integration.
 - Keep the existing beat/keyboard/admin flows stable.
 
 ---
@@ -33,20 +33,23 @@ Planned features:
 - dark background
 - mobile-friendly layout
 - distraction-free singing mode
-- optional future auto-scroll
+- compact audio player when a song has playable audio
+- manual lyrics reading while audio plays
 
 ---
 
-# Future Audio Integration
+# Audio Integration
 
-Audio support will later connect directly into Lyrics Mode.
-
-Planned:
+Current:
 
 - play audio while reading lyrics
 - reference recordings
 - choir practice support
+
+Future:
+
 - multiple recordings per song
+- optional line timing if accurate lyric/audio sync is needed later
 
 ---
 

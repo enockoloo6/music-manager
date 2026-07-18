@@ -56,9 +56,12 @@ Suggested columns:
 
 - embedded audio player
 - play/pause
+- Lyrics Mode player for reading lyrics while audio plays
 - future seek controls
 - public users can access audio when a song has audio
 - public users do not see audio actions when a song has no audio
+- offline playback after audio is saved locally
+- mobile or unknown data estimate before saving offline audio
 
 ## Multiple Recordings
 
@@ -75,10 +78,14 @@ Current implementation uses one primary song audio entry in the UI.
 
 # Lyrics Mode Integration
 
-Lyrics Mode will later support:
+Lyrics Mode supports:
+
+- playing the song audio attachment while lyrics remain readable
+
+Lyrics Mode may later support:
 
 - synchronized playback
-- optional auto-scroll
+- optional line timing if accurate lyric/audio sync is needed later
 - live worship mode
 
 ---
@@ -87,7 +94,7 @@ Lyrics Mode will later support:
 
 - waveform preview
 - recording directly from browser
-- offline caching
+- offline cache management controls
 - playlists/setlists
 
 Recording directly from the browser is implemented with a standard maximum duration, visible timer, and automatic stop.

@@ -1,5 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { deleteSongAudio, fetchSongAudio, uploadSongAudio } from '../services/songAudioService';
+import {
+  attachCachedAudioUrls,
+  buildAudioCacheEstimate,
+  cacheAudioFile,
+  getCachedAudioForSong,
+  shouldAskBeforeAudioCache
+} from '../services/offlineAudioCacheService';
 
 const MAX_RECORDING_SECONDS = 300;
 
@@ -43,6 +50,24 @@ function formatRecordingTime(seconds) {
   return `${minutes}:${String(remainingSeconds).padStart(2, '0')}`;
 }
 
+function buildCachedAudioItems(cachedItems) {
+  return (cachedItems || []).map(item => ({
+    id: item.id,
+    song_id: item.songId,
+    file_name: item.fileName,
+    mime_type: item.mimeType,
+    size_bytes: item.sizeBytes,
+    cached_audio: item,
+    cached_url: URL.createObjectURL(item.blob)
+  }));
+}
+
+function revokeCachedUrls(items) {
+  (items || []).forEach(item => {
+    if (item.cached_url) URL.revokeObjectURL(item.cached_url);
+  });
+}
+
 export default function AudioAttachments({ song, user, canManage }) {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -55,6 +80,10 @@ export default function AudioAttachments({ song, user, canManage }) {
   const [recordingError, setRecordingError] = useState('');
   const [recordingNotice, setRecordingNotice] = useState('');
   const [recordingSeconds, setRecordingSeconds] = useState(0);
+  const [audioToDelete, setAudioToDelete] = useState(null);
+  const [cachePrompt, setCachePrompt] = useState(null);
+  const [cacheNotice, setCacheNotice] = useState('');
+  const [cachingAudio, setCachingAudio] = useState(false);
 
   const recorderRef = useRef(null);
   const streamRef = useRef(null);
@@ -74,20 +103,61 @@ export default function AudioAttachments({ song, user, canManage }) {
     }
   }
 
+  const saveAudioForOffline = useCallback(async targetItems => {
+    const estimate = buildAudioCacheEstimate(targetItems);
+    if (estimate.items.length === 0) return;
+
+    setCachingAudio(true);
+    setCacheNotice('');
+
+    try {
+      await Promise.all(estimate.items.map(cacheAudioFile));
+      const withCachedUrls = await attachCachedAudioUrls(targetItems);
+      setItems(withCachedUrls);
+      setCacheNotice('Audio saved for offline playback.');
+    } catch (err) {
+      console.error('offline audio cache failed:', err);
+      setCacheNotice('Audio could not be saved for offline playback.');
+    } finally {
+      setCachingAudio(false);
+      setCachePrompt(null);
+    }
+  }, []);
+
+  const prepareOfflineCache = useCallback(async loadedItems => {
+    const estimate = buildAudioCacheEstimate(loadedItems);
+    if (estimate.items.length === 0) return;
+
+    if (shouldAskBeforeAudioCache()) {
+      setCachePrompt(estimate);
+      return;
+    }
+
+    await saveAudioForOffline(loadedItems);
+  }, [saveAudioForOffline]);
+
   const load = useCallback(async () => {
     if (!song?.id) return;
     setLoading(true);
     setLoadError('');
+    setCachePrompt(null);
     try {
-      setItems(await fetchSongAudio(song.id));
+      const onlineItems = await fetchSongAudio(song.id);
+      const withCachedUrls = await attachCachedAudioUrls(onlineItems);
+      setItems(withCachedUrls);
+      await prepareOfflineCache(withCachedUrls);
     } catch (err) {
       console.error('audio load error:', err);
-      setItems([]);
-      setLoadError(getAudioLoadMessage(err, user));
+      const cachedItems = buildCachedAudioItems(await getCachedAudioForSong(song.id));
+      setItems(cachedItems);
+      setLoadError(cachedItems.length > 0 ? '' : getAudioLoadMessage(err, user));
+      if (cachedItems.length > 0) {
+        setCacheNotice('Playing locally saved audio.');
+      }
     } finally {
       setLoading(false);
     }
-  }, [song?.id, user]);
+  }, [prepareOfflineCache, song?.id, user]);
 
   useEffect(() => {
     void Promise.resolve().then(load);
@@ -100,6 +170,10 @@ export default function AudioAttachments({ song, user, canManage }) {
       streamRef.current?.getTracks?.().forEach(track => track.stop());
     };
   }, [recordingUrl]);
+
+  useEffect(() => {
+    return () => revokeCachedUrls(items);
+  }, [items]);
 
   async function handleUpload(e) {
     const file = e.target.files?.[0];
@@ -118,8 +192,8 @@ export default function AudioAttachments({ song, user, canManage }) {
   }
 
   async function handleDelete(audio) {
-    if (!window.confirm('Delete audio attachment?')) return;
     await deleteSongAudio(audio);
+    setAudioToDelete(null);
     await load();
   }
 
@@ -278,24 +352,64 @@ export default function AudioAttachments({ song, user, canManage }) {
       ) : (
         <div className="audio-attachments__list">
           {loadError && <div className="audio-attachments__error">{loadError}</div>}
+          {cacheNotice && <div className="audio-attachments__cache-note">{cacheNotice}</div>}
+          {cachePrompt && (
+            <div className="audio-attachments__cache-prompt">
+              <span>
+                Save this audio for offline use? Estimated mobile data: {cachePrompt.label}.
+              </span>
+              <div className="audio-attachments__cache-actions">
+                <button type="button" onClick={() => saveAudioForOffline(items)} disabled={cachingAudio}>
+                  {cachingAudio ? 'Saving...' : 'Save Offline'}
+                </button>
+                <button type="button" onClick={() => setCachePrompt(null)} disabled={cachingAudio}>
+                  Not Now
+                </button>
+              </div>
+            </div>
+          )}
           {!loadError && items.length === 0 && <div className="audio-attachments__empty">No audio attachments yet.</div>}
           {items.map(audio => (
             <div key={audio.id} className="audio-attachments__item">
-              {audio.signed_url ? (
-                <audio controls src={audio.signed_url} preload="none" />
+              {audio.cached_url || audio.signed_url ? (
+                <audio controls src={audio.cached_url || audio.signed_url} preload="none" />
               ) : (
                 <div className="audio-attachments__error">
                   Audio file found, but playback link could not be generated.
                 </div>
               )}
-              <span>{audio.file_name}</span>
+              <span>
+                {audio.file_name}
+                {audio.cached_audio && <small className="audio-attachments__offline-label">Offline ready</small>}
+              </span>
               {canManage && (
-                <button type="button" onClick={() => handleDelete(audio)}>
+                <button type="button" onClick={() => setAudioToDelete(audio)}>
                   Delete
                 </button>
               )}
             </div>
           ))}
+        </div>
+      )}
+
+      {audioToDelete && (
+        <div className="app-modal no-print" role="dialog" aria-modal="true" aria-labelledby="delete-audio-title">
+          <div className="app-modal__panel">
+            <div>
+              <span className="app-modal__eyebrow">Delete audio</span>
+              <h2 id="delete-audio-title">Delete audio attachment?</h2>
+              <p>This removes the recording from this song.</p>
+            </div>
+
+            <div className="app-modal__actions">
+              <button type="button" className="app-modal__danger" onClick={() => handleDelete(audioToDelete)}>
+                Delete Audio
+              </button>
+              <button type="button" onClick={() => setAudioToDelete(null)}>
+                Cancel
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
