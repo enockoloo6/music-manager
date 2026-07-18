@@ -114,6 +114,7 @@ Verify:
 * Favorite/preferred and Worship/Praise/Other beat labels can be saved.
 * Approved users see their minimal light-blue Song Steward greeting, verses rotate automatically, and the notification can be hidden.
 * Manual view opens for logged-in users.
+* Manual and Settings explain what works online and offline.
 * App version appears in Settings.
 * Admin Revoke and Remove Admin actions use pastel danger styling, while Make Admin is visually marked as sensitive.
 * Missing Lyrics and Audio actions are visibly emphasized.

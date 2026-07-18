@@ -83,6 +83,30 @@
   text-transform: uppercase;
 }
 
+.settings-capabilities {
+  background: #f1f9ff;
+  border: 1px solid #dceff8;
+  border-radius: 10px;
+  display: grid;
+  gap: 7px;
+  padding: 12px 14px;
+}
+
+.settings-capabilities__eyebrow {
+  color: #315a78;
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.settings-capabilities p {
+  color: #475569;
+  font-size: 0.86rem;
+  line-height: 1.5;
+  margin: 0;
+}
+
 .admin-user-actions {
   display: flex;
   flex-wrap: wrap;

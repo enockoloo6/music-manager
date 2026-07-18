@@ -20,9 +20,9 @@ const manualSections = [
     ]
   },
   {
-    icon: '🟠',
+    icon: '●',
     title: 'Finish details',
-    summary: 'Amber links show what is missing.',
+    summary: 'Highlighted links show what is missing.',
     items: [
       'Add Lyrics means lyrics are missing.',
       'Add Audio means audio is missing.',
@@ -36,7 +36,27 @@ const manualSections = [
     items: [
       'Beats shows piano settings.',
       'Preferred marks the best beat.',
-      'Audio lets you upload, record, or play tracks.'
+      'Audio lets you upload, record, play, and save tracks for offline playback.'
+    ]
+  },
+  {
+    icon: '☁',
+    title: 'Online and offline',
+    summary: 'Open once online, then use what was saved.',
+    items: [
+      'Songs, lyrics, beats, keyboards, and categories are cached for offline viewing.',
+      'Audio can play offline after it is saved locally.',
+      'On mobile data or unknown networks, the app shows estimated audio data before saving.'
+    ]
+  },
+  {
+    icon: '★',
+    title: 'Presentation planning',
+    summary: 'Prepare worship songs without losing history.',
+    items: [
+      'Admins can highlight or hide songs and set presentation dates.',
+      'Highlighted songs appear first and show their presentation date.',
+      'Approved users can mark songs presented and view Song Stats.'
     ]
   },
   {
@@ -45,8 +65,8 @@ const manualSections = [
     summary: 'Use these for setup and control.',
     items: [
       'Settings saves your default keyboard.',
-      'Reports shows totals and recent additions.',
-      'Admin manages users and approval.'
+      'Settings explains what works online and offline.',
+      'Admin manages approval and protected access.'
     ]
   }
 ];

@@ -161,6 +161,7 @@ Implemented direction:
 * Mobile song names keep a bold visual weight matching desktop.
 * Save Recording is green after audio capture to make the save action easier to find.
 * Logged-in users can open a Manual view from the header for quick usage guidance.
+* Manual and Settings include brief online/offline capability notes, including offline audio behavior and data-size warnings.
 * The app version is shown in Settings instead of the primary header.
 * Missing Lyrics and Audio actions remain link-style actions with a softer visible color emphasis.
 * Song card headers and outlines use a deeper blue treatment so the song background is more visible.

@@ -91,6 +91,7 @@ Implemented:
 * Mobile song titles keep a strong bold weight to match desktop scanning.
 * Save Recording is green after audio capture so the save action is easier to spot.
 * Added a logged-in Manual view with quick usage guidance.
+* Manual and Settings now explain online/offline capabilities, including offline audio and data-size warnings.
 * Moved the app version badge from the header into Settings.
 * Missing Lyrics and Audio actions remain link-style actions with a softer visible color emphasis.
 * Song card headers and outlines use a deeper blue treatment for better visibility.

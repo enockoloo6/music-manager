@@ -65,6 +65,20 @@ function SettingsPage({
             <VersionBadge variant="settings" />
           </div>
         </div>
+
+        <div className="settings-capabilities">
+          <span className="settings-capabilities__eyebrow">Online and Offline</span>
+          <p>
+            When online, the app syncs songs, lyrics, beats, keyboards, categories, presentation history, and audio links.
+            After access, songs and lyrics remain available offline, and audio can play offline once it has been saved on this device.
+          </p>
+          <p>
+            On Wi-Fi, offline audio can be saved without a data warning. On mobile data or unknown networks, the app shows the estimated audio size before saving.
+          </p>
+          <p>
+            Adding or editing songs, lyrics, beats, audio, users, and presentation details still requires internet.
+          </p>
+        </div>
       </div>
     </section>
   );
