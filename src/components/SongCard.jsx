@@ -65,6 +65,7 @@ function SongCard({
   onEditLyrics,
   onOpenLyrics,
   onSaveLyrics,
+  onNotify,
   user,
   canManageAudio,
   isEditingSong,
@@ -80,6 +81,8 @@ function SongCard({
   const hasPresentationDate = Boolean(song.is_highlighted && song.presentation_date);
   const presentationCount = song.song_presentations?.length || 0;
   const canManageSong = Boolean(role?.approved || role?.admin);
+  const canEditSongs = Boolean(role?.canEditSongs);
+  const canDeleteSongs = Boolean(role?.canDeleteSongs);
   const canOpenAudio = hasAudio || canManageAudio;
   const hasPublicDetails = !canManageSong && Boolean(hasBeats || hasPresentationDate);
   const hasMoreActions = Boolean(canManageSong || hasPublicDetails);
@@ -174,7 +177,7 @@ function SongCard({
             <button type="button" className="song-card__link-action" onClick={openLyricsMode}>
               Lyrics
             </button>
-          ) : role?.approved ? (
+          ) : canEditSongs ? (
             <button
               type="button"
               className={`song-card__link-action song-card__link-action--needed${isEditingLyrics ? ' song-card__link-action--active' : ''}`}
@@ -268,7 +271,7 @@ function SongCard({
 
           {canManageSong && (
             <div className="song-card__more-actions">
-              {role?.approved && (
+              {canEditSongs && (
                 <button
                   type="button"
                   onClick={() => onStartSongEdit?.(song)}
@@ -287,7 +290,7 @@ function SongCard({
                 </button>
               )}
 
-              {role?.approved && hasLyrics && (
+              {canEditSongs && hasLyrics && (
                 <button
                   type="button"
                   onClick={openLyricsEditor}
@@ -315,7 +318,7 @@ function SongCard({
                 </button>
               )}
 
-              {role?.admin && (
+              {canDeleteSongs && (
                 <button
                   type="button"
                   onClick={() => onDeleteSong?.(song)}
@@ -373,6 +376,7 @@ function SongCard({
           song={song}
           user={user}
           canManage={canManageAudio}
+          onNotify={onNotify}
         />
       )}
 
@@ -651,7 +655,7 @@ function SongCard({
                     </p>
                   )}
 
-                  {role?.approved && (
+                  {(canEditSongs || canDeleteSongs) && (
                     <details className="no-print" style={{ marginTop: '8px' }}>
                       <summary style={{ cursor: 'pointer', color: '#1a237e', fontSize: '0.78rem', fontWeight: 700 }}>
                         Beat actions
@@ -664,19 +668,23 @@ function SongCard({
                           marginTop: '7px'
                         }}
                       >
-                        <button
-                          type="button"
-                          onClick={() => onStartEdit?.(style)}
-                        >
-                          Edit Beat
-                        </button>
+                        {canEditSongs && (
+                          <button
+                            type="button"
+                            onClick={() => onStartEdit?.(style)}
+                          >
+                            Edit Beat
+                          </button>
+                        )}
 
-                        <button
-                          type="button"
-                          onClick={() => onDeleteBeat?.(style)}
-                        >
-                          Remove Beat
-                        </button>
+                        {canDeleteSongs && (
+                          <button
+                            type="button"
+                            onClick={() => onDeleteBeat?.(style)}
+                          >
+                            Remove Beat
+                          </button>
+                        )}
                       </div>
                     </details>
                   )}

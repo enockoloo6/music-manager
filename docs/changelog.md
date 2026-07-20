@@ -110,6 +110,11 @@ Implemented:
 * Highlighted songs now appear first in the library, ordered by earliest presentation date before regular sorting.
 * Public users now get one More action for highlighted song presentation details and beat details instead of duplicate More links.
 * Added a protected account experience for `enockoloo6@gmail.com` with a PROTECTED badge and protected panel in the frontend.
+* Added fine-grained user access for edit, delete, admin, super admin, protected status, and protected-status management.
+* Added Log Trail for edit/delete actions and limited Settings, Admin, and Log Trail to super-admin/protected access.
+* Added configurable inactivity logout, defaulting to 30 minutes.
+* Added a phone install prompt for PWA installation, including iOS Add to Home Screen guidance.
+* Updated the in-app Manual to display help based on the logged-in user's capabilities.
 
 Public audio visibility depends on applying the public read migration to the active Supabase project.
 The migration file exists at `supabase/migrations/20260714_public_audio_read_access.sql`; applying it requires Supabase CLI authentication or a Postgres admin connection string.

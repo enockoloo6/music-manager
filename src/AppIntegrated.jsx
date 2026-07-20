@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { supabase } from './supabaseClient';
 import { fetchAllSongAudio } from './services/songAudioService';
 
 import AdminPage from './components/AdminPage';
 import AppFooter from './components/AppFooter';
 import LyricsMode from './components/LyricsMode';
+import LogTrailPage from './components/LogTrailPage';
 import ManualPage from './components/ManualPage';
 import OfflineBanner from './components/OfflineBanner';
 import ReportsPage from './components/ReportsPage';
@@ -42,6 +43,8 @@ const CACHE_KEYS = {
 };
 const DISMISSED_OVERDUE_PRESENTATIONS_KEY = 'music-manager-dismissed-overdue-presentations';
 const DISMISSED_OFFLINE_AUDIO_PROMPT_KEY = 'music-manager-dismissed-offline-audio-prompt';
+const DISMISSED_INSTALL_PROMPT_KEY = 'music-manager-dismissed-install-prompt';
+const DEFAULT_INACTIVITY_TIMEOUT_MINUTES = 30;
 
 function todayDateString() {
   return new Date().toISOString().slice(0, 10);
@@ -61,6 +64,21 @@ function loadDismissedOverduePresentations() {
 function hasDismissedOfflineAudioPrompt() {
   if (typeof window === 'undefined') return false;
   return window.sessionStorage.getItem(DISMISSED_OFFLINE_AUDIO_PROMPT_KEY) === '1';
+}
+
+function hasDismissedInstallPrompt() {
+  if (typeof window === 'undefined') return false;
+  return window.sessionStorage.getItem(DISMISSED_INSTALL_PROMPT_KEY) === '1';
+}
+
+function isAppInstalled() {
+  if (typeof window === 'undefined') return false;
+  return window.matchMedia?.('(display-mode: standalone)').matches || window.navigator.standalone === true;
+}
+
+function isIosDevice() {
+  if (typeof window === 'undefined') return false;
+  return /iphone|ipad|ipod/i.test(window.navigator.userAgent || '');
 }
 
 const EMPTY_FORM = {
@@ -145,6 +163,10 @@ function getDisplayName(emailAddress) {
     .filter(Boolean)
     .map(part => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
     .join(' ') || 'Song Steward';
+}
+
+function isProtectedOwnerEmail(emailAddress) {
+  return String(emailAddress || '').trim().toLowerCase() === SUPER_ADMIN_EMAIL;
 }
 
 function formatFriendlyDate(value) {
@@ -297,10 +319,80 @@ function ActionModal({
   );
 }
 
+function NoticeModal({ notice, onClose }) {
+  if (!notice) return null;
+
+  return (
+    <div className="app-modal no-print" role="alertdialog" aria-modal="true" aria-labelledby="notice-modal-title">
+      <div className="app-modal__panel">
+        <div>
+          <span className="app-modal__eyebrow">{notice.eyebrow || 'Notice'}</span>
+          <h2 id="notice-modal-title">{notice.title || 'Message'}</h2>
+          <p>{notice.message}</p>
+        </div>
+
+        <div className="app-modal__actions app-modal__actions--single">
+          <button type="button" onClick={onClose} autoFocus>
+            OK
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function InstallPromptModal({
+  mode,
+  installing = false,
+  onInstall,
+  onDismiss
+}) {
+  if (!mode) return null;
+
+  const isIos = mode === 'ios';
+
+  return (
+    <div className="app-modal no-print" role="dialog" aria-modal="true" aria-labelledby="install-prompt-title">
+      <div className="app-modal__panel">
+        <div>
+          <span className="app-modal__eyebrow">Install app</span>
+          <h2 id="install-prompt-title">Install Music Manager on this phone?</h2>
+          {isIos ? (
+            <p>
+              To open it like an app, tap Share in Safari, then choose Add to Home Screen.
+            </p>
+          ) : (
+            <p>
+              Install this app on your phone so you can open it from your home screen without finding the browser link.
+            </p>
+          )}
+        </div>
+
+        <div className="app-modal__actions">
+          {isIos ? (
+            <button type="button" onClick={onDismiss}>
+              Got It
+            </button>
+          ) : (
+            <button type="button" onClick={onInstall} disabled={installing}>
+              {installing ? 'Opening...' : 'Install App'}
+            </button>
+          )}
+          <button type="button" onClick={onDismiss} disabled={installing}>
+            Not Now
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function AppIntegrated() {
   const [songs, setSongs] = useState([]);
   const [keyboards, setKeyboards] = useState([]);
   const [profiles, setProfiles] = useState([]);
+  const [auditLogs, setAuditLogs] = useState([]);
+  const [auditLogsLoading, setAuditLogsLoading] = useState(false);
   const [appTitle, setAppTitle] = useState(DEFAULT_APP_TITLE);
   const [savingAppTitle, setSavingAppTitle] = useState(false);
   const [offlineCacheNotice, setOfflineCacheNotice] = useState('');
@@ -311,7 +403,15 @@ function AppIntegrated() {
   const [activeView, setActiveView] = useState('library');
   const [statsSong, setStatsSong] = useState(null);
   const [user, setUser] = useState(null);
-  const [role, setRole] = useState({ approved: false, admin: false, owner: false });
+  const [role, setRole] = useState({
+    approved: false,
+    admin: false,
+    owner: false,
+    protected: false,
+    canManageProtectedUsers: false,
+    canEditSongs: false,
+    canDeleteSongs: false
+  });
   const [authMode, setAuthMode] = useState('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -319,10 +419,16 @@ function AppIntegrated() {
   const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState(EMPTY_FORM);
   const [defaultKeyboardId, setDefaultKeyboardId] = useState('');
+  const [logoutTimeoutMinutes, setLogoutTimeoutMinutes] = useState(DEFAULT_INACTIVITY_TIMEOUT_MINUTES);
   const [showLoginForm, setShowLoginForm] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [actionModal, setActionModal] = useState(null);
+  const [noticeModal, setNoticeModal] = useState(null);
+  const [installPromptEvent, setInstallPromptEvent] = useState(null);
+  const [installPromptMode, setInstallPromptMode] = useState(null);
+  const [installingApp, setInstallingApp] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [editData, setEditData] = useState({});
   const [editingSongId, setEditingSongId] = useState(null);
@@ -341,6 +447,14 @@ function AppIntegrated() {
   const [hideStewardPanel, setHideStewardPanel] = useState(false);
 
   const isOnline = useOnlineStatus();
+  const inactivityTimerRef = useRef(null);
+
+  function showAppNotice(message, title = 'Message') {
+    setNoticeModal({
+      title,
+      message: String(message || '')
+    });
+  }
 
   useEffect(() => {
     fetchSongs(false);
@@ -353,6 +467,86 @@ function AppIntegrated() {
   useEffect(() => {
     document.title = appTitle || DEFAULT_APP_TITLE;
   }, [appTitle]);
+
+  useEffect(() => {
+    const originalAlert = window.alert;
+    window.alert = message => {
+      showAppNotice(message);
+    };
+
+    return () => {
+      window.alert = originalAlert;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (isAppInstalled() || hasDismissedInstallPrompt()) return undefined;
+
+    function showInstallPrompt(mode, event = null) {
+      if (isAppInstalled() || hasDismissedInstallPrompt()) return;
+      setInstallPromptEvent(event);
+      setInstallPromptMode(mode);
+    }
+
+    const handleBeforeInstallPrompt = event => {
+      event.preventDefault();
+      showInstallPrompt('native', event);
+    };
+
+    const handleAppInstalled = () => {
+      setInstallPromptEvent(null);
+      setInstallPromptMode(null);
+      window.sessionStorage.setItem(DISMISSED_INSTALL_PROMPT_KEY, '1');
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    window.addEventListener('appinstalled', handleAppInstalled);
+
+    const iosPromptTimer = window.setTimeout(() => {
+      if (isIosDevice()) {
+        showInstallPrompt('ios');
+      }
+    }, 1200);
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      window.removeEventListener('appinstalled', handleAppInstalled);
+      window.clearTimeout(iosPromptTimer);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (inactivityTimerRef.current) {
+      window.clearTimeout(inactivityTimerRef.current);
+      inactivityTimerRef.current = null;
+    }
+
+    if (!user || !logoutTimeoutMinutes) return undefined;
+
+    const timeoutMs = Number(logoutTimeoutMinutes) * 60 * 1000;
+    const resetInactivityTimer = () => {
+      if (document.hidden) return;
+      window.clearTimeout(inactivityTimerRef.current);
+      inactivityTimerRef.current = window.setTimeout(() => {
+        supabase.auth.signOut();
+      }, timeoutMs);
+    };
+
+    const activityEvents = ['pointerdown', 'keydown', 'touchstart', 'scroll'];
+    activityEvents.forEach(eventName => {
+      window.addEventListener(eventName, resetInactivityTimer, { passive: true });
+    });
+    document.addEventListener('visibilitychange', resetInactivityTimer);
+    resetInactivityTimer();
+
+    return () => {
+      window.clearTimeout(inactivityTimerRef.current);
+      activityEvents.forEach(eventName => {
+        window.removeEventListener(eventName, resetInactivityTimer);
+      });
+      document.removeEventListener('visibilitychange', resetInactivityTimer);
+    };
+  }, [user, logoutTimeoutMinutes]);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -369,16 +563,19 @@ function AppIntegrated() {
       if (session?.user) {
         setUser(session.user);
         fetchSongs(true);
-        loadRole(session.user.id, session.user.email);
+        loadRole(session.user.id, session.user.email).finally(() => setAuthLoading(false));
         setShowLoginForm(false);
       } else {
         setUser(null);
-        setRole({ approved: false, admin: false, owner: false });
+        setRole({ approved: false, admin: false, owner: false, protected: false, canManageProtectedUsers: false, canEditSongs: false, canDeleteSongs: false });
+        setAuditLogs([]);
+        setLogoutTimeoutMinutes(DEFAULT_INACTIVITY_TIMEOUT_MINUTES);
         setShowAddForm(false);
         setSelectedCategory('All');
         setSelectedContributor('All');
         fetchSongs(false);
         setActiveView('library');
+        setAuthLoading(false);
       }
     });
 
@@ -388,51 +585,113 @@ function AppIntegrated() {
   }, []);
 
   async function loadRole(userId, userEmail) {
+    const protectedOwner = isProtectedOwnerEmail(userEmail);
+
     try {
-      const { data: profile, error } = await supabase
+      let profileResult = await supabase
         .from('profiles')
-        .select('is_approved, is_admin, is_super_admin, default_keyboard_id')
+        .select('is_approved, is_admin, is_super_admin, is_protected, can_manage_protected_users, default_keyboard_id, logout_timeout_minutes, can_edit_songs, can_delete_songs')
         .eq('id', userId)
         .maybeSingle();
 
-      if (error) throw error;
+      if (profileResult.error) {
+        console.warn('loadRole permissions fallback:', profileResult.error.message);
+        profileResult = await supabase
+          .from('profiles')
+          .select('is_approved, is_admin, is_super_admin, default_keyboard_id')
+          .eq('id', userId)
+          .maybeSingle();
+      }
+
+      if (profileResult.error) throw profileResult.error;
+
+      const profile = profileResult.data;
 
       if (profile) {
-        const protectedOwner = userEmail === SUPER_ADMIN_EMAIL;
         const nextRole = {
-          approved: protectedOwner || Boolean(profile.is_approved),
-          admin: protectedOwner || Boolean(profile.is_admin),
-          owner: protectedOwner || Boolean(profile.is_super_admin)
+          approved: protectedOwner || Boolean(profile.is_protected) || Boolean(profile.is_approved),
+          admin: protectedOwner || Boolean(profile.is_protected) || Boolean(profile.is_admin),
+          owner: protectedOwner || Boolean(profile.is_protected) || Boolean(profile.is_super_admin),
+          protected: protectedOwner || Boolean(profile.is_protected),
+          canManageProtectedUsers: protectedOwner || Boolean(profile.can_manage_protected_users),
+          canEditSongs: protectedOwner || Boolean(profile.is_protected) || Boolean(profile.is_super_admin) || Boolean(profile.can_edit_songs ?? profile.is_approved),
+          canDeleteSongs: protectedOwner || Boolean(profile.is_protected) || Boolean(profile.is_super_admin) || Boolean(profile.can_delete_songs)
         };
 
         setRole(nextRole);
-        if (nextRole.admin) loadProfiles();
+        if (nextRole.owner) loadProfiles({ force: true });
 
         if (profile.default_keyboard_id) {
           const keyboardId = String(profile.default_keyboard_id);
           setDefaultKeyboardId(keyboardId);
           setFormData(current => ({ ...current, keyboard_id: keyboardId }));
         }
+
+        setLogoutTimeoutMinutes(Number(profile.logout_timeout_minutes) || DEFAULT_INACTIVITY_TIMEOUT_MINUTES);
       } else {
-        const protectedOwner = userEmail === SUPER_ADMIN_EMAIL;
         await supabase.from('profiles').insert({
           id: userId,
           email: userEmail,
           is_approved: protectedOwner,
           is_admin: protectedOwner,
-          is_super_admin: protectedOwner
+          is_super_admin: protectedOwner,
+          is_protected: protectedOwner,
+          can_manage_protected_users: protectedOwner,
+          can_edit_songs: protectedOwner,
+          can_delete_songs: protectedOwner,
+          logout_timeout_minutes: DEFAULT_INACTIVITY_TIMEOUT_MINUTES
         });
-        setRole({ approved: protectedOwner, admin: protectedOwner, owner: protectedOwner });
+        setRole({
+          approved: protectedOwner,
+          admin: protectedOwner,
+          owner: protectedOwner,
+          protected: protectedOwner,
+          canManageProtectedUsers: protectedOwner,
+          canEditSongs: protectedOwner,
+          canDeleteSongs: protectedOwner
+        });
+        setLogoutTimeoutMinutes(DEFAULT_INACTIVITY_TIMEOUT_MINUTES);
       }
     } catch (err) {
       console.error('loadRole error:', err.message);
-      setRole({ approved: false, admin: false, owner: false });
+      setRole({
+        approved: protectedOwner,
+        admin: protectedOwner,
+        owner: protectedOwner,
+        protected: protectedOwner,
+        canManageProtectedUsers: protectedOwner,
+        canEditSongs: protectedOwner,
+        canDeleteSongs: protectedOwner
+      });
     }
   }
 
-  async function loadProfiles() {
-    const { data } = await supabase.rpc('get_all_profiles');
+  async function loadProfiles({ force = false } = {}) {
+    if (!force && !role.owner) return;
+
+    const { data, error } = await supabase.rpc('get_all_profiles');
+    if (error) {
+      showAppNotice('Users failed to load: ' + error.message);
+      return;
+    }
+
     setProfiles(data || []);
+  }
+
+  async function loadAuditLogs() {
+    if (!role.owner) return;
+
+    setAuditLogsLoading(true);
+
+    try {
+      const { data, error } = await supabase.rpc('get_audit_logs');
+      if (error) throw error;
+      setAuditLogs(data || []);
+    } catch (err) {
+      showAppNotice('Log trail failed to load: ' + err.message);
+    } finally {
+      setAuditLogsLoading(false);
+    }
   }
 
   async function loadAppSettings() {
@@ -459,11 +718,11 @@ function AppIntegrated() {
   }
 
   async function updateAppTitle(nextTitle) {
-    if (!role.admin) return;
+    if (!role.owner) return;
 
     const title = nextTitle.trim();
     if (!title) {
-      alert('Please enter an app name.');
+      showAppNotice('Please enter an app name.');
       return;
     }
 
@@ -479,31 +738,73 @@ function AppIntegrated() {
       setAppTitle(title);
       saveCachedValue(CACHE_KEYS.APP_TITLE, title);
     } catch (err) {
-      alert('App name update failed: ' + err.message);
+      showAppNotice('App name update failed: ' + err.message);
     } finally {
       setSavingAppTitle(false);
     }
   }
 
-  async function toggleStatus(profileId, field, current) {
-    const target = profiles.find(profile => profile.id === profileId);
-    if (!target || target.email === SUPER_ADMIN_EMAIL) return;
+  async function updateProfileAccess(profileId, updates) {
+    if (!role.owner) {
+      showAppNotice('Only a super admin can manage users.');
+      return;
+    }
 
-    const newApproved = field === 'is_approved' ? !current : Boolean(target.is_approved);
-    const newAdmin = field === 'is_admin' ? !current : Boolean(target.is_admin);
+    const target = profiles.find(profile => profile.id === profileId);
+    if (!target) return;
+
+    const normalizedUpdates = updates.is_super_admin
+      ? { ...updates, can_edit_songs: true, can_delete_songs: true }
+      : updates.is_protected
+        ? {
+            ...updates,
+            is_approved: true,
+            is_admin: true,
+            is_super_admin: true,
+            can_edit_songs: true,
+            can_delete_songs: true
+          }
+      : updates;
+    const nextProfile = { ...target, ...normalizedUpdates };
 
     const { error } = await supabase.rpc('admin_update_profile', {
       target_id: profileId,
-      new_is_approved: newApproved,
-      new_is_admin: newAdmin
+      new_is_approved: Boolean(nextProfile.is_approved),
+      new_is_admin: Boolean(nextProfile.is_admin),
+      new_is_super_admin: Object.prototype.hasOwnProperty.call(normalizedUpdates, 'is_super_admin') ? Boolean(normalizedUpdates.is_super_admin) : null,
+      new_is_protected: Object.prototype.hasOwnProperty.call(normalizedUpdates, 'is_protected') ? Boolean(normalizedUpdates.is_protected) : null,
+      new_can_edit_songs: Object.prototype.hasOwnProperty.call(normalizedUpdates, 'can_edit_songs') ? Boolean(normalizedUpdates.can_edit_songs) : null,
+      new_can_delete_songs: Object.prototype.hasOwnProperty.call(normalizedUpdates, 'can_delete_songs') ? Boolean(normalizedUpdates.can_delete_songs) : null,
+      new_can_manage_protected_users: Object.prototype.hasOwnProperty.call(normalizedUpdates, 'can_manage_protected_users') ? Boolean(normalizedUpdates.can_manage_protected_users) : null
     });
 
     if (error) {
-      alert('Update failed: ' + error.message);
+      showAppNotice('Update failed: ' + error.message);
       return;
     }
 
     loadProfiles();
+  }
+
+  function toggleStatus(profileId, field, current) {
+    updateProfileAccess(profileId, { [field]: !current });
+  }
+
+  function toggleActionPermission(profileId, field, current) {
+    updateProfileAccess(profileId, { [field]: !current });
+  }
+
+  async function recordAuditLog(actionType, targetTable, targetId, targetLabel) {
+    const { error } = await supabase.rpc('log_user_action', {
+      action_type: actionType,
+      target_table: targetTable,
+      target_id: String(targetId),
+      target_label: targetLabel
+    });
+
+    if (error) {
+      console.error('audit log failed:', error.message);
+    }
   }
 
   async function updateSongPlanning(songId, updates) {
@@ -537,7 +838,7 @@ function AppIntegrated() {
       if (error) throw error;
       await fetchSongs(true);
     } catch (err) {
-      alert('Song planning update failed: ' + err.message);
+      showAppNotice('Song planning update failed: ' + err.message);
     } finally {
       setSaving(false);
     }
@@ -579,14 +880,14 @@ function AppIntegrated() {
       if (error) throw error;
       await fetchSongs(true);
       if (showSuccess) {
-        alert('Song marked as presented.');
+        showAppNotice('Song marked as presented.');
       }
       return true;
     } catch (err) {
       if (err.message?.includes('duplicate key')) {
-        alert('This song is already marked as presented for that date.');
+        showAppNotice('This song is already marked as presented for that date.');
       } else {
-        alert('Mark presented failed: ' + err.message);
+        showAppNotice('Mark presented failed: ' + err.message);
       }
       return false;
     } finally {
@@ -741,18 +1042,71 @@ function AppIntegrated() {
   async function handleAuth(e) {
     e.preventDefault();
 
-    if (authMode === 'signup') {
-      const { error } = await supabase.auth.signUp({ email, password });
-      if (error) alert(error.message);
-      else {
-        alert('Account request sent! Wait for admin approval.');
-        setShowLoginForm(false);
-      }
+    const cleanEmail = email.trim();
+    if (!cleanEmail || !password) {
+      showAppNotice('Please enter your email and password.');
       return;
     }
 
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) alert(error.message);
+    setAuthLoading(true);
+
+    if (authMode === 'signup') {
+      const { data, error } = await supabase.auth.signUp({ email: cleanEmail, password });
+      if (error) {
+        showAppNotice(error.message);
+        setAuthLoading(false);
+        return;
+      }
+
+      if (data.session?.user) {
+        setUser(data.session.user);
+        await loadRole(data.session.user.id, data.session.user.email);
+      }
+
+      showAppNotice('Account request sent! Wait for admin approval.');
+      setShowLoginForm(false);
+      setPassword('');
+      setAuthLoading(false);
+      return;
+    }
+
+    const { error } = await supabase.auth.signInWithPassword({ email: cleanEmail, password });
+    if (error) {
+      showAppNotice(error.message);
+      setAuthLoading(false);
+    }
+  }
+
+  function handleSignOut() {
+    window.clearTimeout(inactivityTimerRef.current);
+    supabase.auth.signOut();
+  }
+
+  async function installApp() {
+    if (!installPromptEvent) {
+      setInstallPromptMode(null);
+      return;
+    }
+
+    setInstallingApp(true);
+
+    try {
+      installPromptEvent.prompt();
+      await installPromptEvent.userChoice;
+      window.sessionStorage.setItem(DISMISSED_INSTALL_PROMPT_KEY, '1');
+      setInstallPromptEvent(null);
+      setInstallPromptMode(null);
+    } catch (err) {
+      showAppNotice('Install prompt could not be opened: ' + err.message);
+    } finally {
+      setInstallingApp(false);
+    }
+  }
+
+  function dismissInstallPrompt() {
+    window.sessionStorage.setItem(DISMISSED_INSTALL_PROMPT_KEY, '1');
+    setInstallPromptEvent(null);
+    setInstallPromptMode(null);
   }
 
   async function claimAdminBootstrap() {
@@ -765,7 +1119,7 @@ function AppIntegrated() {
       .limit(1);
 
     if (admins?.length > 0) {
-      alert('An admin already exists. Ask them to approve you.');
+      showAppNotice('An admin already exists. Ask them to approve you.');
       return;
     }
 
@@ -775,20 +1129,37 @@ function AppIntegrated() {
       .eq('id', user.id);
 
     if (error) {
-      alert('Error: ' + error.message);
+      showAppNotice('Error: ' + error.message);
       return;
     }
 
-    setRole({ approved: true, admin: true, owner: user.email === SUPER_ADMIN_EMAIL });
+    setRole({
+      approved: true,
+      admin: true,
+      owner: isProtectedOwnerEmail(user.email),
+      protected: isProtectedOwnerEmail(user.email),
+      canEditSongs: true,
+      canDeleteSongs: isProtectedOwnerEmail(user.email),
+      canManageProtectedUsers: isProtectedOwnerEmail(user.email)
+    });
     loadProfiles();
-    alert('✅ You are now admin!');
+    showAppNotice('✅ You are now admin!');
   }
 
   async function deleteEntry(table, id) {
-    if (!role.approved) return;
+    if (!role.canDeleteSongs) {
+      showAppNotice('You do not have permission to delete songs or beat settings.');
+      return false;
+    }
 
-    await supabase.from(table).delete().eq('id', id);
+    const { error } = await supabase.from(table).delete().eq('id', id);
+    if (error) {
+      showAppNotice('Delete failed: ' + error.message);
+      return false;
+    }
+
     fetchSongs();
+    return true;
   }
 
   function requestDeleteSong(song) {
@@ -796,6 +1167,7 @@ function AppIntegrated() {
       type: 'deleteEntry',
       table: 'songs',
       id: song.id,
+      targetLabel: song.song_name,
       eyebrow: 'Delete song',
       title: `Delete ${song.song_name}?`,
       message: 'This removes the song and its attached beat details. This cannot be undone.',
@@ -809,6 +1181,7 @@ function AppIntegrated() {
       type: 'deleteEntry',
       table: 'styles',
       id: style.id,
+      targetLabel: style.beat_name,
       eyebrow: 'Remove beat',
       title: `Remove ${style.beat_name}?`,
       message: 'This removes only this beat from the song.',
@@ -823,22 +1196,23 @@ function AppIntegrated() {
     const songName = formData.song_name.trim();
     const lyrics = formData.lyrics.trim();
     const beatName = formData.beat_name.trim();
-    const beatDetailsProvided = formData.includeBeat || Boolean(
-      beatName
-      || formData.keyboard_id
-      || formData.tempo
+    const beatSupportingDetailsProvided = formData.includeBeat && Boolean(
+      formData.tempo
       || formData.key.trim()
       || formData.location.trim()
+      || formData.beat_use.trim()
+      || formData.is_favorite
       || formData.notes.trim()
     );
+    const beatDetailsProvided = formData.includeBeat && Boolean(beatName);
 
     if (!songName) {
-      alert('Please enter a song name.');
+      showAppNotice('Please enter a song name.');
       return;
     }
 
-    if (beatDetailsProvided && !beatName) {
-      alert('Please enter a beat name, or turn off optional piano settings.');
+    if (!beatName && beatSupportingDetailsProvided) {
+      showAppNotice('Please enter a beat name before saving piano settings, or clear those optional piano details.');
       return;
     }
 
@@ -889,9 +1263,9 @@ function AppIntegrated() {
 
       setFormData({ ...EMPTY_FORM, keyboard_id: defaultKeyboardId });
       await fetchSongs();
-      alert(beatDetailsProvided ? '✅ Song and beat saved!' : '✅ Song saved!');
+      showAppNotice(beatDetailsProvided ? '✅ Song and beat saved!' : '✅ Song saved!');
     } catch (err) {
-      alert('Save failed: ' + err.message);
+      showAppNotice('Save failed: ' + err.message);
     } finally {
       setSaving(false);
     }
@@ -927,10 +1301,15 @@ function AppIntegrated() {
   }
 
   async function saveSongEdit(songId) {
+    if (!role.canEditSongs) {
+      showAppNotice('You do not have permission to edit songs.');
+      return;
+    }
+
     const nextName = editSongName.trim();
 
     if (!nextName) {
-      alert('Please enter a song name.');
+      showAppNotice('Please enter a song name.');
       return;
     }
 
@@ -943,18 +1322,24 @@ function AppIntegrated() {
         .eq('id', songId);
 
       if (error) throw error;
+      await recordAuditLog('song_edit', 'songs', songId, nextName);
       cancelSongEdit();
       await fetchSongs();
     } catch (err) {
-      alert('Song update failed: ' + err.message);
+      showAppNotice('Song update failed: ' + err.message);
     } finally {
       setSaving(false);
     }
   }
 
   async function saveEdit(styleId) {
+    if (!role.canEditSongs) {
+      showAppNotice('You do not have permission to edit beat settings.');
+      return;
+    }
+
     if (!editData.keyboard_id) {
-      alert('Please select a keyboard.');
+      showAppNotice('Please select a keyboard.');
       return;
     }
 
@@ -973,10 +1358,11 @@ function AppIntegrated() {
       }).eq('id', styleId);
 
       if (error) throw error;
+      await recordAuditLog('beat_edit', 'styles', styleId, editData.beat_name || 'Beat setting');
       cancelEdit();
       await fetchSongs();
     } catch (err) {
-      alert('Update failed: ' + err.message);
+      showAppNotice('Update failed: ' + err.message);
     } finally {
       setSaving(false);
     }
@@ -1051,7 +1437,7 @@ function AppIntegrated() {
     if (!songName) return;
 
     if (existingNames.has(songName)) {
-      alert('A song with that name already exists.');
+      showAppNotice('A song with that name already exists.');
       return;
     }
 
@@ -1103,7 +1489,7 @@ function AppIntegrated() {
 
       await fetchSongs();
     } catch (err) {
-      alert('Duplicate failed: ' + err.message);
+      showAppNotice('Duplicate failed: ' + err.message);
     } finally {
       setSaving(false);
     }
@@ -1121,7 +1507,15 @@ function AppIntegrated() {
     }
 
     if (modal.type === 'deleteEntry') {
-      await deleteEntry(modal.table, modal.id);
+      const deleted = await deleteEntry(modal.table, modal.id);
+      if (deleted) {
+        await recordAuditLog(
+          modal.table === 'songs' ? 'song_delete' : 'beat_delete',
+          modal.table,
+          modal.id,
+          modal.targetLabel || modal.title
+        );
+      }
     }
 
     if (modal.type === 'songVisibility') {
@@ -1132,16 +1526,20 @@ function AppIntegrated() {
   }
 
   async function saveLyrics(song, lyrics) {
-    if (!role.approved) return;
+    if (!role.canEditSongs) {
+      showAppNotice('You do not have permission to edit lyrics.');
+      return;
+    }
 
     setSaving(true);
 
     try {
       await updateSongLyrics(song.id, lyrics);
+      await recordAuditLog('lyrics_edit', 'songs', song.id, song.song_name);
       setEditingLyricsSong(null);
       await fetchSongs();
     } catch (err) {
-      alert('Lyrics update failed: ' + err.message);
+      showAppNotice('Lyrics update failed: ' + err.message);
     } finally {
       setSaving(false);
     }
@@ -1156,6 +1554,23 @@ function AppIntegrated() {
         .from('profiles')
         .update({ default_keyboard_id: nextKeyboardId || null })
         .eq('id', user.id);
+    }
+  }
+
+  async function updateLogoutTimeout(nextMinutes) {
+    const minutes = Number(nextMinutes);
+    setLogoutTimeoutMinutes(minutes);
+
+    if (user) {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ logout_timeout_minutes: minutes || null })
+        .eq('id', user.id);
+
+      if (error) {
+        showAppNotice('Logout setting update failed: ' + error.message);
+        setLogoutTimeoutMinutes(DEFAULT_INACTIVITY_TIMEOUT_MINUTES);
+      }
     }
   }
 
@@ -1176,6 +1591,14 @@ function AppIntegrated() {
     cancelSongEdit();
     setEditingLyricsSong(null);
     setActiveView('admin');
+  }
+
+  function openLogTrailView() {
+    setShowAddForm(false);
+    cancelSongEdit();
+    setEditingLyricsSong(null);
+    setActiveView('logs');
+    loadAuditLogs();
   }
 
   function openReportsView() {
@@ -1355,7 +1778,7 @@ function AppIntegrated() {
       .slice(0, 5)
   ), [songs]);
 
-  const isSuperAdmin = emailAddress => emailAddress === SUPER_ADMIN_EMAIL;
+  const isSuperAdmin = isProtectedOwnerEmail;
 
   const navButtonStyle = view => ({
     background: activeView === view ? 'rgba(255,255,255,0.22)' : 'transparent',
@@ -1373,8 +1796,11 @@ function AppIntegrated() {
         input, select, textarea {
           width: 100%; padding: 9px 11px; border: 1px solid #cfd8e3;
           border-radius: 7px; font-family: inherit; font-size: 0.92rem;
-          background: #fff; transition: border-color 0.15s;
+          background: #fff; color: #102f4a; caret-color: #1a237e;
+          -webkit-text-fill-color: #102f4a; color-scheme: light;
+          transition: border-color 0.15s;
         }
+        input::placeholder, textarea::placeholder { color: #64748b; opacity: 1; -webkit-text-fill-color: #64748b; }
         input:focus, select:focus, textarea:focus { outline: none; border-color: #7fb7d8; box-shadow: 0 0 0 2px rgba(127,183,216,0.18); }
         button { cursor: pointer; border-radius: 6px; border: none; font-weight: 600; transition: all 0.15s; }
         button:hover { opacity: 0.87; }
@@ -1408,7 +1834,7 @@ function AppIntegrated() {
           <span className="app-header__mark" style={{ color: '#fff', display: 'inline-flex', alignItems: 'center', fontSize: '1.85rem', fontWeight: 900, lineHeight: 1, textShadow: '0 2px 8px rgba(0,0,0,0.35)' }}>♫</span>
           <span className="app-header__title" style={{ color: '#fff', fontWeight: '800', fontSize: '1.18rem', letterSpacing: '0.02em' }}>{appTitle}</span>
           {user && !authLoading && (
-            role.owner ? <RoleBadge text="PROTECTED" color="#5f9fbd" /> :
+            role.owner ? <RoleBadge text="SUPER ADMIN" color="#5f9fbd" /> :
             role.admin ? <RoleBadge text="ADMIN" color="#c62828" /> :
             role.approved ? <RoleBadge text="APPROVED" color="#2e7d32" /> :
             <RoleBadge text="PENDING" color="#64748b" />
@@ -1421,13 +1847,20 @@ function AppIntegrated() {
               <button type="button" onClick={openLibraryView} style={navButtonStyle('library')}>
                 Library
               </button>
-              <button type="button" onClick={openSettingsView} style={navButtonStyle('settings')}>
-                Settings
-              </button>
               <button type="button" onClick={openReportsView} style={navButtonStyle('reports')}>
                 Reports
               </button>
-              {role.admin && (
+              {role.owner && (
+                <button type="button" onClick={openSettingsView} style={navButtonStyle('settings')}>
+                  Settings
+                </button>
+              )}
+              {role.owner && (
+                <button type="button" onClick={openLogTrailView} style={navButtonStyle('logs')}>
+                  Log Trail
+                </button>
+              )}
+              {role.owner && (
                 <button type="button" onClick={openAdminView} style={navButtonStyle('admin')}>
                   Admin
                 </button>
@@ -1440,7 +1873,7 @@ function AppIntegrated() {
             </button>
           )}
           {user ? (
-            <button onClick={() => supabase.auth.signOut()} style={{ background: '#c62828', color: 'white', padding: '7px 14px', fontSize: '0.83rem' }}>
+            <button onClick={handleSignOut} style={{ background: '#c62828', color: 'white', padding: '7px 14px', fontSize: '0.83rem' }}>
               Logout
             </button>
           ) : (
@@ -1470,10 +1903,39 @@ function AppIntegrated() {
               {authMode === 'login' ? '🔐 Login' : '📝 Request Access'}
             </h2>
             <form onSubmit={handleAuth} style={{ display: 'grid', gap: '10px' }}>
-              <div><label>Email</label><input type="email" placeholder="your@email.com" onChange={e => setEmail(e.target.value)} required /></div>
-              <div><label>Password</label><input type="password" placeholder="••••••••" onChange={e => setPassword(e.target.value)} required /></div>
-              <button type="submit" style={{ background: '#1a237e', color: 'white', padding: '10px', marginTop: '2px' }}>
-                {authMode === 'login' ? 'Login' : 'Request Access'}
+              <div>
+                <label>Email</label>
+                <input
+                  type="email"
+                  placeholder="your@email.com"
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  autoComplete={authMode === 'login' ? 'username' : 'email'}
+                  required
+                />
+              </div>
+              <div>
+                <label>Password</label>
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="Enter password"
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  autoComplete={authMode === 'login' ? 'current-password' : 'new-password'}
+                  required
+                />
+              </div>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', textTransform: 'none', letterSpacing: 0, fontSize: '0.82rem', color: '#1a237e' }}>
+                <input
+                  type="checkbox"
+                  checked={showPassword}
+                  onChange={e => setShowPassword(e.target.checked)}
+                  style={{ width: 'auto' }}
+                />
+                Show password
+              </label>
+              <button type="submit" disabled={authLoading} style={{ background: '#1a237e', color: 'white', padding: '10px', marginTop: '2px' }}>
+                {authLoading ? 'Please wait...' : authMode === 'login' ? 'Login' : 'Request Access'}
               </button>
             </form>
             <p onClick={() => setAuthMode(authMode === 'login' ? 'signup' : 'login')} style={{ cursor: 'pointer', color: '#1a237e', marginTop: '12px', textDecoration: 'underline', fontSize: '0.86rem', textAlign: 'center' }}>
@@ -1498,7 +1960,7 @@ function AppIntegrated() {
               <span className="owner-panel__eyebrow">Protected owner account</span>
               <h2>Enock's Music Manager</h2>
               <p>
-                This account is protected. It stays approved, keeps admin access, and cannot be changed from user management.
+                This account is protected. It stays approved, keeps super admin access, and cannot be restricted from user management.
               </p>
             </div>
           </section>
@@ -1601,23 +2063,36 @@ function AppIntegrated() {
           </div>
         )}
 
-        {(role.approved || role.admin) && activeView === 'settings' && (
+        {role.owner && activeView === 'settings' && (
           <SettingsPage
             appTitle={appTitle}
             defaultKeyboardId={defaultKeyboardId}
             keyboards={keyboards}
-            isAdmin={role.admin}
+            isAdmin={role.owner}
             savingAppTitle={savingAppTitle}
             onAppTitleChange={updateAppTitle}
             onDefaultKeyboardChange={updateDefaultKeyboard}
+            logoutTimeoutMinutes={logoutTimeoutMinutes}
+            onLogoutTimeoutChange={updateLogoutTimeout}
           />
         )}
 
-        {role.admin && activeView === 'admin' && (
+        {role.owner && activeView === 'admin' && (
           <AdminPage
             profiles={profiles}
             isSuperAdmin={isSuperAdmin}
+            currentUserId={user?.id}
+            canManageSuperAdmins={role.owner}
+            canManageProtectedUsers={role.canManageProtectedUsers}
             onToggleStatus={toggleStatus}
+            onToggleActionPermission={toggleActionPermission}
+          />
+        )}
+
+        {role.owner && activeView === 'logs' && (
+          <LogTrailPage
+            logs={auditLogs}
+            loading={auditLogsLoading}
           />
         )}
 
@@ -1630,7 +2105,7 @@ function AppIntegrated() {
         )}
 
         {user && !authLoading && activeView === 'manual' && (
-          <ManualPage isAdmin={role.admin} />
+          <ManualPage role={role} />
         )}
 
         {user && !authLoading && activeView === 'songStats' && (
@@ -1676,8 +2151,8 @@ function AppIntegrated() {
               <>
                 <div className="form-grid" style={{ marginTop: '10px' }}>
                   <div>
-                    <label>Beat Name *</label>
-                    <input placeholder="e.g. 8-Beat Modern" value={formData.beat_name} onChange={e => setFormData({ ...formData, beat_name: e.target.value })} required={formData.includeBeat} />
+                    <label>Beat Name</label>
+                    <input placeholder="e.g. 8-Beat Modern" value={formData.beat_name} onChange={e => setFormData({ ...formData, beat_name: e.target.value })} />
                   </div>
                   <div>
                     <label>Keyboard</label>
@@ -1772,6 +2247,7 @@ function AppIntegrated() {
               onEditLyrics={setEditingLyricsSong}
               onOpenLyrics={setLyricsSong}
               onSaveLyrics={saveLyrics}
+              onNotify={showAppNotice}
               user={user}
               canManageAudio={role?.approved}
               isEditingSong={editingSongId === song.id}
@@ -1798,6 +2274,16 @@ function AppIntegrated() {
         saving={saving}
         onCancel={() => setActionModal(null)}
         onConfirm={handleActionModalConfirm}
+      />
+      <NoticeModal
+        notice={noticeModal}
+        onClose={() => setNoticeModal(null)}
+      />
+      <InstallPromptModal
+        mode={installPromptMode}
+        installing={installingApp}
+        onInstall={installApp}
+        onDismiss={dismissInstallPrompt}
       />
       {offlineAudioPrompt && (
         <div className="app-modal no-print" role="dialog" aria-modal="true" aria-labelledby="offline-audio-title">

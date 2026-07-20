@@ -68,7 +68,7 @@ function revokeCachedUrls(items) {
   });
 }
 
-export default function AudioAttachments({ song, user, canManage }) {
+export default function AudioAttachments({ song, user, canManage, onNotify }) {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState('');
@@ -184,7 +184,7 @@ export default function AudioAttachments({ song, user, canManage }) {
       await uploadSongAudio({ songId: song.id, file, userId: user?.id });
       await load();
     } catch (err) {
-      alert(err.message);
+      onNotify?.(err.message);
     } finally {
       setUploading(false);
       e.target.value = '';
@@ -285,7 +285,7 @@ export default function AudioAttachments({ song, user, canManage }) {
       discardRecording();
       await load();
     } catch (err) {
-      alert(err.message);
+      onNotify?.(err.message);
     } finally {
       setSavingRecording(false);
     }

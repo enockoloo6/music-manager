@@ -177,7 +177,12 @@ Implemented direction:
 * Reports show most-presented songs so the team can see repeated favorites over time.
 * Highlighted songs display first in the library, ordered by earliest presentation date before the normal library sort is applied.
 * Public highlighted songs use a single More action that opens presentation and beat details together, avoiding duplicate More links.
-* `enockoloo6@gmail.com` is treated as the protected account, receives a PROTECTED badge, and remains approved/admin even if profile flags are stale.
+* `enockoloo6@gmail.com` is treated as the protected owner, receives full access, and cannot be restricted from user management.
+* Protected users have full access and remain immune to ordinary super-admin restrictions.
+* Users with `can_manage_protected_users` can add or remove protected status for other users.
+* Settings, Admin, and Log Trail are visible only to super admins/protected users.
+* The in-app Manual is capability-aware and only displays instructions for actions available to the logged-in account.
+* The app prompts phone users to install Music Manager when the browser reports install support, with iOS Add to Home Screen instructions where native install is unavailable.
 
 ---
 

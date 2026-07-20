@@ -7,7 +7,9 @@ function SettingsPage({
   isAdmin = false,
   savingAppTitle = false,
   onAppTitleChange,
-  onDefaultKeyboardChange
+  onDefaultKeyboardChange,
+  logoutTimeoutMinutes = 30,
+  onLogoutTimeoutChange
 }) {
   return (
     <section className="panel no-print" style={{ borderTop: '4px solid #1a237e' }}>
@@ -56,6 +58,20 @@ function SettingsPage({
                 {keyboard.model_name}
               </option>
             ))}
+          </select>
+        </div>
+
+        <div>
+          <label>Log Out After Inactivity</label>
+          <select
+            value={logoutTimeoutMinutes}
+            onChange={e => onLogoutTimeoutChange?.(e.target.value)}
+          >
+            <option value={15}>15 minutes</option>
+            <option value={30}>30 minutes</option>
+            <option value={60}>1 hour</option>
+            <option value={120}>2 hours</option>
+            <option value={240}>4 hours</option>
           </select>
         </div>
 

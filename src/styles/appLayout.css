@@ -111,12 +111,34 @@
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
+  justify-content: flex-end;
 }
 
 .admin-user-actions__button {
   border: 1px solid transparent;
   font-size: 0.72rem;
   padding: 5px 10px;
+}
+
+.admin-user-actions__check {
+  align-items: center;
+  background: #f1f9ff;
+  border: 1px solid #c8e4f3;
+  border-radius: 6px;
+  color: #315a78;
+  display: inline-flex;
+  font-size: 0.72rem;
+  font-weight: 800;
+  gap: 5px;
+  letter-spacing: 0;
+  margin: 0;
+  padding: 5px 9px;
+  text-transform: none;
+}
+
+.admin-user-actions__check input {
+  margin: 0;
+  width: auto;
 }
 
 .admin-user-actions__button--approve {
@@ -139,6 +161,62 @@
 
 .admin-user-actions__button--danger:hover {
   background: #fadada;
+}
+
+.log-trail {
+  display: grid;
+  gap: 8px;
+}
+
+.log-trail__item {
+  align-items: center;
+  border-bottom: 1px solid #e8eef4;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  padding: 9px 0;
+}
+
+.log-trail__item > div {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-width: 0;
+}
+
+.log-trail__item strong {
+  color: #102f4a;
+  font-size: 0.88rem;
+}
+
+.log-trail__item span:not(.log-trail__badge) {
+  color: #64748b;
+  font-size: 0.78rem;
+}
+
+.log-trail__item time {
+  color: #94a3b8;
+  flex: 0 0 auto;
+  font-size: 0.76rem;
+}
+
+.log-trail__badge {
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 900;
+  padding: 2px 7px;
+  text-transform: uppercase;
+}
+
+.log-trail__badge--edit {
+  background: #dceff8;
+  color: #315a78;
+}
+
+.log-trail__badge--delete {
+  background: #fde8e8;
+  color: #9f2f2f;
 }
 
 .panel.contributor-panel {
@@ -381,6 +459,15 @@
   background: #e8eef4;
   color: #315a78;
   padding: 9px 12px;
+}
+
+.app-modal__actions--single {
+  justify-content: flex-end;
+}
+
+.app-modal__actions--single button:last-child {
+  background: #315a78;
+  color: #fff;
 }
 
 .song-stats-page {

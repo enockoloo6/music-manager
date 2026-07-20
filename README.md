@@ -240,20 +240,25 @@ Invalid schema: music_manager
 
 ## 🔐 Authentication & Roles
 
-| Role | View songs | Add/Edit beats | Approve users | Make admins |
-|---|---|---|---|---|
-| Logged out | ✅ | ❌ | ❌ | ❌ |
-| Pending | ✅ | ❌ | ❌ | ❌ |
-| Approved | ✅ | ✅ | ❌ | ❌ |
-| Admin | ✅ | ✅ | ✅ | ✅ |
+| Capability | What it allows |
+|---|---|
+| Approved | Access song work and add songs. |
+| Edit songs | Edit song names, lyrics, and beat settings. |
+| Delete songs | Delete songs and remove beat settings. |
+| Admin | Presentation planning actions such as highlight, hide, and schedule. |
+| Super admin | Settings, Admin, and Log Trail access. |
+| Protected | Full access that cannot be restricted by ordinary super admins. |
+| Manage protected users | Add or remove protected status for other users. |
 
-### Protected super admin
+The user manual shown in the app is capability-aware. It only displays instructions for actions available to the logged-in account.
+
+### Protected Owner
 
 ```text
 enockoloo6@gmail.com
 ```
 
-is the protected super admin account.
+is protected by default, has full access, and can grant protected-status management to other users.
 
 ---
 
@@ -265,7 +270,9 @@ is the protected super admin account.
 | 🎵 Multiple beats per song | One song can store many beats |
 | ✏️ Inline editing | Edit beats without page reload |
 | 🔒 Authentication | Supabase Auth login/signup |
-| 👑 Admin panel | Approve users and grant admin rights |
+| 👑 Admin panel | Super-admin controls for approval, edit, delete, admin, super admin, and protected access |
+| 🧾 Log trail | Super-admin view of edit and delete actions with actor email |
+| 📱 Install prompt | In-app prompt helps phone users install Music Manager from the browser |
 | 🎹 Default keyboard | Remembers preferred keyboard |
 | 🖨️ Print mode | Clean printable output |
 

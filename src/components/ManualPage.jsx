@@ -1,84 +1,140 @@
-const manualSections = [
-  {
-    icon: '🔎',
-    title: 'Find songs',
-    summary: 'Library is the main place to look.',
-    items: [
-      'Search by title, lyrics, beat, key, or notes.',
-      'Sort by latest or song name.',
-      'Filter by category or contributor.'
-    ]
-  },
-  {
-    icon: '➕',
-    title: 'Add songs',
-    summary: 'Start small. Add more details later.',
-    items: [
-      'Tap Add Song and enter the name.',
-      'Paste lyrics now, or add them later.',
-      'Add piano settings only when needed.'
-    ]
-  },
-  {
-    icon: '●',
-    title: 'Finish details',
-    summary: 'Highlighted links show what is missing.',
-    items: [
-      'Add Lyrics means lyrics are missing.',
-      'Add Audio means audio is missing.',
-      'More has edit, duplicate, and delete.'
-    ]
-  },
-  {
-    icon: '🎹',
-    title: 'Use beats and audio',
-    summary: 'Keep practice details with the song.',
-    items: [
-      'Beats shows piano settings.',
-      'Preferred marks the best beat.',
-      'Audio lets you upload, record, play, and save tracks for offline playback.'
-    ]
-  },
-  {
-    icon: '☁',
-    title: 'Online and offline',
-    summary: 'Open once online, then use what was saved.',
-    items: [
-      'Songs, lyrics, beats, keyboards, and categories are cached for offline viewing.',
-      'Audio can play offline after it is saved locally.',
-      'On mobile data or unknown networks, the app shows estimated audio data before saving.'
-    ]
-  },
-  {
-    icon: '★',
-    title: 'Presentation planning',
-    summary: 'Prepare worship songs without losing history.',
-    items: [
-      'Admins can highlight or hide songs and set presentation dates.',
-      'Highlighted songs appear first and show their presentation date.',
-      'Approved users can mark songs presented and view Song Stats.'
-    ]
-  },
-  {
-    icon: '⚙️',
-    title: 'Settings and access',
-    summary: 'Use these for setup and control.',
-    items: [
-      'Settings saves your default keyboard.',
-      'Settings explains what works online and offline.',
-      'Admin manages approval and protected access.'
-    ]
-  }
-];
+function buildManualSections(role = {}) {
+  const canAddSongs = Boolean(role.approved || role.admin);
+  const canEditSongs = Boolean(role.canEditSongs);
+  const canDeleteSongs = Boolean(role.canDeleteSongs);
+  const canPlanPresentations = Boolean(role.admin || role.owner || role.protected);
+  const canManageUsers = Boolean(role.owner);
+  const canManageProtectedUsers = Boolean(role.canManageProtectedUsers);
 
-function ManualPage({ isAdmin = false }) {
+  const sections = [
+    {
+      icon: '🔎',
+      title: 'Find songs',
+      summary: 'Library is the main place to look.',
+      items: [
+        'Search by title, lyrics, beat, key, or notes.',
+        'Sort by latest or song name.',
+        'Filter by category or contributor.'
+      ]
+    },
+    {
+      icon: '☁',
+      title: 'Online and offline',
+      summary: 'Open once online, then use what was saved.',
+      items: [
+        'Songs, lyrics, beats, keyboards, and categories are cached for offline viewing.',
+        'Audio can play offline after it is saved locally.',
+        'On mobile data or unknown networks, the app shows estimated audio data before saving.'
+      ]
+    }
+  ];
+
+  if (canAddSongs) {
+    sections.splice(1, 0, {
+      icon: '➕',
+      title: 'Add songs',
+      summary: 'Start small. Add more details later.',
+      items: [
+        'Tap Add Song and enter the song name.',
+        'Save with only a song name, then add lyrics, audio, and piano settings later.',
+        'Add piano settings only when you have a beat name ready.'
+      ]
+    });
+  }
+
+  if (canEditSongs) {
+    sections.push({
+      icon: '●',
+      title: 'Finish details',
+      summary: 'Use edit actions to complete each song.',
+      items: [
+        'Add Lyrics means lyrics are missing.',
+        'Edit Song changes the saved song name.',
+        'Beat actions let you edit piano settings.'
+      ]
+    });
+  }
+
+  if (canAddSongs) {
+    sections.push({
+      icon: '🎹',
+      title: 'Use beats and audio',
+      summary: 'Keep practice details with the song.',
+      items: [
+        'Beats shows piano settings.',
+        'Preferred marks the best beat.',
+        'Audio lets approved users upload, record, play, and save tracks for offline playback.'
+      ]
+    });
+  }
+
+  if (canPlanPresentations) {
+    sections.push({
+      icon: '★',
+      title: 'Presentation planning',
+      summary: 'Prepare worship songs without losing history.',
+      items: [
+        'Highlight or hide songs and set presentation dates.',
+        'Highlighted songs appear first and show their presentation date.',
+        'Use Mark Presented and Song Stats to keep presentation history.'
+      ]
+    });
+  } else if (canAddSongs) {
+    sections.push({
+      icon: '★',
+      title: 'Presentation history',
+      summary: 'Record when songs are used.',
+      items: [
+        'Use Mark Presented when a song has been presented.',
+        'Open Song Stats to see presentation count and dates.',
+        'Ask a super admin if a song needs to be highlighted, hidden, or scheduled.'
+      ]
+    });
+  }
+
+  if (canDeleteSongs) {
+    sections.push({
+      icon: '🗑',
+      title: 'Delete access',
+      summary: 'Delete actions are restricted.',
+      items: [
+        'Delete Song removes a song and its attached beat details.',
+        'Remove Beat deletes only that beat setting.',
+        'Delete and edit actions are recorded in the log trail.'
+      ]
+    });
+  }
+
+  if (canManageUsers) {
+    sections.push({
+      icon: '⚙️',
+      title: 'Settings and access',
+      summary: 'Use these for setup and control.',
+      items: [
+        'Settings saves your default keyboard and inactivity logout time.',
+        'Admin manages approval, edit, delete, admin, and super admin access.',
+        canManageProtectedUsers
+          ? 'Protected access can be granted or removed for other users.'
+          : 'Protected users have full access and remain locked from normal restrictions.',
+        'Log Trail shows edit and delete actions with the user who did them.'
+      ]
+    });
+  }
+
+  return sections;
+}
+
+function ManualPage({ role = {} }) {
+  const manualSections = buildManualSections(role);
+  const hasLimitedAccess = !role.approved && !role.admin && !role.owner;
+
   return (
     <section className="manual-page no-print" aria-label="User manual">
       <div className="panel manual-page__intro">
         <span className="manual-page__eyebrow">Quick help</span>
         <h2>How to use Music Manager</h2>
         <p>
-          Keep each song together with its lyrics, beats, audio, and notes. Add what you have now, then complete the rest later.
+          This guide only shows actions available to your account. If a capability is not listed, your account does not currently have that access.
         </p>
       </div>
 
@@ -100,11 +156,11 @@ function ManualPage({ isAdmin = false }) {
           </article>
         ))}
 
-        {!isAdmin && (
+        {hasLimitedAccess && (
           <article className="manual-page__section manual-page__section--note">
             <h3>Need more access?</h3>
             <p>
-              If some actions are locked, ask an admin to approve or update your account.
+              If song actions are locked, ask a super admin or protected user to update your account.
             </p>
           </article>
         )}
