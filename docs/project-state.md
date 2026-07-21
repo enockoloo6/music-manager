@@ -145,8 +145,10 @@ Implemented direction:
 * Approved users can duplicate an existing song, including lyrics and beat settings, then edit the copy.
 * Song duplication lets users choose which parts to copy: lyrics, beat settings, song metadata, and presentation planning.
 * Songs can have multiple beats; beats open from a Beats action instead of always crowding the card.
+* Approved editors can add another beat directly from a saved song card.
 * Public users see that beat-details action as More.
 * Beats can be marked as favorite/preferred and labelled for Worship, Praise, or other use.
+* Beat add/edit forms use standard musical key choices while preserving older custom key values.
 * Search no longer has a separate category tab beside it.
 * Beat details use pipe separators and share the subdued piano model color.
 * Audio recording has a standard maximum duration with a visible timer and automatic stop.

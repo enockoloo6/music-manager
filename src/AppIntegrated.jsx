@@ -95,6 +95,32 @@ const EMPTY_FORM = {
   notes: ''
 };
 
+const EMPTY_BEAT_FORM = {
+  beat_name: '',
+  keyboard_id: '',
+  tempo: '',
+  key: '',
+  location: '',
+  beat_use: '',
+  is_favorite: false,
+  notes: ''
+};
+
+const MUSICAL_KEY_OPTIONS = [
+  'C',
+  'C#/Db',
+  'D',
+  'D#/Eb',
+  'E',
+  'F',
+  'F#/Gb',
+  'G',
+  'G#/Ab',
+  'A',
+  'A#/Bb',
+  'B'
+];
+
 const STEWARD_VERSES = [
   {
     text: 'Be ye stedfast, unmoveable, always abounding in the work of the Lord.',
@@ -1368,6 +1394,49 @@ function AppIntegrated() {
     }
   }
 
+  async function addBeatToSong(song, beatData) {
+    if (!role.canEditSongs) {
+      showAppNotice('You do not have permission to add beat settings.');
+      return false;
+    }
+
+    const beatName = beatData.beat_name?.trim();
+
+    if (!beatName) {
+      showAppNotice('Please enter a beat name.');
+      return false;
+    }
+
+    setSaving(true);
+
+    try {
+      const { data, error } = await supabase.from('styles').insert([{
+        song_id: song.id,
+        keyboard_id: beatData.keyboard_id || null,
+        beat_name: beatName,
+        keyboard_location: beatData.location?.trim() || null,
+        style_category: beatData.beat_use?.trim() || null,
+        is_favorite: Boolean(beatData.is_favorite),
+        tempo: beatData.tempo || null,
+        musical_key: beatData.key?.trim() || null,
+        notes: beatData.notes?.trim() || null
+      }])
+        .select('id')
+        .single();
+
+      if (error) throw error;
+      await recordAuditLog('beat_edit', 'styles', data.id, beatName);
+      await fetchSongs();
+      showAppNotice(`Beat added to ${song.song_name}.`);
+      return true;
+    } catch (err) {
+      showAppNotice('Beat add failed: ' + err.message);
+      return false;
+    } finally {
+      setSaving(false);
+    }
+  }
+
   function getDuplicateSongName(song) {
     const baseName = `${song.song_name} Copy`;
     const existingNames = new Set(songs.map(item => item.song_name));
@@ -2177,7 +2246,12 @@ function AppIntegrated() {
                 <div className="form-grid" style={{ marginTop: '10px' }}>
                   <div>
                     <label>Key</label>
-                    <input placeholder="e.g. G, Bb, F#" value={formData.key} onChange={e => setFormData({ ...formData, key: e.target.value })} />
+                    <select value={formData.key} onChange={e => setFormData({ ...formData, key: e.target.value })}>
+                      <option value="">Not specified</option>
+                      {MUSICAL_KEY_OPTIONS.map(keyOption => (
+                        <option key={keyOption} value={keyOption}>{keyOption}</option>
+                      ))}
+                    </select>
                   </div>
                   <div>
                     <label>Beat Use</label>
@@ -2243,6 +2317,7 @@ function AppIntegrated() {
               onStartEdit={startEdit}
               onCancelEdit={cancelEdit}
               onSaveEdit={saveEdit}
+              onAddBeat={addBeatToSong}
               onEditDataChange={setEditData}
               onEditLyrics={setEditingLyricsSong}
               onOpenLyrics={setLyricsSong}
@@ -2250,6 +2325,9 @@ function AppIntegrated() {
               onNotify={showAppNotice}
               user={user}
               canManageAudio={role?.approved}
+              defaultKeyboardId={defaultKeyboardId}
+              emptyBeatForm={EMPTY_BEAT_FORM}
+              musicalKeyOptions={MUSICAL_KEY_OPTIONS}
               isEditingSong={editingSongId === song.id}
               editSongName={editingSongId === song.id ? editSongName : ''}
               isEditingLyrics={editingLyricsSong?.id === song.id}

@@ -123,6 +123,8 @@ Implemented:
 * Read-only local cache foundation with IndexedDB audio caching for offline playback
 * Song duplication
 * Multiple beat support with favorite/preferred and Worship/Praise/Other labels
+* Add Another Beat from a saved song card
+* Standard musical key choices for add/edit beat forms
 * Public beat-details action labelled More
 * Beat details hide invalid timestamp-like use values
 

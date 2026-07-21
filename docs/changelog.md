@@ -115,6 +115,9 @@ Implemented:
 * Added configurable inactivity logout, defaulting to 30 minutes.
 * Added a phone install prompt for PWA installation, including iOS Add to Home Screen guidance.
 * Updated the in-app Manual to display help based on the logged-in user's capabilities.
+* Approved editors can now add another beat directly from a saved song card, including keyboard, beat category, tempo, key, use, preferred status, and notes.
+* Beat add/edit key fields now use standard musical key choices while still preserving older custom key values already stored on a song.
+* Updated the in-app Manual with the Add Another Beat workflow and key-selection behavior.
 
 Public audio visibility depends on applying the public read migration to the active Supabase project.
 The migration file exists at `supabase/migrations/20260714_public_audio_read_access.sql`; applying it requires Supabase CLI authentication or a Postgres admin connection string.
@@ -229,6 +232,10 @@ Song Duplication and Beat Preferences
 Public Beat Details Label
 
 3845235
+
+Inline Beat Add and Key Choices
+
+db50914
 
 ---
 

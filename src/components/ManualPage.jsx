@@ -37,7 +37,7 @@ function buildManualSections(role = {}) {
       items: [
         'Tap Add Song and enter the song name.',
         'Save with only a song name, then add lyrics, audio, and piano settings later.',
-        'Add piano settings only when you have a beat name ready.'
+        'Add piano settings only when you have a beat name ready; the Key field uses standard musical key choices.'
       ]
     });
   }
@@ -50,7 +50,8 @@ function buildManualSections(role = {}) {
       items: [
         'Add Lyrics means lyrics are missing.',
         'Edit Song changes the saved song name.',
-        'Beat actions let you edit piano settings.'
+        'Add Another Beat saves a new beat under the same song.',
+        'Beat actions let you edit existing piano settings.'
       ]
     });
   }
@@ -62,6 +63,7 @@ function buildManualSections(role = {}) {
       summary: 'Keep practice details with the song.',
       items: [
         'Beats shows piano settings.',
+        'Use Add Another Beat when a song needs settings for another keyboard, tempo, category, or use.',
         'Preferred marks the best beat.',
         'Audio lets approved users upload, record, play, and save tracks for offline playback.'
       ]

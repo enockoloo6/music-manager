@@ -26,6 +26,24 @@ function beatDisplayName(style) {
   return category ? `${style.beat_name} (${category})` : style.beat_name;
 }
 
+function MusicalKeyOptions({ options = [], value = '' }) {
+  const trimmedValue = value?.trim();
+  const normalizedOptions = options.filter(Boolean);
+  const hasCurrentValue = trimmedValue && !normalizedOptions.includes(trimmedValue);
+
+  return (
+    <>
+      <option value="">Not specified</option>
+      {hasCurrentValue && <option value={trimmedValue}>{trimmedValue}</option>}
+      {normalizedOptions.map(keyOption => (
+        <option key={keyOption} value={keyOption}>
+          {keyOption}
+        </option>
+      ))}
+    </>
+  );
+}
+
 function formatPresentationDate(value) {
   if (!value) return '';
 
@@ -61,6 +79,7 @@ function SongCard({
   onStartEdit,
   onCancelEdit,
   onSaveEdit,
+  onAddBeat,
   onEditDataChange,
   onEditLyrics,
   onOpenLyrics,
@@ -68,6 +87,9 @@ function SongCard({
   onNotify,
   user,
   canManageAudio,
+  defaultKeyboardId,
+  emptyBeatForm,
+  musicalKeyOptions,
   isEditingSong,
   editSongName,
   isEditingLyrics
@@ -75,6 +97,11 @@ function SongCard({
   const [showMore, setShowMore] = useState(false);
   const [showAudio, setShowAudio] = useState(false);
   const [showBeats, setShowBeats] = useState(false);
+  const [isAddingBeat, setIsAddingBeat] = useState(false);
+  const [newBeatData, setNewBeatData] = useState(() => ({
+    ...(emptyBeatForm || {}),
+    keyboard_id: defaultKeyboardId || ''
+  }));
   const hasLyrics = Boolean(getFirstLyricLine(song.lyrics));
   const hasAudio = (song.song_audio?.length || 0) > 0;
   const hasBeats = (song.styles?.length || 0) > 0;
@@ -143,6 +170,34 @@ function SongCard({
     });
   }
 
+  function startAddingBeat() {
+    setShowBeats(true);
+    setShowMore(false);
+    setShowAudio(false);
+    onEditLyrics?.(null);
+    setIsAddingBeat(true);
+    setNewBeatData({
+      ...(emptyBeatForm || {}),
+      keyboard_id: defaultKeyboardId || ''
+    });
+  }
+
+  function cancelAddingBeat() {
+    setIsAddingBeat(false);
+    setNewBeatData({
+      ...(emptyBeatForm || {}),
+      keyboard_id: defaultKeyboardId || ''
+    });
+  }
+
+  async function saveNewBeat() {
+    const saved = await onAddBeat?.(song, newBeatData);
+    if (saved) {
+      cancelAddingBeat();
+      setShowBeats(true);
+    }
+  }
+
   function toggleMore() {
     setShowMore(current => {
       const nextOpen = !current;
@@ -199,10 +254,10 @@ function SongCard({
             </button>
           )}
 
-          {hasBeats && canManageSong && (
+          {((hasBeats && canManageSong) || canEditSongs) && (
             <button
               type="button"
-              className={`song-card__link-action${showBeats ? ' song-card__link-action--active' : ''}`}
+              className={`song-card__link-action${hasBeats ? '' : ' song-card__link-action--needed'}${showBeats ? ' song-card__link-action--active' : ''}`}
               onClick={toggleBeats}
               aria-expanded={showBeats}
             >
@@ -380,8 +435,179 @@ function SongCard({
         />
       )}
 
-      {(showBeats || showPublicDetails) && (
+      {(showBeats || isAddingBeat || showPublicDetails) && (
       <div>
+        {canEditSongs && (
+          <div className="beat-section-header no-print">
+            <div>
+              <strong>Beats for this song</strong>
+              <span>{song.styles?.length || 0} saved</span>
+            </div>
+
+            {!isAddingBeat && (
+              <button type="button" onClick={startAddingBeat} disabled={saving}>
+                Add Another Beat
+              </button>
+            )}
+          </div>
+        )}
+
+        {isAddingBeat && (
+          <form
+            className="beat-add-panel no-print"
+            onSubmit={event => {
+              event.preventDefault();
+              saveNewBeat();
+            }}
+          >
+            <div className="beat-add-panel__title">
+              <strong>Add beat to {song.song_name}</strong>
+              <span>This creates another beat under the same song.</span>
+            </div>
+
+            <div className="form-grid">
+              <div>
+                <label>Beat Name *</label>
+                <input
+                  style={inputStyle}
+                  placeholder="e.g. 8-Beat Modern"
+                  value={newBeatData.beat_name}
+                  onChange={event => setNewBeatData({
+                    ...newBeatData,
+                    beat_name: event.target.value
+                  })}
+                  required
+                  autoFocus
+                />
+              </div>
+
+              <div>
+                <label>Keyboard</label>
+                <select
+                  style={{
+                    ...inputStyle,
+                    padding: '6px 8px'
+                  }}
+                  value={newBeatData.keyboard_id}
+                  onChange={event => setNewBeatData({
+                    ...newBeatData,
+                    keyboard_id: event.target.value
+                  })}
+                >
+                  <option value="">Select keyboard…</option>
+                  {keyboards.map(keyboard => (
+                    <option key={keyboard.id} value={keyboard.id}>
+                      {keyboard.model_name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="form-grid" style={{ marginTop: '8px' }}>
+              <div>
+                <label>Beat Category</label>
+                <input
+                  style={inputStyle}
+                  placeholder="e.g. Ballad, Country, Bank 3…"
+                  value={newBeatData.location}
+                  onChange={event => setNewBeatData({
+                    ...newBeatData,
+                    location: event.target.value
+                  })}
+                />
+              </div>
+
+              <div>
+                <label>Tempo (BPM)</label>
+                <input
+                  style={inputStyle}
+                  placeholder="e.g. 92"
+                  type="number"
+                  value={newBeatData.tempo}
+                  onChange={event => setNewBeatData({
+                    ...newBeatData,
+                    tempo: event.target.value
+                  })}
+                />
+              </div>
+            </div>
+
+            <div className="form-grid" style={{ marginTop: '8px' }}>
+              <div>
+                <label>Key</label>
+                <select
+                  style={inputStyle}
+                  value={newBeatData.key}
+                  onChange={event => setNewBeatData({
+                    ...newBeatData,
+                    key: event.target.value
+                  })}
+                >
+                  <MusicalKeyOptions options={musicalKeyOptions} value={newBeatData.key} />
+                </select>
+              </div>
+
+              <div>
+                <label>Beat Use</label>
+                <select
+                  style={{
+                    ...inputStyle,
+                    padding: '6px 8px'
+                  }}
+                  value={newBeatData.beat_use}
+                  onChange={event => setNewBeatData({
+                    ...newBeatData,
+                    beat_use: event.target.value
+                  })}
+                >
+                  <option value="">Not specified</option>
+                  <option value="Worship">Worship</option>
+                  <option value="Praise">Praise</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="form-grid" style={{ marginTop: '8px' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', textTransform: 'none', letterSpacing: 0 }}>
+                <input
+                  type="checkbox"
+                  checked={Boolean(newBeatData.is_favorite)}
+                  onChange={event => setNewBeatData({
+                    ...newBeatData,
+                    is_favorite: event.target.checked
+                  })}
+                  style={{ width: 'auto' }}
+                />
+                Preferred beat
+              </label>
+
+              <div>
+                <label>Beat Notes</label>
+                <input
+                  style={inputStyle}
+                  placeholder="Fill levels, variations, intro tips…"
+                  value={newBeatData.notes}
+                  onChange={event => setNewBeatData({
+                    ...newBeatData,
+                    notes: event.target.value
+                  })}
+                />
+              </div>
+            </div>
+
+            <div className="beat-add-panel__actions">
+              <button type="submit" disabled={saving}>
+                {saving ? 'Saving…' : 'Save Beat to This Song'}
+              </button>
+              <button type="button" onClick={cancelAddingBeat} disabled={saving}>
+                Cancel
+              </button>
+            </div>
+          </form>
+        )}
+
         {song.styles?.length > 0 ? (
           song.styles.map((style, idx) => (
             <div
@@ -511,9 +737,8 @@ function SongCard({
                     <div>
                       <label>Key</label>
 
-                      <input
+                      <select
                         style={inputStyle}
-                        placeholder="e.g. G, Bb"
                         value={editData.key}
                         onChange={e =>
                           onEditDataChange?.({
@@ -521,7 +746,9 @@ function SongCard({
                             key: e.target.value
                           })
                         }
-                      />
+                      >
+                        <MusicalKeyOptions options={musicalKeyOptions} value={editData.key} />
+                      </select>
                     </div>
                   </div>
 
