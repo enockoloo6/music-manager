@@ -235,7 +235,7 @@ Public Beat Details Label
 
 Inline Beat Add and Key Choices
 
-db50914
+eb97fb5
 
 ---
 
