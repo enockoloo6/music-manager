@@ -68,7 +68,7 @@ function revokeCachedUrls(items) {
   });
 }
 
-export default function AudioAttachments({ song, user, canManage, onNotify }) {
+export default function AudioAttachments({ song, user, canAdd = false, canDelete = false, onNotify }) {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState('');
@@ -176,6 +176,8 @@ export default function AudioAttachments({ song, user, canManage, onNotify }) {
   }, [items]);
 
   async function handleUpload(e) {
+    if (!canAdd) return;
+
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -192,12 +194,16 @@ export default function AudioAttachments({ song, user, canManage, onNotify }) {
   }
 
   async function handleDelete(audio) {
+    if (!canDelete) return;
+
     await deleteSongAudio(audio);
     setAudioToDelete(null);
     await load();
   }
 
   async function startRecording() {
+    if (!canAdd) return;
+
     setRecordingError('');
     setRecordingNotice('');
     setRecordingSeconds(0);
@@ -270,6 +276,7 @@ export default function AudioAttachments({ song, user, canManage, onNotify }) {
   }
 
   async function saveRecording() {
+    if (!canAdd) return;
     if (!recordedBlob) return;
 
     setSavingRecording(true);
@@ -295,7 +302,7 @@ export default function AudioAttachments({ song, user, canManage, onNotify }) {
     <div className="audio-attachments">
       <strong>🔊 Audio</strong>
 
-      {canManage && (
+      {canAdd && (
         <div className="audio-attachments__manager app-work-form app-work-form--add">
           <div className="app-work-form__banner">
             <span>Adding Audio</span>
@@ -387,7 +394,7 @@ export default function AudioAttachments({ song, user, canManage, onNotify }) {
                 {audio.file_name}
                 {audio.cached_audio && <small className="audio-attachments__offline-label">Offline ready</small>}
               </span>
-              {canManage && (
+              {canDelete && (
                 <button type="button" onClick={() => setAudioToDelete(audio)}>
                   Delete
                 </button>
@@ -397,7 +404,7 @@ export default function AudioAttachments({ song, user, canManage, onNotify }) {
         </div>
       )}
 
-      {audioToDelete && (
+      {audioToDelete && canDelete && (
         <div className="app-modal no-print" role="dialog" aria-modal="true" aria-labelledby="delete-audio-title">
           <div className="app-modal__panel">
             <div>

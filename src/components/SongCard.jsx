@@ -1,4 +1,4 @@
-import { Fragment, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import AudioAttachments from './AudioAttachments';
 import LyricsEditor from './LyricsEditor';
 
@@ -77,7 +77,7 @@ function formatPresentationDate(value) {
 
 function SongCard({
   song,
-  role,
+  permissions,
   editingId,
   editData,
   keyboards,
@@ -103,7 +103,8 @@ function SongCard({
   onSaveLyrics,
   onNotify,
   user,
-  canManageAudio,
+  canAddAudio,
+  canDeleteAudio,
   defaultKeyboardId,
   emptyBeatForm,
   musicalKeyOptions,
@@ -112,7 +113,10 @@ function SongCard({
   beatCategoryMap,
   isEditingSong,
   editSongName,
-  isEditingLyrics
+  isEditingLyrics,
+  activePanel,
+  autoCollapsePanels = true,
+  onSetActivePanel
 }) {
   const [showMore, setShowMore] = useState(false);
   const [showAudio, setShowAudio] = useState(false);
@@ -127,15 +131,30 @@ function SongCard({
   const hasBeats = (song.styles?.length || 0) > 0;
   const hasPresentationDate = Boolean(song.is_highlighted && song.presentation_date);
   const presentationCount = song.song_presentations?.length || 0;
-  const canManageSong = Boolean(role?.approved || role?.admin);
-  const canEditSongs = Boolean(role?.canEditSongs);
-  const canDeleteSongs = Boolean(role?.canDeleteSongs);
+  const canEditSongs = Boolean(permissions?.editSongs);
+  const canDeleteSongs = Boolean(permissions?.deleteSongs);
+  const canAddBeatSettings = Boolean(permissions?.addBeatSettings);
+  const canEditBeatSettings = Boolean(permissions?.editBeatSettings);
+  const canDeleteBeatSettings = Boolean(permissions?.deleteBeatSettings);
+  const canDuplicateSongs = Boolean(permissions?.duplicateSongs);
+  const canPlanPresentations = Boolean(permissions?.planPresentations);
+  const canMarkPresented = Boolean(permissions?.markPresented);
+  const canViewSongStats = Boolean(permissions?.viewSongStats);
+  const canManageAudio = Boolean(canAddAudio || canDeleteAudio);
   const canOpenAudio = hasAudio || canManageAudio;
   const isEditingBeatOnThisCard = Boolean(editingId && (song.styles || []).some(style => style.id === editingId));
   const newBeatNameOptions = getBeatOptionsForCategory(beatCategoryMap, newBeatData.location, beatNameOptions || []);
   const editBeatNameOptions = getBeatOptionsForCategory(beatCategoryMap, editData?.location, beatNameOptions || []);
-  const hasPublicDetails = !canManageSong && Boolean(hasBeats || hasPresentationDate);
-  const hasMoreActions = Boolean(canManageSong || hasPublicDetails);
+  const hasPublicDetails = !canEditSongs && Boolean(hasBeats || hasPresentationDate);
+  const hasMoreActions = Boolean(
+    hasPublicDetails
+    || canEditSongs
+    || canDeleteSongs
+    || canDuplicateSongs
+    || canPlanPresentations
+    || canMarkPresented
+    || canViewSongStats
+  );
   const showPublicDetails = hasPublicDetails && showMore;
   const cardClasses = [
     'card',
@@ -155,10 +174,28 @@ function SongCard({
     margin: 0
   };
 
+  useEffect(() => {
+    if (!activePanel) return;
+    if (activePanel.forceClose || (autoCollapsePanels && activePanel.songId !== song.id)) {
+      const closeTimer = window.setTimeout(() => {
+        setShowMore(false);
+        setShowAudio(false);
+        setShowBeats(false);
+        setIsAddingBeat(false);
+      }, 0);
+
+      return () => window.clearTimeout(closeTimer);
+    }
+
+    return undefined;
+  }, [activePanel, autoCollapsePanels, song.id]);
+
   function openLyricsEditor() {
     setShowMore(false);
     setShowAudio(false);
     setShowBeats(false);
+    setIsAddingBeat(false);
+    onSetActivePanel?.({ songId: song.id, panel: 'lyrics' });
     onEditLyrics?.(song);
   }
 
@@ -166,6 +203,8 @@ function SongCard({
     setShowMore(false);
     setShowAudio(false);
     setShowBeats(false);
+    setIsAddingBeat(false);
+    onSetActivePanel?.({ songId: song.id, panel: 'lyrics' });
     onOpenLyrics?.(song);
   }
 
@@ -175,7 +214,11 @@ function SongCard({
       if (nextOpen) {
         setShowMore(false);
         setShowBeats(false);
+        setIsAddingBeat(false);
+        onSetActivePanel?.({ songId: song.id, panel: 'audio' });
         onEditLyrics?.(null);
+      } else {
+        onSetActivePanel?.(null);
       }
       return nextOpen;
     });
@@ -187,7 +230,11 @@ function SongCard({
       if (nextOpen) {
         setShowMore(false);
         setShowAudio(false);
+        onSetActivePanel?.({ songId: song.id, panel: 'beats' });
         onEditLyrics?.(null);
+      } else {
+        setIsAddingBeat(false);
+        onSetActivePanel?.(null);
       }
       return nextOpen;
     });
@@ -197,6 +244,7 @@ function SongCard({
     setShowBeats(true);
     setShowMore(false);
     setShowAudio(false);
+    onSetActivePanel?.({ songId: song.id, panel: 'beats' });
     onEditLyrics?.(null);
     setIsAddingBeat(true);
     setNewBeatData({
@@ -227,7 +275,11 @@ function SongCard({
       if (nextOpen) {
         setShowAudio(false);
         setShowBeats(false);
+        setIsAddingBeat(false);
+        onSetActivePanel?.({ songId: song.id, panel: 'more' });
         onEditLyrics?.(null);
+      } else {
+        onSetActivePanel?.(null);
       }
       return nextOpen;
     });
@@ -254,7 +306,7 @@ function SongCard({
               Highlighted
             </span>
           )}
-          {song.is_hidden && role?.admin && (
+          {song.is_hidden && canPlanPresentations && (
             <span className="song-card__status song-card__status--hidden">
               Hidden
             </span>
@@ -288,7 +340,7 @@ function SongCard({
             </button>
           )}
 
-          {((hasBeats && canManageSong) || canEditSongs) && (
+          {((hasBeats && canEditBeatSettings) || canAddBeatSettings) && (
             <button
               type="button"
               className={`song-card__link-action${hasBeats ? '' : ' song-card__link-action--needed'}${showBeats ? ' song-card__link-action--active' : ''}`}
@@ -312,7 +364,7 @@ function SongCard({
         </div>
       </div>
 
-      {showMore && (canManageSong || hasPresentationDate) && (
+      {showMore && hasMoreActions && (
         <div className="song-card__more no-print">
           {hasPresentationDate && (
             <div className="song-card__presentation">
@@ -324,7 +376,7 @@ function SongCard({
             </div>
           )}
 
-          {role?.admin && (
+          {canPlanPresentations && (
             <div className="song-card__planning">
               <label>
                 <input
@@ -358,7 +410,7 @@ function SongCard({
             </div>
           )}
 
-          {canManageSong && (
+          {(canEditSongs || canDeleteSongs || canDuplicateSongs || canMarkPresented || canViewSongStats) && (
             <div className="song-card__more-actions">
               {canEditSongs && (
                 <button
@@ -369,7 +421,7 @@ function SongCard({
                 </button>
               )}
 
-              {role?.approved && (
+              {canDuplicateSongs && (
                 <button
                   type="button"
                   onClick={() => onDuplicateSong?.(song)}
@@ -388,7 +440,7 @@ function SongCard({
                 </button>
               )}
 
-              {canManageSong && (
+              {canMarkPresented && (
                 <button
                   type="button"
                   onClick={() => onMarkPresented?.(song)}
@@ -398,7 +450,7 @@ function SongCard({
                 </button>
               )}
 
-              {canManageSong && (
+              {canViewSongStats && (
                 <button
                   type="button"
                   onClick={() => onOpenSongStats?.(song)}
@@ -459,7 +511,10 @@ function SongCard({
           <LyricsEditor
             song={song}
             saving={saving}
-            onCancel={() => onEditLyrics?.(null)}
+            onCancel={() => {
+              onSetActivePanel?.(null);
+              onEditLyrics?.(null);
+            }}
             onSave={onSaveLyrics}
           />
         </div>
@@ -469,14 +524,15 @@ function SongCard({
         <AudioAttachments
           song={song}
           user={user}
-          canManage={canManageAudio}
+          canAdd={canAddAudio}
+          canDelete={canDeleteAudio}
           onNotify={onNotify}
         />
       )}
 
       {(showBeats || isAddingBeat || showPublicDetails) && (
       <div>
-        {canEditSongs && (
+        {canAddBeatSettings && (
           <div className="beat-section-header no-print">
             <div>
               <strong>Beats for this song</strong>
@@ -921,7 +977,7 @@ function SongCard({
                     </p>
                   )}
 
-                  {(canEditSongs || canDeleteSongs) && (
+                  {(canEditBeatSettings || canDeleteBeatSettings) && (
                     <details className="no-print" style={{ marginTop: '8px' }}>
                       <summary style={{ cursor: 'pointer', color: '#1a237e', fontSize: '0.78rem', fontWeight: 700 }}>
                         Beat actions
@@ -934,7 +990,7 @@ function SongCard({
                           marginTop: '7px'
                         }}
                       >
-                        {canEditSongs && (
+                        {canEditBeatSettings && (
                           <button
                             type="button"
                             onClick={() => onStartEdit?.(style)}
@@ -943,7 +999,7 @@ function SongCard({
                           </button>
                         )}
 
-                        {canDeleteSongs && (
+                        {canDeleteBeatSettings && (
                           <button
                             type="button"
                             onClick={() => onDeleteBeat?.(style)}

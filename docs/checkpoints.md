@@ -119,10 +119,11 @@ Verify:
 * Admin Revoke and Remove Admin actions use pastel danger styling, while Make Admin is visually marked as sensitive.
 * Missing Lyrics and Audio actions are visibly emphasized.
 * Song card background and Lyrics Mode title remain easy to see.
-* Admins can highlight a song from More and the song receives the highlighted card color.
-* Admins can hide a song from More and non-admin users no longer see it.
+* Opening Audio, Beats, More, lyrics, or edit actions on one library song collapses open sections on other songs when the Settings auto-collapse checkbox is enabled.
+* Users with Planning permission can highlight a song from More and the song receives the highlighted card color.
+* Users with Planning permission can hide a song from More and users without Planning permission no longer see it.
 * Admins can set a presentation date from More and the date appears in the More panel only when the song is highlighted.
-* Approved users and admins can mark a song as presented from an in-app modal and Song Stats shows the presentation date.
+* Users with Planning permission can mark a song as presented from an in-app modal and Song Stats shows the presentation date.
 * Highlighted songs with overdue presentation dates show a reminder only when a date exists and the song has not been marked presented for that date.
 * Duplicate, hide/show, delete song, remove beat, delete audio, and Mark Presented use app-owned modals.
 * Delete Song appears last in song More actions.

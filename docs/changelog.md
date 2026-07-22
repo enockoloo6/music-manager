@@ -39,6 +39,12 @@ Implemented:
 * Added a public Suggestions tab where anyone can search first, then submit song suggestions for Consecration, Presentation, Library, or Other review.
 * Suggestions now allow an optional suggester name, avoid app-internal style/group wording, hide the suggestion list from logged-out visitors, and leave song adding as a manual action for permitted users.
 * Super admins can clear the Log Trail; the clear action is recorded immediately after cleanup.
+* New auth signups now create pending `music_manager.profiles` rows automatically, and the login form supports forgot-password emails plus password reset from the Supabase recovery link.
+* Removed a stale shared Supabase auth trigger that inserted into missing `public.profiles` and caused signup to fail with `Database error saving new user`.
+* Added a centralized frontend RBAC layer in `src/rbac.js` so action links are hidden unless the user has the matching capability, and rebuilt Admin as a stored-access plus effective-capabilities matrix.
+* Split Add and Planning into explicit Admin checkboxes: Add controls Add Song, Duplicate Song, Add Beat, Add Audio, and Add Consecration groups; Planning controls highlight, hide, presentation date planning, and Mark Presented.
+* Admin user cards now collapse by default, showing status badges, an access summary, and a capability count until Manage is opened.
+* Manage Protected is now treated as a separate authority from Super Admin; protected switches stay visible but dimmed until the current admin has that checkbox enabled.
 * The in-app Manual documents the Consecration drag workflow.
 * Logged-out users no longer query audio metadata from song cards.
 * Global Print action removed from the header; Lyrics Mode keeps its print action.
@@ -54,7 +60,7 @@ Implemented:
 * Approved users can still open Audio for songs without audio to upload recordings.
 * Added public read migration for `music_manager.song_audio` metadata and `music-manager-audio` storage objects.
 * Lyrics links appear only when a song has lyrics.
-* Approved users see Add Lyrics when a song has no lyrics.
+* Users with Edit permission see Add Lyrics when a song has no lyrics.
 * Add/Edit Lyrics opens inline on the selected song card instead of above the library list.
 * Lyrics Mode closes with Escape.
 * Mobile back closes Lyrics Mode and returns to the library before leaving the app.
@@ -62,9 +68,10 @@ Implemented:
 * Lyrics Mode now includes a compact audio player for songs with audio, so lyrics can be read while playback continues.
 * Approved users can edit song names inline from the song card.
 * Open song-card actions, such as Hide Audio, are visually emphasized for easier scanning.
-* Approved users now see Add Audio when a song has no audio.
+* Users with Add permission now see Add Audio when a song has no audio.
 * Inline lyrics and audio actions share the same active visual treatment when open.
 * Song-card sections now behave as a single-open panel, so opening Lyrics, Audio, Beats, or More closes competing sections on that card.
+* Library cards now auto-collapse open sections on other songs by default, with a Settings checkbox to disable that local display preference.
 * Library defaults to latest-added songs first, using the newest beat timestamp available for each song.
 * Added a compact sort control beside the song count.
 * Moved Category filtering beside the library sort control and removed the category tab beside search.
@@ -109,7 +116,7 @@ Implemented:
 * Hidden songs are muted for admins and removed from non-admin library views.
 * Presentation dates are shown in the song More panel only for highlighted songs and store the admin who last updated the planning state.
 * Added `music_manager.song_presentations` to track each time a song is presented with date and user.
-* Added Mark Presented and Song Stats actions to song More controls for approved users and admins.
+* Added Mark Presented and Song Stats actions to song More controls; Mark Presented is now controlled by Planning permission.
 * Mark Presented uses an in-app modal instead of browser prompt dialogs.
 * Duplicate, hide/show, delete song, remove beat, and delete audio also use app-owned modals instead of browser prompts or confirms.
 * Highlighted songs with overdue presentation dates now show an in-app reminder modal until marked presented, with Remind Later quieting it for the day.

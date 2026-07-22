@@ -10,6 +10,8 @@ function SettingsPage({
   onDefaultKeyboardChange,
   logoutTimeoutMinutes = 30,
   onLogoutTimeoutChange,
+  autoCollapseLibraryPanels = true,
+  onAutoCollapseLibraryPanelsChange,
   autoCollapseConsecrationSubgroups = true,
   onAutoCollapseConsecrationSubgroupsChange
 }) {
@@ -78,7 +80,17 @@ function SettingsPage({
         </div>
 
         <div>
-          <label>Consecration Display</label>
+          <label>Display</label>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '8px', textTransform: 'none', letterSpacing: 0 }}>
+            <input
+              type="checkbox"
+              checked={Boolean(autoCollapseLibraryPanels)}
+              onChange={event => onAutoCollapseLibraryPanelsChange?.(event.target.checked)}
+              style={{ width: 'auto' }}
+            />
+            Auto-collapse other song cards when opening a library section
+          </label>
+
           <label style={{ display: 'flex', alignItems: 'center', gap: '8px', textTransform: 'none', letterSpacing: 0 }}>
             <input
               type="checkbox"

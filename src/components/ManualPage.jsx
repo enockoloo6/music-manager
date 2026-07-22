@@ -1,10 +1,10 @@
-function buildManualSections(role = {}) {
-  const canAddSongs = Boolean(role.approved || role.admin);
-  const canEditSongs = Boolean(role.canEditSongs);
-  const canDeleteSongs = Boolean(role.canDeleteSongs);
-  const canPlanPresentations = Boolean(role.admin || role.owner || role.protected);
-  const canManageUsers = Boolean(role.owner);
-  const canManageProtectedUsers = Boolean(role.canManageProtectedUsers);
+function buildManualSections(permissions = {}) {
+  const canAddSongs = Boolean(permissions.createSongs);
+  const canEditSongs = Boolean(permissions.editSongs);
+  const canDeleteSongs = Boolean(permissions.deleteSongs);
+  const canPlanPresentations = Boolean(permissions.planPresentations);
+  const canManageUsers = Boolean(permissions.manageUsers);
+  const canManageProtectedUsers = Boolean(permissions.manageProtectedUsers);
 
   const sections = [
     {
@@ -14,7 +14,8 @@ function buildManualSections(role = {}) {
       items: [
         'Search by title, lyrics, beat, key, or notes.',
         'Sort by latest or song name.',
-        'Filter by category or contributor.'
+        'Filter by category or contributor.',
+        'By default, opening a song section collapses open sections on other songs; Settings can turn that off.'
       ]
     },
     {
@@ -105,7 +106,7 @@ function buildManualSections(role = {}) {
       items: [
         'Highlight or hide songs and set presentation dates.',
         'Highlighted songs appear first and show their presentation date.',
-        'Use Mark Presented and Song Stats to keep presentation history.'
+        'Use Mark Presented to keep presentation history, and Song Stats to review it.'
       ]
     });
   } else if (canAddSongs) {
@@ -114,9 +115,8 @@ function buildManualSections(role = {}) {
       title: 'Presentation history',
       summary: 'Record when songs are used.',
       items: [
-        'Use Mark Presented when a song has been presented.',
         'Open Song Stats to see presentation count and dates.',
-        'Ask a super admin if a song needs to be highlighted, hidden, or scheduled.'
+        'Ask a super admin if a song needs to be highlighted, hidden, scheduled, or marked presented.'
       ]
     });
   }
@@ -140,11 +140,15 @@ function buildManualSections(role = {}) {
       title: 'Settings and access',
       summary: 'Use these for setup and control.',
       items: [
+        'New users use Request Access; their pending profile is created automatically for Admin review.',
+        'Users who forget a password can use Forgot password on the login form and set a new password from the email link.',
         'Settings saves your default keyboard and inactivity logout time.',
-        'Admin manages approval, edit, delete, admin, and super admin access.',
+        'Admin shows stored access switches beside effective RBAC capabilities, so you can see exactly which actions each user will see.',
+        'Admin user cards are collapsed by default; open Manage on one user to edit permissions, and the other users stay compact.',
+        'Use Add for creating new songs, beats, audio, duplicates, and Consecration groups; use Planning for highlight, hide, presentation date, and Mark Presented controls.',
         canManageProtectedUsers
           ? 'Protected access can be granted or removed for other users.'
-          : 'Protected users have full access and remain locked from normal restrictions.',
+          : 'Protected access controls stay dimmed until your account has Manage Protected enabled.',
         'Log Trail shows edit and delete actions with the user who did them.'
       ]
     });
@@ -153,9 +157,12 @@ function buildManualSections(role = {}) {
   return sections;
 }
 
-function ManualPage({ role = {} }) {
-  const manualSections = buildManualSections(role);
-  const hasLimitedAccess = !role.approved && !role.admin && !role.owner;
+function ManualPage({ permissions = {} }) {
+  const manualSections = buildManualSections(permissions);
+  const hasLimitedAccess = !permissions.createSongs
+    && !permissions.editSongs
+    && !permissions.manageUsers
+    && !permissions.viewConsecration;
 
   return (
     <section className="manual-page no-print" aria-label="User manual">

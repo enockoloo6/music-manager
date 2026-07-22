@@ -25,6 +25,7 @@ import {
 } from './services/offlineAudioCacheService';
 import { loadCachedValue, saveCachedValue } from './services/offlineCacheService';
 import { songMatchesSearch, updateSongLyrics } from './services/songLyricsService';
+import { buildPermissions } from './rbac';
 
 import './styles/appFooter.css';
 import './styles/lyricsEditor.css';
@@ -47,6 +48,7 @@ const DISMISSED_OVERDUE_PRESENTATIONS_KEY = 'music-manager-dismissed-overdue-pre
 const DISMISSED_OFFLINE_AUDIO_PROMPT_KEY = 'music-manager-dismissed-offline-audio-prompt';
 const DISMISSED_INSTALL_PROMPT_KEY = 'music-manager-dismissed-install-prompt';
 const CONSECRATION_AUTO_COLLAPSE_KEY = 'music-manager-consecration-auto-collapse-subgroups';
+const LIBRARY_AUTO_COLLAPSE_KEY = 'music-manager-library-auto-collapse-song-panels';
 const DEFAULT_INACTIVITY_TIMEOUT_MINUTES = 30;
 const CONSECRATION_NO_STYLE_GROUP_NAME = 'Play without styles';
 
@@ -68,6 +70,12 @@ function loadDismissedOverduePresentations() {
 function loadConsecrationAutoCollapsePreference() {
   if (typeof window === 'undefined') return true;
   const storedValue = window.localStorage.getItem(CONSECRATION_AUTO_COLLAPSE_KEY);
+  return storedValue === null ? true : storedValue === '1';
+}
+
+function loadLibraryAutoCollapsePreference() {
+  if (typeof window === 'undefined') return true;
+  const storedValue = window.localStorage.getItem(LIBRARY_AUTO_COLLAPSE_KEY);
   return storedValue === null ? true : storedValue === '1';
 }
 
@@ -262,6 +270,32 @@ function getDisplayName(emailAddress) {
 
 function isProtectedOwnerEmail(emailAddress) {
   return String(emailAddress || '').trim().toLowerCase() === SUPER_ADMIN_EMAIL;
+}
+
+function getAuthRedirectUrl() {
+  if (typeof window === 'undefined') return undefined;
+  return `${window.location.origin}${window.location.pathname}`;
+}
+
+function formatNoticeMessage(message, fallback = 'Something went wrong. Please try again.') {
+  if (typeof message === 'string') {
+    const trimmedMessage = message.trim();
+    return trimmedMessage && trimmedMessage !== '{}' ? trimmedMessage : fallback;
+  }
+
+  if (message?.message) {
+    return formatNoticeMessage(message.message, fallback);
+  }
+
+  if (message?.error_description) {
+    return formatNoticeMessage(message.error_description, fallback);
+  }
+
+  if (message?.error) {
+    return formatNoticeMessage(message.error, fallback);
+  }
+
+  return fallback;
 }
 
 function formatFriendlyDate(value) {
@@ -505,12 +539,15 @@ function AppIntegrated() {
     owner: false,
     protected: false,
     canManageProtectedUsers: false,
+    canAddSongs: false,
     canEditSongs: false,
-    canDeleteSongs: false
+    canDeleteSongs: false,
+    canPlanPresentations: false
   });
   const [authMode, setAuthMode] = useState('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [passwordConfirm, setPasswordConfirm] = useState('');
   const [authLoading, setAuthLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState(EMPTY_FORM);
@@ -522,6 +559,7 @@ function AppIntegrated() {
   const [showLoginForm, setShowLoginForm] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [activeLibraryPanel, setActiveLibraryPanel] = useState(null);
   const [showFilters, setShowFilters] = useState(false);
   const [showMoreNav, setShowMoreNav] = useState(false);
   const [actionModal, setActionModal] = useState(null);
@@ -540,6 +578,7 @@ function AppIntegrated() {
   const [offlineAudioPrompt, setOfflineAudioPrompt] = useState(null);
   const [offlineAudioSaving, setOfflineAudioSaving] = useState(false);
   const [offlineAudioNotice, setOfflineAudioNotice] = useState('');
+  const [autoCollapseLibraryPanels, setAutoCollapseLibraryPanels] = useState(loadLibraryAutoCollapsePreference);
   const [autoCollapseConsecrationSubgroups, setAutoCollapseConsecrationSubgroups] = useState(loadConsecrationAutoCollapsePreference);
   const [stewardVerseState, setStewardVerseState] = useState(() => ({
     index: Math.floor(Math.random() * STEWARD_VERSES.length),
@@ -550,11 +589,12 @@ function AppIntegrated() {
   const isOnline = useOnlineStatus();
   const inactivityTimerRef = useRef(null);
   const moreNavRef = useRef(null);
+  const permissions = useMemo(() => buildPermissions(role, user), [role, user]);
 
-  function showAppNotice(message, title = 'Message') {
+  function showAppNotice(message, title = 'Message', fallback = 'Something went wrong. Please try again.') {
     setNoticeModal({
       title,
-      message: String(message || '')
+      message: formatNoticeMessage(message, fallback)
     });
   }
 
@@ -563,6 +603,14 @@ function AppIntegrated() {
     setAutoCollapseConsecrationSubgroups(nextValue);
     if (typeof window !== 'undefined') {
       window.localStorage.setItem(CONSECRATION_AUTO_COLLAPSE_KEY, nextValue ? '1' : '0');
+    }
+  }
+
+  function updateLibraryAutoCollapsePanels(enabled) {
+    const nextValue = Boolean(enabled);
+    setAutoCollapseLibraryPanels(nextValue);
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem(LIBRARY_AUTO_COLLAPSE_KEY, nextValue ? '1' : '0');
     }
   }
 
@@ -670,6 +718,16 @@ function AppIntegrated() {
     });
 
     const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'PASSWORD_RECOVERY' && session?.user) {
+        setUser(session.user);
+        setAuthMode('reset');
+        setPassword('');
+        setPasswordConfirm('');
+        setShowLoginForm(true);
+        setAuthLoading(false);
+        return;
+      }
+
       if (session?.user) {
         setUser(session.user);
         fetchSongs(true);
@@ -677,16 +735,18 @@ function AppIntegrated() {
         setShowLoginForm(false);
       } else {
         setUser(null);
-        setRole({ approved: false, admin: false, owner: false, protected: false, canManageProtectedUsers: false, canEditSongs: false, canDeleteSongs: false });
+        setRole({ approved: false, admin: false, owner: false, protected: false, canManageProtectedUsers: false, canAddSongs: false, canEditSongs: false, canDeleteSongs: false, canPlanPresentations: false });
         setAuditLogs([]);
         setConsecrationGroups([]);
         setSuggestions([]);
         setSuggestionFormData(EMPTY_SUGGESTION_FORM);
         setLogoutTimeoutMinutes(DEFAULT_INACTIVITY_TIMEOUT_MINUTES);
         setShowAddForm(false);
+        closeLibraryPanels();
         setShowMoreNav(false);
         setSelectedCategory('All');
         setSelectedContributor('All');
+        setPasswordConfirm('');
         fetchSongs(false);
         setActiveView('library');
         setAuthLoading(false);
@@ -699,10 +759,10 @@ function AppIntegrated() {
   }, []);
 
   useEffect(() => {
-    if (activeView === 'consecration' && user && (role.approved || role.admin)) {
+    if (activeView === 'consecration' && user && permissions.viewConsecration) {
       fetchConsecrationGroups();
     }
-  }, [activeView, user, role.approved, role.admin]);
+  }, [activeView, user, permissions.viewConsecration]);
 
   useEffect(() => {
     if (activeView === 'suggestions' && user) {
@@ -710,7 +770,7 @@ function AppIntegrated() {
     }
     // Fetch when the Suggestions view opens or review permissions change.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeView, user, role.approved, role.admin]);
+  }, [activeView, user, permissions.viewSuggestionsList]);
 
   useEffect(() => {
     if (!showMoreNav) return undefined;
@@ -734,7 +794,7 @@ function AppIntegrated() {
     try {
       let profileResult = await supabase
         .from('profiles')
-        .select('is_approved, is_admin, is_super_admin, is_protected, can_manage_protected_users, default_keyboard_id, logout_timeout_minutes, can_edit_songs, can_delete_songs')
+        .select('is_approved, is_admin, is_super_admin, is_protected, can_manage_protected_users, default_keyboard_id, logout_timeout_minutes, can_add_songs, can_edit_songs, can_delete_songs, can_plan_presentations')
         .eq('id', userId)
         .maybeSingle();
 
@@ -758,8 +818,10 @@ function AppIntegrated() {
           owner: protectedOwner || Boolean(profile.is_protected) || Boolean(profile.is_super_admin),
           protected: protectedOwner || Boolean(profile.is_protected),
           canManageProtectedUsers: protectedOwner || Boolean(profile.can_manage_protected_users),
+          canAddSongs: protectedOwner || Boolean(profile.is_protected) || Boolean(profile.is_super_admin) || Boolean(profile.can_add_songs ?? profile.can_edit_songs ?? profile.is_approved),
           canEditSongs: protectedOwner || Boolean(profile.is_protected) || Boolean(profile.is_super_admin) || Boolean(profile.can_edit_songs ?? profile.is_approved),
-          canDeleteSongs: protectedOwner || Boolean(profile.is_protected) || Boolean(profile.is_super_admin) || Boolean(profile.can_delete_songs)
+          canDeleteSongs: protectedOwner || Boolean(profile.is_protected) || Boolean(profile.is_super_admin) || Boolean(profile.can_delete_songs),
+          canPlanPresentations: protectedOwner || Boolean(profile.is_protected) || Boolean(profile.is_super_admin) || Boolean(profile.can_plan_presentations ?? profile.is_admin)
         };
 
         setRole(nextRole);
@@ -781,8 +843,10 @@ function AppIntegrated() {
           is_super_admin: protectedOwner,
           is_protected: protectedOwner,
           can_manage_protected_users: protectedOwner,
+          can_add_songs: protectedOwner,
           can_edit_songs: protectedOwner,
           can_delete_songs: protectedOwner,
+          can_plan_presentations: protectedOwner,
           logout_timeout_minutes: DEFAULT_INACTIVITY_TIMEOUT_MINUTES
         });
         setRole({
@@ -791,8 +855,10 @@ function AppIntegrated() {
           owner: protectedOwner,
           protected: protectedOwner,
           canManageProtectedUsers: protectedOwner,
+          canAddSongs: protectedOwner,
           canEditSongs: protectedOwner,
-          canDeleteSongs: protectedOwner
+          canDeleteSongs: protectedOwner,
+          canPlanPresentations: protectedOwner
         });
         setLogoutTimeoutMinutes(DEFAULT_INACTIVITY_TIMEOUT_MINUTES);
       }
@@ -804,14 +870,16 @@ function AppIntegrated() {
         owner: protectedOwner,
         protected: protectedOwner,
         canManageProtectedUsers: protectedOwner,
+        canAddSongs: protectedOwner,
         canEditSongs: protectedOwner,
-        canDeleteSongs: protectedOwner
+        canDeleteSongs: protectedOwner,
+        canPlanPresentations: protectedOwner
       });
     }
   }
 
   async function loadProfiles({ force = false } = {}) {
-    if (!force && !role.owner) return;
+    if (!force && !permissions.manageUsers) return;
 
     const { data, error } = await supabase.rpc('get_all_profiles');
     if (error) {
@@ -823,7 +891,7 @@ function AppIntegrated() {
   }
 
   async function loadAuditLogs() {
-    if (!role.owner) return;
+    if (!permissions.viewLogTrail) return;
 
     setAuditLogsLoading(true);
 
@@ -839,7 +907,7 @@ function AppIntegrated() {
   }
 
   async function clearAuditLogs() {
-    if (!role.owner) {
+    if (!permissions.clearLogTrail) {
       showAppNotice('Only a super admin can clear the log trail.');
       return;
     }
@@ -859,7 +927,7 @@ function AppIntegrated() {
   }
 
   function requestClearAuditLogs() {
-    if (!role.owner) {
+    if (!permissions.clearLogTrail) {
       showAppNotice('Only a super admin can clear the log trail.');
       return;
     }
@@ -898,7 +966,7 @@ function AppIntegrated() {
   }
 
   async function updateAppTitle(nextTitle) {
-    if (!role.owner) return;
+    if (!permissions.manageSettings) return;
 
     const title = nextTitle.trim();
     if (!title) {
@@ -925,7 +993,7 @@ function AppIntegrated() {
   }
 
   async function updateProfileAccess(profileId, updates) {
-    if (!role.owner) {
+    if (!permissions.manageUsers) {
       showAppNotice('Only a super admin can manage users.');
       return;
     }
@@ -934,15 +1002,17 @@ function AppIntegrated() {
     if (!target) return;
 
     const normalizedUpdates = updates.is_super_admin
-      ? { ...updates, can_edit_songs: true, can_delete_songs: true }
+      ? { ...updates, can_add_songs: true, can_edit_songs: true, can_delete_songs: true, can_plan_presentations: true }
       : updates.is_protected
         ? {
             ...updates,
             is_approved: true,
             is_admin: true,
             is_super_admin: true,
+            can_add_songs: true,
             can_edit_songs: true,
-            can_delete_songs: true
+            can_delete_songs: true,
+            can_plan_presentations: true
           }
       : updates;
     const nextProfile = { ...target, ...normalizedUpdates };
@@ -953,8 +1023,10 @@ function AppIntegrated() {
       new_is_admin: Boolean(nextProfile.is_admin),
       new_is_super_admin: Object.prototype.hasOwnProperty.call(normalizedUpdates, 'is_super_admin') ? Boolean(normalizedUpdates.is_super_admin) : null,
       new_is_protected: Object.prototype.hasOwnProperty.call(normalizedUpdates, 'is_protected') ? Boolean(normalizedUpdates.is_protected) : null,
+      new_can_add_songs: Object.prototype.hasOwnProperty.call(normalizedUpdates, 'can_add_songs') ? Boolean(normalizedUpdates.can_add_songs) : null,
       new_can_edit_songs: Object.prototype.hasOwnProperty.call(normalizedUpdates, 'can_edit_songs') ? Boolean(normalizedUpdates.can_edit_songs) : null,
       new_can_delete_songs: Object.prototype.hasOwnProperty.call(normalizedUpdates, 'can_delete_songs') ? Boolean(normalizedUpdates.can_delete_songs) : null,
+      new_can_plan_presentations: Object.prototype.hasOwnProperty.call(normalizedUpdates, 'can_plan_presentations') ? Boolean(normalizedUpdates.can_plan_presentations) : null,
       new_can_manage_protected_users: Object.prototype.hasOwnProperty.call(normalizedUpdates, 'can_manage_protected_users') ? Boolean(normalizedUpdates.can_manage_protected_users) : null
     });
 
@@ -988,7 +1060,7 @@ function AppIntegrated() {
   }
 
   async function updateSongPlanning(songId, updates) {
-    if (!role.admin) return;
+    if (!permissions.planPresentations) return;
 
     setSaving(true);
 
@@ -1039,7 +1111,7 @@ function AppIntegrated() {
   }
 
   async function markSongPresented(song, presentedDate, options = {}) {
-    if (!(role.approved || role.admin) || !user) return;
+    if (!permissions.markPresented || !user) return;
 
     const { showSuccess = true } = options;
     const presentedOn = presentedDate?.trim();
@@ -1313,7 +1385,7 @@ function AppIntegrated() {
   }
 
   async function deleteSuggestion(suggestion) {
-    if (!role.canDeleteSongs) {
+    if (!permissions.deleteSongs) {
       showAppNotice('You do not have permission to delete suggestions.');
       return;
     }
@@ -1380,7 +1452,7 @@ function AppIntegrated() {
   }
 
   async function saveConsecrationBeatGroup() {
-    if (!user || !(role.approved || role.admin)) {
+    if (!user || !permissions.addConsecration) {
       showAppNotice('Please log in with an approved account to add Consecration groups.');
       return false;
     }
@@ -1442,7 +1514,7 @@ function AppIntegrated() {
   }
 
   async function updateConsecrationBeatGroup(groupId, groupFormData) {
-    if (!user || !(role.approved || role.admin)) {
+    if (!user || !permissions.editConsecration) {
       showAppNotice('Please log in with an approved account to edit Consecration groups.');
       return false;
     }
@@ -1531,17 +1603,81 @@ function AppIntegrated() {
     e.preventDefault();
 
     const cleanEmail = email.trim();
-    if (!cleanEmail || !password) {
-      showAppNotice('Please enter your email and password.');
+    if (authMode === 'reset') {
+      if (!password || !passwordConfirm) {
+        showAppNotice('Please enter and confirm your new password.');
+        return;
+      }
+
+      if (password !== passwordConfirm) {
+        showAppNotice('The new passwords do not match.');
+        return;
+      }
+
+      setAuthLoading(true);
+
+      const { error } = await supabase.auth.updateUser({ password });
+      if (error) {
+        showAppNotice(error, 'Password Reset Failed', 'Password could not be updated. Open the latest reset link from your email and try again.');
+        setAuthLoading(false);
+        return;
+      }
+
+      setPassword('');
+      setPasswordConfirm('');
+      setAuthMode('login');
+      setShowLoginForm(false);
+      setAuthLoading(false);
+      showAppNotice('Password updated. Please log in with your new password.');
+      await supabase.auth.signOut();
+      return;
+    }
+
+    if (!cleanEmail) {
+      showAppNotice('Please enter your email.');
+      return;
+    }
+
+    if (authMode === 'forgot') {
+      setAuthLoading(true);
+
+      const { error } = await supabase.auth.resetPasswordForEmail(cleanEmail, {
+        redirectTo: getAuthRedirectUrl()
+      });
+
+      if (error) {
+        showAppNotice(error, 'Password Reset Failed', 'Password reset email could not be sent. Check the email address and try again.');
+        setAuthLoading(false);
+        return;
+      }
+
+      setAuthMode('login');
+      setShowLoginForm(false);
+      setAuthLoading(false);
+      showAppNotice('Password reset link sent. Check your email and open the link to set a new password.');
+      return;
+    }
+
+    if (!password) {
+      showAppNotice('Please enter your password.');
       return;
     }
 
     setAuthLoading(true);
 
     if (authMode === 'signup') {
-      const { data, error } = await supabase.auth.signUp({ email: cleanEmail, password });
+      const { data, error } = await supabase.auth.signUp({
+        email: cleanEmail,
+        password,
+        options: {
+          emailRedirectTo: getAuthRedirectUrl(),
+          data: {
+            app: 'music_manager'
+          }
+        }
+      });
       if (error) {
-        showAppNotice(error.message);
+        showAppNotice(error, 'Access Request Failed', 'Access request could not be sent. Check the email and password, then try again.');
         setAuthLoading(false);
         return;
       }
@@ -1551,16 +1687,22 @@ function AppIntegrated() {
         await loadRole(data.session.user.id, data.session.user.email);
       }
 
-      showAppNotice('Account request sent! Wait for admin approval.');
+      const needsEmailConfirmation = Boolean(data.user && !data.session);
+      showAppNotice(
+        needsEmailConfirmation
+          ? 'Account request received. Check your email and confirm your address, then wait for admin approval.'
+          : 'Account request received. Your account is now waiting for admin approval.'
+      );
       setShowLoginForm(false);
       setPassword('');
+      setPasswordConfirm('');
       setAuthLoading(false);
       return;
     }
 
     const { error } = await supabase.auth.signInWithPassword({ email: cleanEmail, password });
     if (error) {
-      showAppNotice(error.message);
+      showAppNotice(error, 'Login Failed', 'Login failed. Check your email and password, then try again.');
       setAuthLoading(false);
     }
   }
@@ -1613,7 +1755,7 @@ function AppIntegrated() {
 
     const { error } = await supabase
       .from('profiles')
-      .update({ is_approved: true, is_admin: true })
+      .update({ is_approved: true, is_admin: true, can_add_songs: true, can_edit_songs: true, can_plan_presentations: true })
       .eq('id', user.id);
 
     if (error) {
@@ -1626,16 +1768,18 @@ function AppIntegrated() {
       admin: true,
       owner: isProtectedOwnerEmail(user.email),
       protected: isProtectedOwnerEmail(user.email),
+      canAddSongs: true,
       canEditSongs: true,
       canDeleteSongs: isProtectedOwnerEmail(user.email),
-      canManageProtectedUsers: isProtectedOwnerEmail(user.email)
+      canManageProtectedUsers: isProtectedOwnerEmail(user.email),
+      canPlanPresentations: true
     });
     loadProfiles();
     showAppNotice('✅ You are now admin!');
   }
 
   async function deleteEntry(table, id) {
-    if (!role.canDeleteSongs) {
+    if (!permissions.deleteSongs) {
       showAppNotice('You do not have permission to delete songs or beat settings.');
       return false;
     }
@@ -1689,6 +1833,11 @@ function AppIntegrated() {
 
   async function handleSubmit(e) {
     e.preventDefault();
+
+    if (!permissions.createSongs) {
+      showAppNotice('You do not have permission to add songs.');
+      return;
+    }
 
     const songName = formData.song_name.trim();
     const lyrics = formData.lyrics.trim();
@@ -1769,6 +1918,8 @@ function AppIntegrated() {
   }
 
   function startEdit(style) {
+    setActiveLibraryPanel({ songId: style.song_id, panel: 'beatEdit' });
+    setEditingLyricsSong(null);
     setEditingId(style.id);
     setEditData({
       beat_name: style.beat_name || '',
@@ -1783,22 +1934,26 @@ function AppIntegrated() {
   }
 
   function cancelEdit() {
+    closeLibraryPanels();
     setEditingId(null);
     setEditData({});
   }
 
   function startSongEdit(song) {
+    setActiveLibraryPanel({ songId: song.id, panel: 'songEdit' });
+    setEditingLyricsSong(null);
     setEditingSongId(song.id);
     setEditSongName(song.song_name || '');
   }
 
   function cancelSongEdit() {
+    closeLibraryPanels();
     setEditingSongId(null);
     setEditSongName('');
   }
 
   async function saveSongEdit(songId) {
-    if (!role.canEditSongs) {
+    if (!permissions.editSongs) {
       showAppNotice('You do not have permission to edit songs.');
       return;
     }
@@ -1830,7 +1985,7 @@ function AppIntegrated() {
   }
 
   async function saveEdit(styleId) {
-    if (!role.canEditSongs) {
+    if (!permissions.editBeatSettings) {
       showAppNotice('You do not have permission to edit beat settings.');
       return;
     }
@@ -1866,7 +2021,7 @@ function AppIntegrated() {
   }
 
   async function addBeatToSong(song, beatData) {
-    if (!role.canEditSongs) {
+    if (!permissions.addBeatSettings) {
       showAppNotice('You do not have permission to add beat settings.');
       return false;
     }
@@ -1965,7 +2120,7 @@ function AppIntegrated() {
   }
 
   async function duplicateSong(song, requestedName, options = {}) {
-    if (!role.approved) return;
+    if (!permissions.duplicateSongs) return;
 
     const {
       copyLyrics = false,
@@ -2087,7 +2242,7 @@ function AppIntegrated() {
   }
 
   async function saveLyrics(song, lyrics) {
-    if (!role.canEditSongs) {
+    if (!permissions.editSongs) {
       showAppNotice('You do not have permission to edit lyrics.');
       return;
     }
@@ -2098,6 +2253,7 @@ function AppIntegrated() {
       await updateSongLyrics(song.id, lyrics);
       await recordAuditLog('lyrics_edit', 'songs', song.id, song.song_name);
       setEditingLyricsSong(null);
+      closeLibraryPanels();
       await fetchSongs();
     } catch (err) {
       showAppNotice('Lyrics update failed: ' + err.message);
@@ -2135,6 +2291,13 @@ function AppIntegrated() {
     }
   }
 
+  function closeLibraryPanels() {
+    setActiveLibraryPanel({
+      forceClose: true,
+      nonce: Date.now()
+    });
+  }
+
   function openLibraryView() {
     setStatsSong(null);
     setActiveView('library');
@@ -2142,6 +2305,7 @@ function AppIntegrated() {
 
   function openSettingsView() {
     setShowAddForm(false);
+    closeLibraryPanels();
     cancelSongEdit();
     setEditingLyricsSong(null);
     setActiveView('settings');
@@ -2149,6 +2313,7 @@ function AppIntegrated() {
 
   function openAdminView() {
     setShowAddForm(false);
+    closeLibraryPanels();
     cancelSongEdit();
     setEditingLyricsSong(null);
     setActiveView('admin');
@@ -2156,6 +2321,7 @@ function AppIntegrated() {
 
   function openLogTrailView() {
     setShowAddForm(false);
+    closeLibraryPanels();
     cancelSongEdit();
     setEditingLyricsSong(null);
     setActiveView('logs');
@@ -2164,6 +2330,7 @@ function AppIntegrated() {
 
   function openReportsView() {
     setShowAddForm(false);
+    closeLibraryPanels();
     cancelSongEdit();
     setEditingLyricsSong(null);
     setActiveView('reports');
@@ -2171,6 +2338,7 @@ function AppIntegrated() {
 
   function openConsecrationView() {
     setShowAddForm(false);
+    closeLibraryPanels();
     cancelSongEdit();
     setEditingLyricsSong(null);
     setActiveView('consecration');
@@ -2178,6 +2346,7 @@ function AppIntegrated() {
 
   function openSuggestionsView() {
     setShowAddForm(false);
+    closeLibraryPanels();
     cancelSongEdit();
     setEditingLyricsSong(null);
     setActiveView('suggestions');
@@ -2185,6 +2354,7 @@ function AppIntegrated() {
 
   function openManualView() {
     setShowAddForm(false);
+    closeLibraryPanels();
     cancelSongEdit();
     setEditingLyricsSong(null);
     setActiveView('manual');
@@ -2192,6 +2362,7 @@ function AppIntegrated() {
 
   function openSongStats(song) {
     setShowAddForm(false);
+    closeLibraryPanels();
     cancelSongEdit();
     setEditingLyricsSong(null);
     setStatsSong(song);
@@ -2199,12 +2370,12 @@ function AppIntegrated() {
   }
 
   const visibleSongsForUser = useMemo(
-    () => songs.filter(song => role.admin || !song.is_hidden),
-    [songs, role.admin]
+    () => songs.filter(song => permissions.planPresentations || !song.is_hidden),
+    [songs, permissions.planPresentations]
   );
 
   const overduePresentationSong = useMemo(() => {
-    if (!user || !(role.approved || role.admin) || presentationPromptSong) return null;
+    if (!user || !permissions.markPresented || presentationPromptSong) return null;
 
     const today = todayDateString();
 
@@ -2214,7 +2385,7 @@ function AppIntegrated() {
       if (songWasPresentedOn(song, song.presentation_date)) return false;
       return !dismissedOverduePresentationKeys.includes(getPresentationKey(song));
     }) || null;
-  }, [visibleSongsForUser, user, role.approved, role.admin, presentationPromptSong, dismissedOverduePresentationKeys]);
+  }, [visibleSongsForUser, user, permissions.markPresented, presentationPromptSong, dismissedOverduePresentationKeys]);
 
   const activePresentationPromptSong = presentationPromptSong || overduePresentationSong;
   const presentationPromptMode = presentationPromptSong ? 'manual' : 'overdue';
@@ -2340,7 +2511,7 @@ function AppIntegrated() {
     [visibleSongsForUser, search, selectedCategory, selectedContributor, librarySort, user]
   );
 
-  const showContributorPanel = Boolean(user && role.approved && activeView === 'library' && !hideStewardPanel);
+  const showContributorPanel = Boolean(user && permissions.markPresented && activeView === 'library' && !hideStewardPanel);
   const stewardVerse = STEWARD_VERSES[stewardVerseState.index];
   const activeStatsSong = statsSong
     ? songs.find(song => song.id === statsSong.id) || statsSong
@@ -2410,7 +2581,13 @@ function AppIntegrated() {
     color: '#fff',
     border: '1px solid rgba(255,255,255,0.24)',
     padding: '6px 10px',
-    fontSize: '0.8rem'
+    fontSize: '0.8rem',
+    flex: '1 1 0',
+    minWidth: 0,
+    overflow: 'hidden',
+    textAlign: 'center',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap'
   });
   const moreNavActive = ['reports', 'manual', 'settings', 'logs', 'admin'].includes(activeView);
 
@@ -2472,8 +2649,8 @@ function AppIntegrated() {
           )}
         </div>
 
-        <div className="app-header__nav no-print" style={{ display: 'flex', gap: '7px', alignItems: 'center', flexWrap: 'wrap' }}>
-          {(role.approved || role.admin) && (
+        <div className="app-header__nav no-print" style={{ display: 'flex', gap: '7px', alignItems: 'center', flexWrap: 'wrap', minWidth: 0 }}>
+          {permissions.viewConsecration && (
             <>
               <button type="button" onClick={openLibraryView} style={navButtonStyle('library')}>
                 Library
@@ -2501,7 +2678,7 @@ function AppIntegrated() {
 
               {showMoreNav && (
                 <div className="app-header__more-menu">
-                  {(role.approved || role.admin) && (
+                  {permissions.viewReports && (
                     <button type="button" onClick={() => openMoreNavPage(openReportsView)}>
                       Reports
                     </button>
@@ -2509,17 +2686,17 @@ function AppIntegrated() {
                   <button type="button" onClick={() => openMoreNavPage(openManualView)}>
                     Manual
                   </button>
-                  {role.owner && (
+                  {permissions.manageSettings && (
                     <button type="button" onClick={() => openMoreNavPage(openSettingsView)}>
                       Settings
                     </button>
                   )}
-                  {role.owner && (
+                  {permissions.viewLogTrail && (
                     <button type="button" onClick={() => openMoreNavPage(openLogTrailView)}>
                       Log Trail
                     </button>
                   )}
-                  {role.owner && (
+                  {permissions.manageUsers && (
                     <button type="button" onClick={() => openMoreNavPage(openAdminView)}>
                       Admin
                     </button>
@@ -2533,7 +2710,7 @@ function AppIntegrated() {
               Logout
             </button>
           ) : (
-            <button onClick={() => setShowLoginForm(value => !value)} style={{ background: showLoginForm ? '#455a64' : 'rgba(255,255,255,0.18)', color: '#fff', padding: '7px 14px', fontSize: '0.83rem', border: '1px solid rgba(255,255,255,0.3)' }}>
+            <button onClick={() => setShowLoginForm(value => !value)} style={{ background: showLoginForm ? '#455a64' : 'rgba(255,255,255,0.18)', color: '#fff', padding: '7px 14px', fontSize: '0.83rem', border: '1px solid rgba(255,255,255,0.3)', flex: '1 1 0', minWidth: 0, overflow: 'hidden', textAlign: 'center', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {showLoginForm ? '✕ Close' : '🔐 Login'}
             </button>
           )}
@@ -2553,54 +2730,105 @@ function AppIntegrated() {
           </div>
         )}
 
-        {!user && showLoginForm && (
+        {((!user && showLoginForm) || authMode === 'reset') && (
           <div className="panel no-print" style={{ maxWidth: '370px', margin: '0 auto 20px', borderTop: '4px solid #1a237e' }}>
             <h2 style={{ marginTop: 0, marginBottom: '14px', fontSize: '1.05rem', color: '#1a237e' }}>
-              {authMode === 'login' ? '🔐 Login' : '📝 Request Access'}
+              {authMode === 'login'
+                ? '🔐 Login'
+                : authMode === 'signup'
+                  ? '📝 Request Access'
+                  : authMode === 'forgot'
+                    ? 'Reset Password'
+                    : 'Set New Password'}
             </h2>
             <form onSubmit={handleAuth} style={{ display: 'grid', gap: '10px' }}>
-              <div>
-                <label>Email</label>
-                <input
-                  type="email"
-                  placeholder="your@email.com"
-                  value={email}
-                  onChange={e => setEmail(e.target.value)}
-                  autoComplete={authMode === 'login' ? 'username' : 'email'}
-                  required
-                />
-              </div>
-              <div>
-                <label>Password</label>
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  placeholder="Enter password"
-                  value={password}
-                  onChange={e => setPassword(e.target.value)}
-                  autoComplete={authMode === 'login' ? 'current-password' : 'new-password'}
-                  required
-                />
-              </div>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', textTransform: 'none', letterSpacing: 0, fontSize: '0.82rem', color: '#1a237e' }}>
-                <input
-                  type="checkbox"
-                  checked={showPassword}
-                  onChange={e => setShowPassword(e.target.checked)}
-                  style={{ width: 'auto' }}
-                />
-                Show password
-              </label>
+              {authMode !== 'reset' && (
+                <div>
+                  <label>Email</label>
+                  <input
+                    type="email"
+                    placeholder="your@email.com"
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
+                    autoComplete={authMode === 'login' ? 'username' : 'email'}
+                    required
+                  />
+                </div>
+              )}
+
+              {authMode !== 'forgot' && (
+                <div>
+                  <label>{authMode === 'reset' ? 'New Password' : 'Password'}</label>
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder={authMode === 'reset' ? 'Enter new password' : 'Enter password'}
+                    value={password}
+                    onChange={e => setPassword(e.target.value)}
+                    autoComplete={authMode === 'login' ? 'current-password' : 'new-password'}
+                    required
+                  />
+                </div>
+              )}
+
+              {authMode === 'reset' && (
+                <div>
+                  <label>Confirm New Password</label>
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="Re-enter new password"
+                    value={passwordConfirm}
+                    onChange={e => setPasswordConfirm(e.target.value)}
+                    autoComplete="new-password"
+                    required
+                  />
+                </div>
+              )}
+
+              {authMode !== 'forgot' && (
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', textTransform: 'none', letterSpacing: 0, fontSize: '0.82rem', color: '#1a237e' }}>
+                  <input
+                    type="checkbox"
+                    checked={showPassword}
+                    onChange={e => setShowPassword(e.target.checked)}
+                    style={{ width: 'auto' }}
+                  />
+                  Show password
+                </label>
+              )}
+
               <button type="submit" disabled={authLoading} style={{ background: '#1a237e', color: 'white', padding: '10px', marginTop: '2px' }}>
-                {authLoading ? 'Please wait...' : authMode === 'login' ? 'Login' : 'Request Access'}
+                {authLoading
+                  ? 'Please wait...'
+                  : authMode === 'login'
+                    ? 'Login'
+                    : authMode === 'signup'
+                      ? 'Request Access'
+                      : authMode === 'forgot'
+                        ? 'Send Reset Link'
+                        : 'Save New Password'}
               </button>
             </form>
-            <p onClick={() => setAuthMode(authMode === 'login' ? 'signup' : 'login')} style={{ cursor: 'pointer', color: '#1a237e', marginTop: '12px', textDecoration: 'underline', fontSize: '0.86rem', textAlign: 'center' }}>
-              {authMode === 'login' ? 'New user? Create account' : 'Have an account? Login'}
-            </p>
+
+            {authMode === 'login' && (
+              <>
+                <p onClick={() => setAuthMode('signup')} style={{ cursor: 'pointer', color: '#1a237e', marginTop: '12px', textDecoration: 'underline', fontSize: '0.86rem', textAlign: 'center' }}>
+                  New user? Create account
+                </p>
+                <p onClick={() => setAuthMode('forgot')} style={{ cursor: 'pointer', color: '#315a78', marginTop: '8px', textDecoration: 'underline', fontSize: '0.82rem', textAlign: 'center' }}>
+                  Forgot password?
+                </p>
+              </>
+            )}
+
+            {authMode !== 'login' && authMode !== 'reset' && (
+              <p onClick={() => setAuthMode('login')} style={{ cursor: 'pointer', color: '#1a237e', marginTop: '12px', textDecoration: 'underline', fontSize: '0.86rem', textAlign: 'center' }}>
+                Have an account? Login
+              </p>
+            )}
           </div>
         )}
 
-        {user && !authLoading && !role.approved && !role.admin && (
+        {user && !authLoading && permissions.claimAdmin && (
           <div className="no-print" style={{ background: '#eef6ff', border: '2px dashed #7fb7d8', padding: '13px 18px', borderRadius: '9px', marginBottom: '16px' }}>
             <strong>⚠️ Your account is pending approval.</strong>
             <p style={{ margin: '5px 0 8px', fontSize: '0.87rem' }}>If you are the first user and no admin exists yet:</p>
@@ -2610,7 +2838,7 @@ function AppIntegrated() {
           </div>
         )}
 
-        {role.owner && activeView === 'admin' && (
+        {permissions.manageUsers && activeView === 'admin' && (
           <section className="panel no-print owner-panel">
             <div>
               <span className="owner-panel__eyebrow">Protected owner account</span>
@@ -2644,7 +2872,7 @@ function AppIntegrated() {
           </section>
         )}
 
-        {activeView === 'consecration' && user && (role.approved || role.admin) && (
+        {activeView === 'consecration' && user && permissions.viewConsecration && (
           <ConsecrationBeatGroups
             groups={consecrationGroups}
             formData={consecrationFormData}
@@ -2652,7 +2880,8 @@ function AppIntegrated() {
             onSaveGroup={saveConsecrationBeatGroup}
             onUpdateGroup={updateConsecrationBeatGroup}
             saving={saving}
-            canEdit={role.approved || role.admin}
+            canAdd={permissions.addConsecration}
+            canEdit={permissions.editConsecration}
             beatCategoryOptions={beatCategoryOptions}
             beatNameOptions={beatNameOptions}
             beatCategoryMap={beatCategoryMap}
@@ -2669,8 +2898,21 @@ function AppIntegrated() {
 
         {activeView === 'library' && (
           <div className="library-toolbar no-print" style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px', flexWrap: 'wrap' }}>
-            {(role.approved || role.admin) && (
-              <button onClick={() => { setShowAddForm(value => !value); if (!showAddForm) { setShowFilters(false); setFormData(current => ({ ...current, keyboard_id: defaultKeyboardId || current.keyboard_id })); } }} style={{ background: showAddForm ? '#64748b' : '#5f9fbd', color: 'white', padding: '9px 18px', fontSize: '0.92rem', display: 'flex', alignItems: 'center', gap: '7px' }}>
+            {permissions.createSongs && (
+              <button
+                onClick={() => {
+                  setShowAddForm(current => {
+                    const nextOpen = !current;
+                    if (nextOpen) {
+                      closeLibraryPanels();
+                      setShowFilters(false);
+                      setFormData(existing => ({ ...existing, keyboard_id: defaultKeyboardId || existing.keyboard_id }));
+                    }
+                    return nextOpen;
+                  });
+                }}
+                style={{ background: showAddForm ? '#64748b' : '#5f9fbd', color: 'white', padding: '9px 18px', fontSize: '0.92rem', display: 'flex', alignItems: 'center', gap: '7px' }}
+              >
                 <span>{showAddForm ? '✕' : '➕'}</span>
                 {showAddForm ? 'Close Form' : 'Add Song'}
               </button>
@@ -2736,45 +2978,47 @@ function AppIntegrated() {
           </div>
         )}
 
-        {role.owner && activeView === 'settings' && (
+        {permissions.manageSettings && activeView === 'settings' && (
           <SettingsPage
             appTitle={appTitle}
             defaultKeyboardId={defaultKeyboardId}
             keyboards={keyboards}
-            isAdmin={role.owner}
+            isAdmin={permissions.manageSettings}
             savingAppTitle={savingAppTitle}
             onAppTitleChange={updateAppTitle}
             onDefaultKeyboardChange={updateDefaultKeyboard}
             logoutTimeoutMinutes={logoutTimeoutMinutes}
             onLogoutTimeoutChange={updateLogoutTimeout}
+            autoCollapseLibraryPanels={autoCollapseLibraryPanels}
+            onAutoCollapseLibraryPanelsChange={updateLibraryAutoCollapsePanels}
             autoCollapseConsecrationSubgroups={autoCollapseConsecrationSubgroups}
             onAutoCollapseConsecrationSubgroupsChange={updateConsecrationAutoCollapseSubgroups}
           />
         )}
 
-        {role.owner && activeView === 'admin' && (
+        {permissions.manageUsers && activeView === 'admin' && (
           <AdminPage
             profiles={profiles}
             isSuperAdmin={isSuperAdmin}
             currentUserId={user?.id}
-            canManageSuperAdmins={role.owner}
-            canManageProtectedUsers={role.canManageProtectedUsers}
+            canManageSuperAdmins={permissions.manageUsers}
+            canManageProtectedUsers={permissions.manageProtectedUsers}
             onToggleStatus={toggleStatus}
             onToggleActionPermission={toggleActionPermission}
           />
         )}
 
-        {role.owner && activeView === 'logs' && (
+        {permissions.viewLogTrail && activeView === 'logs' && (
           <LogTrailPage
             logs={auditLogs}
             loading={auditLogsLoading}
             saving={saving}
-            canClear={role.owner}
+            canClear={permissions.clearLogTrail}
             onClearLogs={requestClearAuditLogs}
           />
         )}
 
-        {(role.approved || role.admin) && activeView === 'reports' && (
+        {permissions.viewReports && activeView === 'reports' && (
           <ReportsPage
             recentAdditions={recentAdditions}
             songs={songs}
@@ -2783,7 +3027,7 @@ function AppIntegrated() {
         )}
 
         {user && !authLoading && activeView === 'manual' && (
-          <ManualPage role={role} />
+          <ManualPage permissions={permissions} />
         )}
 
         {!authLoading && activeView === 'suggestions' && (
@@ -2796,7 +3040,7 @@ function AppIntegrated() {
             onDelete={deleteSuggestion}
             existingSongNames={songNameOptions}
             saving={saving}
-            canDelete={role.canDeleteSongs}
+            canDelete={permissions.deleteSongs}
             canSeeSuggestions={Boolean(user)}
           />
         )}
@@ -2808,7 +3052,7 @@ function AppIntegrated() {
           />
         )}
 
-        {role.approved && activeView === 'library' && showAddForm && (
+        {permissions.createSongs && activeView === 'library' && showAddForm && (
           <form onSubmit={handleSubmit} className="panel no-print app-work-form app-work-form--add" style={{ marginBottom: '18px' }}>
             <div className="app-work-form__banner">
               <span>Adding Song</span>
@@ -2935,7 +3179,7 @@ function AppIntegrated() {
             <SongCard
               key={song.id}
               song={song}
-              role={role}
+              permissions={permissions}
               editingId={editingId}
               editData={editData}
               keyboards={keyboards}
@@ -2961,7 +3205,8 @@ function AppIntegrated() {
               onSaveLyrics={saveLyrics}
               onNotify={showAppNotice}
               user={user}
-              canManageAudio={role?.approved}
+              canAddAudio={permissions.addAudio}
+              canDeleteAudio={permissions.deleteAudio}
               defaultKeyboardId={defaultKeyboardId}
               emptyBeatForm={EMPTY_BEAT_FORM}
               musicalKeyOptions={MUSICAL_KEY_OPTIONS}
@@ -2971,6 +3216,9 @@ function AppIntegrated() {
               isEditingSong={editingSongId === song.id}
               editSongName={editingSongId === song.id ? editSongName : ''}
               isEditingLyrics={editingLyricsSong?.id === song.id}
+              activePanel={activeLibraryPanel}
+              autoCollapsePanels={autoCollapseLibraryPanels}
+              onSetActivePanel={setActiveLibraryPanel}
             />
           ))}
         </div>

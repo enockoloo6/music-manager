@@ -115,7 +115,7 @@ Implemented direction:
 * Audio links are shown only for songs that have audio.
 * Public users can see and play audio when a song has audio.
 * Lyrics links are shown only for songs that have lyrics.
-* Approved users see Add Lyrics when a song has no lyrics.
+* Users with Edit permission see Add Lyrics when a song has no lyrics.
 * Add/Edit Lyrics opens inside the selected song card, beside the song context, not as a separate panel above the library list.
 * Lyrics Mode close action is prominent.
 * Lyrics Mode can be closed with Escape.
@@ -124,9 +124,10 @@ Implemented direction:
 * Lyrics printing should include only the lyrics content and no blank app-layout pages.
 * Approved users can edit the song name inline from the song card.
 * Open song-card actions, such as Hide Audio, are visually stronger than inactive action links.
-* Audio follows the same empty-state pattern as lyrics: approved users see Add Audio when no audio exists.
+* Audio follows the same empty-state pattern as lyrics: users with Add permission see Add Audio when no audio exists.
 * Open inline song-card actions use the same active visual treatment across lyrics, audio, and More.
 * Opening one song-card section closes the other open sections on that card so Lyrics, Audio, Beats, and More do not compete.
+* Library song cards auto-collapse open sections on other songs by default; Settings includes a local Display checkbox to disable that behavior on the current device.
 * Duplicate, hide/show, delete song, remove beat, delete audio, and Mark Presented use app-owned modals instead of browser prompts or confirms.
 * Library defaults to latest-added songs first, using the newest beat timestamp available for each song.
 * Compact library sort and category controls sit beside the song count for logged-in users.
@@ -168,11 +169,11 @@ Implemented direction:
 * Missing Lyrics and Audio actions remain link-style actions with a softer visible color emphasis.
 * Song card headers and outlines use a deeper blue treatment so the song background is more visible.
 * Lyrics Mode displays the song title with stronger contrast and visual weight.
-* Admins can highlight songs so they receive a muted warm card treatment in the library.
-* Admins can hide songs from non-admin library views without deleting them.
-* Admins can mark songs with a presentation date, visible from the song More panel only when the song is highlighted.
+* Users with Planning permission can highlight songs so they receive a muted warm card treatment in the library.
+* Users with Planning permission can hide songs from non-planning library views without deleting them.
+* Users with Planning permission can mark songs with a presentation date, visible from the song More panel only when the song is highlighted.
 * Presentation planning stores the admin who last updated the planning state.
-* Approved users and admins can mark songs as presented from an in-app modal, creating dated presentation-history rows.
+* Users with Planning permission can mark songs as presented from an in-app modal, creating dated presentation-history rows.
 * Highlighted songs with overdue presentation dates trigger an in-app reminder modal until marked presented, with Remind Later quieting it for the day.
 * Logged-in users can open Song Stats from a song More panel to see presentation count and dates.
 * Song More actions keep Delete Song last after edit, duplicate, lyrics, Mark Presented, and Song Stats actions.
@@ -181,7 +182,7 @@ Implemented direction:
 * Public highlighted songs use a single More action that opens presentation and beat details together, avoiding duplicate More links.
 * `enockoloo6@gmail.com` is treated as the protected owner, receives full access, and cannot be restricted from user management.
 * Protected users have full access and remain immune to ordinary super-admin restrictions.
-* Users with `can_manage_protected_users` can add or remove protected status for other users.
+* Users with `can_manage_protected_users` can add or remove protected status for other users; Super Admin does not automatically grant this separate protected-management authority.
 * Settings, Admin, and Log Trail are visible only to super admins/protected users.
 * The in-app Manual is capability-aware and only displays instructions for actions available to the logged-in account.
 * The app prompts phone users to install Music Manager when the browser reports install support, with iOS Add to Home Screen instructions where native install is unavailable.
@@ -191,6 +192,13 @@ Implemented direction:
 * Consecration saved groups use the blue list treatment; add/edit forms use the shared gold work-form treatment.
 * Suggestions are stored in `music_manager.song_suggestions`; public visitors can search first, then submit song ideas for Consecration, Presentation, Library, or Other, with an optional suggester name. Logged-out visitors cannot see the suggestion list. Permitted logged-in users can view details, manually add songs through the proper Library or Consecration steps, and delete suggestions; delete actions are written to Log Trail.
 * Super admins can clear the Log Trail through `music_manager.clear_audit_logs()`, which immediately writes a fresh `log_clear` record after cleanup.
+* Supabase auth signups trigger `music_manager.handle_new_auth_user()` so pending profiles appear for Admin approval without relying on the new user logging in first.
+* A stale shared Supabase trigger named `on_auth_user_created` was removed because it inserted into missing `public.profiles` and caused `Database error saving new user`; Music Manager keeps its own guarded auth trigger.
+* Password reset is handled from the login form: users request a reset email, open the Supabase recovery link, then enter and confirm a new password in the app.
+* Frontend action visibility is centralized through `src/rbac.js`; components receive capability flags so users do not see Add, Edit, Delete, Planning, audio, Consecration, Log Trail, Settings, or Admin controls unless their role grants that action. The Admin page shows stored access switches beside an effective capability matrix for each user.
+* Add actions and Planning are separate stored permissions: `can_add_songs` controls Add Song, Duplicate Song, Add Beat, Add Audio, and Add Consecration groups; `can_plan_presentations` controls highlight, hide, presentation date planning, and Mark Presented.
+* Admin user cards are collapsed by default with status badges, an access summary, and a capability count; opening Manage on one user reveals that user's switches and capability matrix.
+* Protected and Manage Protected switches remain visible but dimmed unless the current admin has `can_manage_protected_users`.
 
 ---
 

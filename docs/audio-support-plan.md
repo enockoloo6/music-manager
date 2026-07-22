@@ -50,7 +50,7 @@ Suggested columns:
 
 - file picker upload
 - mobile upload support
-- approved users see Add Audio inline when a song has no audio
+- users with Add permission see Add Audio inline when a song has no audio
 
 ## Playback
 

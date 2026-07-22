@@ -550,6 +550,7 @@ function ConsecrationBeatGroups({
   onSaveGroup,
   onUpdateGroup,
   saving = false,
+  canAdd = false,
   canEdit = false,
   beatCategoryOptions = [],
   beatNameOptions = [],
@@ -686,7 +687,7 @@ function ConsecrationBeatGroups({
           </div>
         </div>
 
-        {canEdit && (
+        {canAdd && (
           <button
             type="button"
             onClick={() => {
@@ -711,7 +712,7 @@ function ConsecrationBeatGroups({
         </label>
       </div>
 
-      {showForm && canEdit && (
+      {showForm && canAdd && (
         <ConsecrationGroupForm
           formData={formData}
           onFormChange={onFormChange}
