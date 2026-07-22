@@ -26,6 +26,19 @@ function buildManualSections(role = {}) {
         'Audio can play offline after it is saved locally.',
         'On mobile data or unknown networks, the app shows estimated audio data before saving.'
       ]
+    },
+    {
+      icon: '✦',
+      title: 'Suggestions',
+      summary: 'Send songs for review before they are added.',
+      items: [
+        'Open Suggestions and search the song name first.',
+        'Submit only when the song is not already in the existing list.',
+        'Choose whether the suggestion is for Consecration, Presentation, Library, or Other.',
+        'A suggester name is optional; add any helpful song details.',
+        'Logged-out visitors can submit suggestions but cannot see the suggestion list.',
+        'Logged-in permitted users can view details, manually add the song through the proper Library or Consecration steps, and delete suggestions.'
+      ]
     }
   ];
 
@@ -66,6 +79,20 @@ function buildManualSections(role = {}) {
         'Use Add Another Beat when a song needs settings for another keyboard, tempo, category, or use.',
         'Preferred marks the best beat.',
         'Audio lets approved users upload, record, play, and save tracks for offline playback.'
+      ]
+    });
+
+    sections.push({
+      icon: '▦',
+      title: 'Consecration groups',
+      summary: 'Group document-style song lists for practice.',
+      items: [
+        'Use Style group when songs share a keyboard style, or Play without styles when no style is needed.',
+        'Set Songs Per Subgroup to split long lists into smaller blocks.',
+        'Drag a song by its handle to reorder it or move it into another subgroup.',
+        'Highlight a main group or a subgroup, then collapse groups or subgroups you do not need.',
+        'When a highlighted group has a highlighted subgroup, that group opens automatically and the highlighted subgroup stays visible.',
+        'When editing a long group, Save Changes stays at the bottom of the screen so it is always available.'
       ]
     });
   }

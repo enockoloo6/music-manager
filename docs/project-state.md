@@ -185,6 +185,12 @@ Implemented direction:
 * Settings, Admin, and Log Trail are visible only to super admins/protected users.
 * The in-app Manual is capability-aware and only displays instructions for actions available to the logged-in account.
 * The app prompts phone users to install Music Manager when the browser reports install support, with iOS Add to Home Screen instructions where native install is unavailable.
+* Logged-in approved users can use a Consecration Songs tab to add style groups or Play without styles groups and paste the songs that belong under them, preserving the document order for team playing while keeping the main Library workflow separate.
+* Consecration groups can be highlighted, assigned due dates, split into configurable song subgroups, and given a highlighted subgroup.
+* Consecration edit mode lets users drag songs by the handle to reorder them or move them between subgroups; dropping onto a song places it there, while dropping inside a subgroup moves it to the end.
+* Consecration saved groups use the blue list treatment; add/edit forms use the shared gold work-form treatment.
+* Suggestions are stored in `music_manager.song_suggestions`; public visitors can search first, then submit song ideas for Consecration, Presentation, Library, or Other, with an optional suggester name. Logged-out visitors cannot see the suggestion list. Permitted logged-in users can view details, manually add songs through the proper Library or Consecration steps, and delete suggestions; delete actions are written to Log Trail.
+* Super admins can clear the Log Trail through `music_manager.clear_audit_logs()`, which immediately writes a fresh `log_clear` record after cleanup.
 
 ---
 

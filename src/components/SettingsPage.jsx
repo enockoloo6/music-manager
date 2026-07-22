@@ -9,7 +9,9 @@ function SettingsPage({
   onAppTitleChange,
   onDefaultKeyboardChange,
   logoutTimeoutMinutes = 30,
-  onLogoutTimeoutChange
+  onLogoutTimeoutChange,
+  autoCollapseConsecrationSubgroups = true,
+  onAutoCollapseConsecrationSubgroupsChange
 }) {
   return (
     <section className="panel no-print" style={{ borderTop: '4px solid #1a237e' }}>
@@ -73,6 +75,19 @@ function SettingsPage({
             <option value={120}>2 hours</option>
             <option value={240}>4 hours</option>
           </select>
+        </div>
+
+        <div>
+          <label>Consecration Display</label>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '8px', textTransform: 'none', letterSpacing: 0 }}>
+            <input
+              type="checkbox"
+              checked={Boolean(autoCollapseConsecrationSubgroups)}
+              onChange={event => onAutoCollapseConsecrationSubgroupsChange?.(event.target.checked)}
+              style={{ width: 'auto' }}
+            />
+            Auto-collapse non-highlighted subgroups inside a highlighted group
+          </label>
         </div>
 
         <div>

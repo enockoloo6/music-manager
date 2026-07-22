@@ -183,16 +183,35 @@
 }
 
 .song-card__song-editor {
-  border-bottom: 1px solid #e8eef4;
   display: grid;
   gap: 10px;
-  padding: 12px 16px;
+  margin: 10px 16px;
+  padding: 12px;
 }
 
 .song-card__song-editor-actions {
+  background: #fff4dc;
+  border-top: 1px solid #c59a68;
+  bottom: 0;
   display: flex;
-  gap: 8px;
   flex-wrap: wrap;
+  gap: 8px;
+  margin: 12px -12px -12px;
+  padding: 10px 12px;
+  position: sticky;
+  z-index: 2;
+}
+
+.song-card__primary-action {
+  background: #315a78;
+  color: #fff;
+  padding: 8px 12px;
+}
+
+.song-card__danger-action {
+  background: #fee2e2;
+  color: #b91c1c;
+  padding: 8px 12px;
 }
 
 .beat-section-header {
@@ -222,11 +241,10 @@
 }
 
 .beat-add-panel {
-  background: #f0f7ff;
-  border-bottom: 1px solid #c8ddf0;
   display: grid;
   gap: 8px;
-  padding: 12px 16px;
+  margin: 10px 16px;
+  padding: 12px;
 }
 
 .beat-add-panel__title {
@@ -240,10 +258,26 @@
 }
 
 .beat-add-panel__actions {
+  background: #eef6fb;
+  border-top: 1px solid #9ec7df;
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin-top: 2px;
+  margin: 12px -12px -12px;
+  padding: 10px 12px;
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+}
+
+.song-card__beat-editor {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+}
+
+.song-card__beat-editor .app-work-form__banner {
+  margin: -12px -12px 10px;
 }
 
 .beat-row__summary {

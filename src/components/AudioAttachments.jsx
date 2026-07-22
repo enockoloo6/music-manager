@@ -296,7 +296,12 @@ export default function AudioAttachments({ song, user, canManage, onNotify }) {
       <strong>🔊 Audio</strong>
 
       {canManage && (
-        <div className="audio-attachments__manager">
+        <div className="audio-attachments__manager app-work-form app-work-form--add">
+          <div className="app-work-form__banner">
+            <span>Adding Audio</span>
+            <strong>{song.song_name}</strong>
+          </div>
+
           <label className="audio-attachments__upload">
             <span>Upload audio</span>
             <input type="file" accept="audio/*" onChange={handleUpload} disabled={uploading || recording} />

@@ -9,6 +9,23 @@ function getFirstLyricLine(lyrics) {
     .find(Boolean) || '';
 }
 
+function normalizeOptionValue(value) {
+  return String(value || '').trim().toLowerCase();
+}
+
+function getMappedOptions(mapping, key) {
+  return mapping?.[normalizeOptionValue(key)] || [];
+}
+
+function getAutoCategoryForBeat(beatCategoryMap, beatName) {
+  return getMappedOptions(beatCategoryMap?.beatToCategories, beatName)[0] || '';
+}
+
+function getBeatOptionsForCategory(beatCategoryMap, categoryName, fallbackOptions) {
+  const mappedOptions = getMappedOptions(beatCategoryMap?.categoryToBeats, categoryName);
+  return mappedOptions.length > 0 ? mappedOptions : fallbackOptions;
+}
+
 function isDisplayableBeatUse(value) {
   return ['Worship', 'Praise', 'Other'].includes(value);
 }
@@ -90,6 +107,9 @@ function SongCard({
   defaultKeyboardId,
   emptyBeatForm,
   musicalKeyOptions,
+  beatCategoryOptions,
+  beatNameOptions,
+  beatCategoryMap,
   isEditingSong,
   editSongName,
   isEditingLyrics
@@ -111,6 +131,9 @@ function SongCard({
   const canEditSongs = Boolean(role?.canEditSongs);
   const canDeleteSongs = Boolean(role?.canDeleteSongs);
   const canOpenAudio = hasAudio || canManageAudio;
+  const isEditingBeatOnThisCard = Boolean(editingId && (song.styles || []).some(style => style.id === editingId));
+  const newBeatNameOptions = getBeatOptionsForCategory(beatCategoryMap, newBeatData.location, beatNameOptions || []);
+  const editBeatNameOptions = getBeatOptionsForCategory(beatCategoryMap, editData?.location, beatNameOptions || []);
   const hasPublicDetails = !canManageSong && Boolean(hasBeats || hasPresentationDate);
   const hasMoreActions = Boolean(canManageSong || hasPublicDetails);
   const showPublicDetails = hasPublicDetails && showMore;
@@ -212,6 +235,17 @@ function SongCard({
 
   return (
     <div className={cardClasses}>
+      <datalist id={`beat-name-options-${song.id}`}>
+        {(isEditingBeatOnThisCard ? editBeatNameOptions : newBeatNameOptions).map(beatName => (
+          <option key={beatName} value={beatName} />
+        ))}
+      </datalist>
+      <datalist id={`beat-category-options-${song.id}`}>
+        {(beatCategoryOptions || []).map(category => (
+          <option key={category} value={category} />
+        ))}
+      </datalist>
+
       <div className="card-header song-card__header">
         <div className="song-card__title-wrap">
           <strong className="song-title">{song.song_name}</strong>
@@ -389,12 +423,17 @@ function SongCard({
 
       {isEditingSong && (
         <form
-          className="song-card__song-editor no-print"
+          className="song-card__song-editor app-work-form app-work-form--edit no-print"
           onSubmit={event => {
             event.preventDefault();
             onSaveSongEdit?.(song.id);
           }}
         >
+          <div className="app-work-form__banner">
+            <span>Editing Song</span>
+            <strong>{song.song_name}</strong>
+          </div>
+
           <div>
             <label>Song Name</label>
             <input
@@ -405,10 +444,10 @@ function SongCard({
           </div>
 
           <div className="song-card__song-editor-actions">
-            <button type="submit" disabled={saving}>
+            <button type="submit" className="song-card__primary-action" disabled={saving}>
               {saving ? 'Saving...' : 'Save Song'}
             </button>
-            <button type="button" onClick={onCancelSongEdit} disabled={saving}>
+            <button type="button" className="song-card__danger-action" onClick={onCancelSongEdit} disabled={saving}>
               Cancel
             </button>
           </div>
@@ -454,15 +493,20 @@ function SongCard({
 
         {isAddingBeat && (
           <form
-            className="beat-add-panel no-print"
+            className="beat-add-panel app-work-form app-work-form--add no-print"
             onSubmit={event => {
               event.preventDefault();
               saveNewBeat();
             }}
           >
+            <div className="app-work-form__banner">
+              <span>Adding Style</span>
+              <strong>{song.song_name}</strong>
+            </div>
+
             <div className="beat-add-panel__title">
-              <strong>Add beat to {song.song_name}</strong>
-              <span>This creates another beat under the same song.</span>
+              <strong>Add style to {song.song_name}</strong>
+              <span>This creates another style under the same song.</span>
             </div>
 
             <div className="form-grid">
@@ -472,10 +516,16 @@ function SongCard({
                   style={inputStyle}
                   placeholder="e.g. 8-Beat Modern"
                   value={newBeatData.beat_name}
-                  onChange={event => setNewBeatData({
-                    ...newBeatData,
-                    beat_name: event.target.value
-                  })}
+                  list={`beat-name-options-${song.id}`}
+                  onChange={event => {
+                    const beatName = event.target.value;
+                    const autoCategory = getAutoCategoryForBeat(beatCategoryMap, beatName);
+                    setNewBeatData({
+                      ...newBeatData,
+                      beat_name: beatName,
+                      location: autoCategory || newBeatData.location
+                    });
+                  }}
                   required
                   autoFocus
                 />
@@ -511,6 +561,7 @@ function SongCard({
                   style={inputStyle}
                   placeholder="e.g. Ballad, Country, Bank 3…"
                   value={newBeatData.location}
+                  list={`beat-category-options-${song.id}`}
                   onChange={event => setNewBeatData({
                     ...newBeatData,
                     location: event.target.value
@@ -598,10 +649,10 @@ function SongCard({
             </div>
 
             <div className="beat-add-panel__actions">
-              <button type="submit" disabled={saving}>
+              <button type="submit" className="song-card__primary-action" disabled={saving}>
                 {saving ? 'Saving…' : 'Save Beat to This Song'}
               </button>
-              <button type="button" onClick={cancelAddingBeat} disabled={saving}>
+              <button type="button" className="song-card__danger-action" onClick={cancelAddingBeat} disabled={saving}>
                 Cancel
               </button>
             </div>
@@ -618,23 +669,10 @@ function SongCard({
               }}
             >
               {editingId === style.id ? (
-                <div
-                  style={{
-                    background: '#f0f4ff',
-                    borderRadius: '8px',
-                    padding: '12px',
-                    border: '1px solid #c5d0f5'
-                  }}
-                >
-                  <div
-                    style={{
-                      fontSize: '0.76rem',
-                      fontWeight: '700',
-                      color: '#1a237e',
-                      marginBottom: '10px'
-                    }}
-                  >
-                    Editing beat
+                <div className="app-work-form app-work-form--edit song-card__beat-editor">
+                  <div className="app-work-form__banner">
+                    <span>Editing Style</span>
+                    <strong>{style.beat_name}</strong>
                   </div>
 
                   <div className="form-grid">
@@ -687,12 +725,16 @@ function SongCard({
                         style={inputStyle}
                         placeholder="e.g. 8-Beat Modern"
                         value={editData.beat_name}
-                        onChange={e =>
+                        list={`beat-name-options-${song.id}`}
+                        onChange={e => {
+                          const beatName = e.target.value;
+                          const autoCategory = getAutoCategoryForBeat(beatCategoryMap, beatName);
                           onEditDataChange?.({
                             ...editData,
-                            beat_name: e.target.value
-                          })
-                        }
+                            beat_name: beatName,
+                            location: autoCategory || editData.location
+                          });
+                        }}
                       />
                     </div>
 
@@ -703,6 +745,7 @@ function SongCard({
                         style={inputStyle}
                         placeholder="e.g. Ballad, Country…"
                         value={editData.location}
+                        list={`beat-category-options-${song.id}`}
                         onChange={e =>
                           onEditDataChange?.({
                             ...editData,
@@ -814,15 +857,10 @@ function SongCard({
                     />
                   </div>
 
-                  <div
-                    style={{
-                      display: 'flex',
-                      gap: '8px',
-                      marginTop: '10px'
-                    }}
-                  >
+                  <div className="app-work-form__actions">
                     <button
                       type="button"
+                      className="song-card__primary-action"
                       onClick={() => onSaveEdit?.(style.id)}
                       disabled={saving}
                     >
@@ -831,6 +869,7 @@ function SongCard({
 
                     <button
                       type="button"
+                      className="song-card__danger-action"
                       onClick={onCancelEdit}
                     >
                       Cancel

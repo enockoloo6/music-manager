@@ -1,27 +1,8 @@
 .lyrics-editor {
-  background: #fff;
-  border: 1px solid #dbe4ee;
-  border-radius: 12px;
-  padding: 18px;
   display: flex;
   flex-direction: column;
   gap: 14px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-}
-
-.lyrics-editor__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.lyrics-editor__label {
-  font-size: 0.72rem;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: #64748b;
-  margin-bottom: 4px;
+  padding: 12px;
 }
 
 .lyrics-editor textarea {
@@ -36,11 +17,18 @@
 }
 
 .lyrics-editor__actions {
+  background: #fff4dc;
+  border-top: 1px solid #c59a68;
+  bottom: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
   flex-wrap: wrap;
+  margin: 0 -12px -12px;
+  padding: 10px 12px;
+  position: sticky;
+  z-index: 2;
 }
 
 .lyrics-editor__actions span {
@@ -55,4 +43,15 @@
   border-radius: 8px;
   padding: 10px 14px;
   font-weight: 600;
+}
+
+.lyrics-editor__actions div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.lyrics-editor button.lyrics-editor__cancel {
+  background: #fee2e2;
+  color: #b91c1c;
 }

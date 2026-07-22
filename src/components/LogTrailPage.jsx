@@ -18,15 +18,23 @@ function actionLabel(actionType) {
     .join(' ') || 'Action';
 }
 
-function LogTrailPage({ logs = [], loading = false }) {
+function LogTrailPage({ logs = [], loading = false, saving = false, canClear = false, onClearLogs }) {
   return (
     <section className="panel no-print" style={{ borderLeft: '4px solid #315a78', marginBottom: '18px' }}>
-      <h2 style={{ margin: '0 0 8px', color: '#102f4a', fontSize: '1.05rem' }}>
-        Log Trail
-      </h2>
+      <div className="log-trail__header">
+        <h2 style={{ margin: '0 0 8px', color: '#102f4a', fontSize: '1.05rem' }}>
+          Log Trail
+        </h2>
+
+        {canClear && (
+          <button type="button" onClick={onClearLogs} disabled={saving || loading}>
+            {saving ? 'Clearing...' : 'Clear Log Trail'}
+          </button>
+        )}
+      </div>
 
       <p style={{ fontSize: '0.81rem', color: '#666', margin: '0 0 12px' }}>
-        Delete and edit actions are recorded with the user who performed them.
+        Delete, edit, suggestion, and log cleanup actions are recorded with the user who performed them.
       </p>
 
       {loading && (

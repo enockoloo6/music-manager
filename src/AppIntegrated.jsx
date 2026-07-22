@@ -4,6 +4,7 @@ import { fetchAllSongAudio } from './services/songAudioService';
 
 import AdminPage from './components/AdminPage';
 import AppFooter from './components/AppFooter';
+import ConsecrationBeatGroups from './components/ConsecrationBeatGroups';
 import LyricsMode from './components/LyricsMode';
 import LogTrailPage from './components/LogTrailPage';
 import ManualPage from './components/ManualPage';
@@ -11,6 +12,7 @@ import OfflineBanner from './components/OfflineBanner';
 import ReportsPage from './components/ReportsPage';
 import SearchBar from './components/SearchBar';
 import SettingsPage from './components/SettingsPage';
+import SuggestionsPage from './components/SuggestionsPage';
 import SongStatsPage from './components/SongStatsPage';
 import SongCard from './components/SongCard';
 
@@ -44,7 +46,9 @@ const CACHE_KEYS = {
 const DISMISSED_OVERDUE_PRESENTATIONS_KEY = 'music-manager-dismissed-overdue-presentations';
 const DISMISSED_OFFLINE_AUDIO_PROMPT_KEY = 'music-manager-dismissed-offline-audio-prompt';
 const DISMISSED_INSTALL_PROMPT_KEY = 'music-manager-dismissed-install-prompt';
+const CONSECRATION_AUTO_COLLAPSE_KEY = 'music-manager-consecration-auto-collapse-subgroups';
 const DEFAULT_INACTIVITY_TIMEOUT_MINUTES = 30;
+const CONSECRATION_NO_STYLE_GROUP_NAME = 'Play without styles';
 
 function todayDateString() {
   return new Date().toISOString().slice(0, 10);
@@ -59,6 +63,12 @@ function loadDismissedOverduePresentations() {
   } catch {
     return [];
   }
+}
+
+function loadConsecrationAutoCollapsePreference() {
+  if (typeof window === 'undefined') return true;
+  const storedValue = window.localStorage.getItem(CONSECRATION_AUTO_COLLAPSE_KEY);
+  return storedValue === null ? true : storedValue === '1';
 }
 
 function hasDismissedOfflineAudioPrompt() {
@@ -79,6 +89,43 @@ function isAppInstalled() {
 function isIosDevice() {
   if (typeof window === 'undefined') return false;
   return /iphone|ipad|ipod/i.test(window.navigator.userAgent || '');
+}
+
+function normalizeOptionValue(value) {
+  return String(value || '').trim().toLowerCase();
+}
+
+function sortOptionValues(values) {
+  return [...new Set(values.filter(Boolean))]
+    .sort((a, b) => a.localeCompare(b));
+}
+
+function addBeatCategoryMapping(map, beatName, categoryName) {
+  const beat = beatName?.trim();
+  const category = categoryName?.trim();
+  if (!beat || !category) return;
+
+  const beatKey = normalizeOptionValue(beat);
+  const categoryKey = normalizeOptionValue(category);
+
+  if (!map.beatToCategories[beatKey]) map.beatToCategories[beatKey] = [];
+  if (!map.categoryToBeats[categoryKey]) map.categoryToBeats[categoryKey] = [];
+
+  map.beatToCategories[beatKey].push(category);
+  map.categoryToBeats[categoryKey].push(beat);
+}
+
+function getMappedOptions(mapping, key) {
+  return sortOptionValues(mapping?.[normalizeOptionValue(key)] || []);
+}
+
+function getAutoCategoryForBeat(beatCategoryMap, beatName) {
+  return getMappedOptions(beatCategoryMap?.beatToCategories, beatName)[0] || '';
+}
+
+function getBeatOptionsForCategory(beatCategoryMap, categoryName, fallbackOptions) {
+  const mappedOptions = getMappedOptions(beatCategoryMap?.categoryToBeats, categoryName);
+  return mappedOptions.length > 0 ? mappedOptions : fallbackOptions;
 }
 
 const EMPTY_FORM = {
@@ -104,6 +151,28 @@ const EMPTY_BEAT_FORM = {
   beat_use: '',
   is_favorite: false,
   notes: ''
+};
+
+const EMPTY_CONSECRATION_FORM = {
+  group_type: 'style',
+  beat_category: '',
+  beat_name: '',
+  tempo: '',
+  musical_key: '',
+  variation: '',
+  song_names: '',
+  song_separator: '',
+  is_highlighted: false,
+  due_date: '',
+  subgroup_size: 6,
+  highlighted_subgroup_index: ''
+};
+
+const EMPTY_SUGGESTION_FORM = {
+  song_name: '',
+  suggestion_area: 'consecration',
+  suggester_name: '',
+  details: ''
 };
 
 const MUSICAL_KEY_OPTIONS = [
@@ -415,6 +484,7 @@ function InstallPromptModal({
 
 function AppIntegrated() {
   const [songs, setSongs] = useState([]);
+  const [consecrationGroups, setConsecrationGroups] = useState([]);
   const [keyboards, setKeyboards] = useState([]);
   const [profiles, setProfiles] = useState([]);
   const [auditLogs, setAuditLogs] = useState([]);
@@ -444,12 +514,16 @@ function AppIntegrated() {
   const [authLoading, setAuthLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState(EMPTY_FORM);
+  const [consecrationFormData, setConsecrationFormData] = useState(EMPTY_CONSECRATION_FORM);
+  const [suggestions, setSuggestions] = useState([]);
+  const [suggestionFormData, setSuggestionFormData] = useState(EMPTY_SUGGESTION_FORM);
   const [defaultKeyboardId, setDefaultKeyboardId] = useState('');
   const [logoutTimeoutMinutes, setLogoutTimeoutMinutes] = useState(DEFAULT_INACTIVITY_TIMEOUT_MINUTES);
   const [showLoginForm, setShowLoginForm] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
+  const [showMoreNav, setShowMoreNav] = useState(false);
   const [actionModal, setActionModal] = useState(null);
   const [noticeModal, setNoticeModal] = useState(null);
   const [installPromptEvent, setInstallPromptEvent] = useState(null);
@@ -466,6 +540,7 @@ function AppIntegrated() {
   const [offlineAudioPrompt, setOfflineAudioPrompt] = useState(null);
   const [offlineAudioSaving, setOfflineAudioSaving] = useState(false);
   const [offlineAudioNotice, setOfflineAudioNotice] = useState('');
+  const [autoCollapseConsecrationSubgroups, setAutoCollapseConsecrationSubgroups] = useState(loadConsecrationAutoCollapsePreference);
   const [stewardVerseState, setStewardVerseState] = useState(() => ({
     index: Math.floor(Math.random() * STEWARD_VERSES.length),
     previous: []
@@ -474,12 +549,21 @@ function AppIntegrated() {
 
   const isOnline = useOnlineStatus();
   const inactivityTimerRef = useRef(null);
+  const moreNavRef = useRef(null);
 
   function showAppNotice(message, title = 'Message') {
     setNoticeModal({
       title,
       message: String(message || '')
     });
+  }
+
+  function updateConsecrationAutoCollapseSubgroups(enabled) {
+    const nextValue = Boolean(enabled);
+    setAutoCollapseConsecrationSubgroups(nextValue);
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem(CONSECRATION_AUTO_COLLAPSE_KEY, nextValue ? '1' : '0');
+    }
   }
 
   useEffect(() => {
@@ -595,8 +679,12 @@ function AppIntegrated() {
         setUser(null);
         setRole({ approved: false, admin: false, owner: false, protected: false, canManageProtectedUsers: false, canEditSongs: false, canDeleteSongs: false });
         setAuditLogs([]);
+        setConsecrationGroups([]);
+        setSuggestions([]);
+        setSuggestionFormData(EMPTY_SUGGESTION_FORM);
         setLogoutTimeoutMinutes(DEFAULT_INACTIVITY_TIMEOUT_MINUTES);
         setShowAddForm(false);
+        setShowMoreNav(false);
         setSelectedCategory('All');
         setSelectedContributor('All');
         fetchSongs(false);
@@ -609,6 +697,36 @@ function AppIntegrated() {
     // Register the auth listener once for the lifetime of this component.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (activeView === 'consecration' && user && (role.approved || role.admin)) {
+      fetchConsecrationGroups();
+    }
+  }, [activeView, user, role.approved, role.admin]);
+
+  useEffect(() => {
+    if (activeView === 'suggestions' && user) {
+      fetchSuggestions();
+    }
+    // Fetch when the Suggestions view opens or review permissions change.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeView, user, role.approved, role.admin]);
+
+  useEffect(() => {
+    if (!showMoreNav) return undefined;
+
+    function closeMoreNavOnOutsidePointer(event) {
+      if (!moreNavRef.current?.contains(event.target)) {
+        setShowMoreNav(false);
+      }
+    }
+
+    document.addEventListener('pointerdown', closeMoreNavOnOutsidePointer);
+
+    return () => {
+      document.removeEventListener('pointerdown', closeMoreNavOnOutsidePointer);
+    };
+  }, [showMoreNav]);
 
   async function loadRole(userId, userEmail) {
     const protectedOwner = isProtectedOwnerEmail(userEmail);
@@ -718,6 +836,42 @@ function AppIntegrated() {
     } finally {
       setAuditLogsLoading(false);
     }
+  }
+
+  async function clearAuditLogs() {
+    if (!role.owner) {
+      showAppNotice('Only a super admin can clear the log trail.');
+      return;
+    }
+
+    setSaving(true);
+
+    try {
+      const { error } = await supabase.rpc('clear_audit_logs');
+      if (error) throw error;
+      setAuditLogs([]);
+      showAppNotice('Log trail cleared.');
+    } catch (err) {
+      showAppNotice('Log trail clear failed: ' + err.message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function requestClearAuditLogs() {
+    if (!role.owner) {
+      showAppNotice('Only a super admin can clear the log trail.');
+      return;
+    }
+
+    setActionModal({
+      type: 'clearAuditLogs',
+      eyebrow: 'Clear log trail',
+      title: 'Clear the Log Trail?',
+      message: 'This removes existing log entries. A fresh record will be kept showing that the log trail was cleared.',
+      confirmText: 'Clear Log Trail',
+      danger: true
+    });
   }
 
   async function loadAppSettings() {
@@ -1045,6 +1199,314 @@ function AppIntegrated() {
     void prepareLibraryAudioOffline();
   }
 
+  async function fetchConsecrationGroups() {
+    const { data, error } = await supabase
+      .from('consecration_beat_groups')
+      .select('*, consecration_beat_group_songs (id, song_id, sort_order, songs (id, song_name))')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('fetchConsecrationGroups error:', error.message);
+      return;
+    }
+
+    const nextGroups = (data || [])
+      .map(group => ({
+        ...group,
+        songs: (group.consecration_beat_group_songs || [])
+          .slice()
+          .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
+          .map(item => item.songs)
+          .filter(Boolean)
+      }))
+      .sort((a, b) => {
+        if (Boolean(a.is_highlighted) !== Boolean(b.is_highlighted)) {
+          return a.is_highlighted ? -1 : 1;
+        }
+        if (a.is_highlighted && b.is_highlighted) {
+          const aDue = a.due_date ? new Date(`${a.due_date}T00:00:00`).getTime() : Number.POSITIVE_INFINITY;
+          const bDue = b.due_date ? new Date(`${b.due_date}T00:00:00`).getTime() : Number.POSITIVE_INFINITY;
+          if (aDue !== bDue) return aDue - bDue;
+        }
+        return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
+      });
+
+    setConsecrationGroups(nextGroups);
+  }
+
+  async function fetchSuggestions() {
+    const { data, error } = await supabase
+      .from('song_suggestions')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      showAppNotice('Suggestions failed to load: ' + error.message);
+      return;
+    }
+
+    setSuggestions(data || []);
+  }
+
+  async function saveSuggestion(event) {
+    event.preventDefault();
+
+    const songName = suggestionFormData.song_name.trim();
+
+    if (!songName) {
+      showAppNotice('Please enter the suggested song name.');
+      return;
+    }
+
+    const existingSong = songs.find(song => song.song_name.toLowerCase() === songName.toLowerCase());
+    if (existingSong) {
+      showAppNotice(`"${existingSong.song_name}" is already in the library. Please use the existing song instead of suggesting it.`);
+      return;
+    }
+
+    if (user) {
+      const existingOpenSuggestion = suggestions.find(suggestion => (
+        suggestion.song_name.toLowerCase() === songName.toLowerCase()
+      ));
+      if (existingOpenSuggestion) {
+        showAppNotice(`"${existingOpenSuggestion.song_name}" is already in Suggestions and is waiting for review.`);
+        return;
+      }
+    }
+
+    setSaving(true);
+
+    try {
+      const { error } = await supabase
+        .from('song_suggestions')
+        .insert({
+          song_name: songName,
+          suggestion_area: suggestionFormData.suggestion_area || 'consecration',
+          suggester_name: suggestionFormData.suggester_name?.trim() || null,
+          details: suggestionFormData.details?.trim() || null,
+          created_by: user?.id || null,
+          suggester_email: user?.email || null
+        });
+
+      if (error) throw error;
+      setSuggestionFormData(EMPTY_SUGGESTION_FORM);
+      if (user) {
+        await fetchSuggestions();
+      }
+      showAppNotice('Suggestion submitted.');
+    } catch (err) {
+      showAppNotice('Suggestion save failed: ' + err.message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function viewSuggestionDetails(suggestion) {
+    const details = [
+      `Song: ${suggestion.song_name}`,
+      `For: ${suggestion.suggestion_area || 'Not specified'}`,
+      suggestion.suggester_name ? `Suggested by: ${suggestion.suggester_name}` : '',
+      suggestion.details ? `Details: ${suggestion.details}` : ''
+    ].filter(Boolean).join('\n\n');
+
+    showAppNotice(details, 'Suggestion Details');
+  }
+
+  async function deleteSuggestion(suggestion) {
+    if (!role.canDeleteSongs) {
+      showAppNotice('You do not have permission to delete suggestions.');
+      return;
+    }
+
+    setActionModal({
+      type: 'deleteSuggestion',
+      suggestion,
+      eyebrow: 'Delete suggestion',
+      title: `Delete ${suggestion.song_name}?`,
+      message: 'This removes the suggestion from the review list. This cannot be undone.',
+      confirmText: 'Delete Suggestion',
+      danger: true
+    });
+  }
+
+  function parseConsecrationSongNames(value) {
+    const seenNames = new Set();
+
+    return String(value || '')
+      .split(/\r?\n/)
+      .map(line => line.replace(/^♪+/, '').trim())
+      .filter(Boolean)
+      .filter(songName => {
+        const normalizedName = songName.toLowerCase();
+        if (seenNames.has(normalizedName)) return false;
+        seenNames.add(normalizedName);
+        return true;
+      });
+  }
+
+  async function findOrCreateSongByName(songName) {
+    const existingSong = songs.find(song => song.song_name.toLowerCase() === songName.toLowerCase());
+    if (existingSong) return existingSong;
+
+    const { data, error } = await supabase
+      .from('songs')
+      .upsert({ song_name: songName, created_by: user?.id || null }, { onConflict: 'song_name' })
+      .select('id, song_name')
+      .single();
+
+    if (error) throw error;
+    return data;
+  }
+
+  function getConsecrationGroupPayload(groupFormData, songCount = 0) {
+    const isNoStyleGroup = groupFormData.group_type === 'no_style';
+    const subgroupSize = Math.max(1, Number(groupFormData.subgroup_size) || 6);
+    const subgroupCount = Math.ceil(songCount / subgroupSize);
+    const highlightedSubgroupIndex = Number(groupFormData.highlighted_subgroup_index) || null;
+    return {
+      title: 'Consecration Songs',
+      beat_name: isNoStyleGroup ? CONSECRATION_NO_STYLE_GROUP_NAME : groupFormData.beat_name.trim(),
+      beat_category: isNoStyleGroup ? null : groupFormData.beat_category.trim() || null,
+      tempo: isNoStyleGroup ? null : groupFormData.tempo || null,
+      musical_key: isNoStyleGroup ? null : groupFormData.musical_key?.trim() || null,
+      variation: isNoStyleGroup ? null : groupFormData.variation.trim() || null,
+      is_highlighted: Boolean(groupFormData.is_highlighted),
+      due_date: groupFormData.due_date || null,
+      subgroup_size: subgroupSize,
+      highlighted_subgroup_index: highlightedSubgroupIndex && highlightedSubgroupIndex <= subgroupCount
+        ? highlightedSubgroupIndex
+        : null
+    };
+  }
+
+  async function saveConsecrationBeatGroup() {
+    if (!user || !(role.approved || role.admin)) {
+      showAppNotice('Please log in with an approved account to add Consecration groups.');
+      return false;
+    }
+
+    const songNames = parseConsecrationSongNames(consecrationFormData.song_names);
+    const groupPayload = getConsecrationGroupPayload(consecrationFormData, songNames.length);
+    const beatName = groupPayload.beat_name;
+
+    if (!beatName) {
+      showAppNotice('Please enter the keyboard style or choose Play without styles.');
+      return false;
+    }
+
+    if (songNames.length === 0) {
+      showAppNotice('Please enter at least one song under this group.');
+      return false;
+    }
+
+    setSaving(true);
+
+    try {
+      const { data: group, error: groupError } = await supabase
+        .from('consecration_beat_groups')
+        .insert({
+          ...groupPayload,
+          created_by: user.id
+        })
+        .select('id')
+        .single();
+
+      if (groupError) throw groupError;
+
+      const linkedSongs = [];
+      for (const songName of songNames) {
+        linkedSongs.push(await findOrCreateSongByName(songName));
+      }
+
+      const { error: songsError } = await supabase
+        .from('consecration_beat_group_songs')
+        .insert(linkedSongs.map((song, index) => ({
+          group_id: group.id,
+          song_id: song.id,
+          sort_order: index + 1
+        })));
+
+      if (songsError) throw songsError;
+
+      await recordAuditLog('beat_edit', 'consecration_beat_groups', group.id, beatName);
+      setConsecrationFormData(EMPTY_CONSECRATION_FORM);
+      await Promise.all([fetchSongs(true), fetchConsecrationGroups()]);
+      showAppNotice('Consecration group saved.');
+      return true;
+    } catch (err) {
+      showAppNotice('Consecration group save failed: ' + err.message);
+      return false;
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function updateConsecrationBeatGroup(groupId, groupFormData) {
+    if (!user || !(role.approved || role.admin)) {
+      showAppNotice('Please log in with an approved account to edit Consecration groups.');
+      return false;
+    }
+
+    const songNames = parseConsecrationSongNames(groupFormData.song_names);
+    const groupPayload = getConsecrationGroupPayload(groupFormData, songNames.length);
+    const beatName = groupPayload.beat_name;
+
+    if (!beatName) {
+      showAppNotice('Please enter the keyboard style or choose Play without styles.');
+      return false;
+    }
+
+    if (songNames.length === 0) {
+      showAppNotice('Please enter at least one song under this group.');
+      return false;
+    }
+
+    setSaving(true);
+
+    try {
+      const { error: groupError } = await supabase
+        .from('consecration_beat_groups')
+        .update(groupPayload)
+        .eq('id', groupId);
+
+      if (groupError) throw groupError;
+
+      const linkedSongs = [];
+      for (const songName of songNames) {
+        linkedSongs.push(await findOrCreateSongByName(songName));
+      }
+
+      const { error: songsError } = await supabase
+        .from('consecration_beat_group_songs')
+        .upsert(linkedSongs.map((song, index) => ({
+          group_id: groupId,
+          song_id: song.id,
+          sort_order: index + 1
+        })), { onConflict: 'group_id,song_id' });
+
+      if (songsError) throw songsError;
+
+      const linkedSongIds = linkedSongs.map(song => song.id);
+      const { error: deleteLinksError } = await supabase
+        .from('consecration_beat_group_songs')
+        .delete()
+        .eq('group_id', groupId)
+        .not('song_id', 'in', `(${linkedSongIds.join(',')})`);
+
+      if (deleteLinksError) throw deleteLinksError;
+
+      await recordAuditLog('beat_edit', 'consecration_beat_groups', groupId, beatName);
+      await Promise.all([fetchSongs(true), fetchConsecrationGroups()]);
+      showAppNotice('Consecration group updated.');
+      return true;
+    } catch (err) {
+      showAppNotice('Consecration group update failed: ' + err.message);
+      return false;
+    } finally {
+      setSaving(false);
+    }
+  }
+
   async function fetchKeyboards() {
     const { data, error } = await supabase
       .from('keyboards')
@@ -1213,6 +1675,15 @@ function AppIntegrated() {
       message: 'This removes only this beat from the song.',
       confirmText: 'Remove Beat',
       danger: true
+    });
+  }
+
+  function updateFormBeatName(beatName) {
+    const autoCategory = getAutoCategoryForBeat(beatCategoryMap, beatName);
+    setFormData({
+      ...formData,
+      beat_name: beatName,
+      location: autoCategory || formData.location
     });
   }
 
@@ -1466,20 +1937,21 @@ function AppIntegrated() {
           name: 'copyLyrics',
           label: 'Lyrics',
           description: song.lyrics?.trim() ? 'Copy saved lyrics.' : 'No lyrics saved yet.',
-          defaultChecked: Boolean(song.lyrics?.trim()),
+          defaultChecked: false,
           disabled: !song.lyrics?.trim()
         },
         {
           name: 'copyBeats',
           label: 'Beat settings',
           description: (song.styles || []).length > 0 ? `Copy ${song.styles.length} beat setting${song.styles.length === 1 ? '' : 's'}.` : 'No beats saved yet.',
-          defaultChecked: (song.styles || []).length > 0,
+          defaultChecked: false,
           disabled: (song.styles || []).length === 0
         },
         {
           name: 'copySongDetails',
           label: 'Song notes and metadata',
-          description: 'Copy composer, theme, scripture, default key/tempo, and notes.'
+          description: 'Copy composer, theme, scripture, default key/tempo, and notes.',
+          defaultChecked: false
         },
         {
           name: 'copyPlanning',
@@ -1591,6 +2063,26 @@ function AppIntegrated() {
       await updateSongPlanning(modal.song.id, { is_hidden: modal.nextHidden });
     }
 
+    if (modal.type === 'clearAuditLogs') {
+      await clearAuditLogs();
+    }
+
+    if (modal.type === 'deleteSuggestion') {
+      const { suggestion } = modal;
+      const { error } = await supabase
+        .from('song_suggestions')
+        .delete()
+        .eq('id', suggestion.id);
+
+      if (error) {
+        showAppNotice('Suggestion delete failed: ' + error.message);
+      } else {
+        await recordAuditLog('suggestion_delete', 'song_suggestions', suggestion.id, suggestion.song_name);
+        await fetchSuggestions();
+        showAppNotice('Suggestion deleted.');
+      }
+    }
+
     setActionModal(null);
   }
 
@@ -1677,6 +2169,20 @@ function AppIntegrated() {
     setActiveView('reports');
   }
 
+  function openConsecrationView() {
+    setShowAddForm(false);
+    cancelSongEdit();
+    setEditingLyricsSong(null);
+    setActiveView('consecration');
+  }
+
+  function openSuggestionsView() {
+    setShowAddForm(false);
+    cancelSongEdit();
+    setEditingLyricsSong(null);
+    setActiveView('suggestions');
+  }
+
   function openManualView() {
     setShowAddForm(false);
     cancelSongEdit();
@@ -1730,6 +2236,56 @@ function AppIntegrated() {
       return a.localeCompare(b);
     });
   }, [visibleSongsForUser]);
+
+  const beatCategoryMap = useMemo(() => {
+    const map = {
+      beatToCategories: {},
+      categoryToBeats: {}
+    };
+
+    songs
+      .flatMap(song => song.styles || [])
+      .forEach(style => addBeatCategoryMapping(map, style.beat_name, style.keyboard_location));
+
+    consecrationGroups
+      .filter(group => group.beat_name !== CONSECRATION_NO_STYLE_GROUP_NAME)
+      .forEach(group => addBeatCategoryMapping(map, group.beat_name, group.beat_category));
+
+    Object.keys(map.beatToCategories).forEach(key => {
+      map.beatToCategories[key] = sortOptionValues(map.beatToCategories[key]);
+    });
+    Object.keys(map.categoryToBeats).forEach(key => {
+      map.categoryToBeats[key] = sortOptionValues(map.categoryToBeats[key]);
+    });
+
+    return map;
+  }, [songs, consecrationGroups]);
+
+  const beatCategoryOptions = useMemo(() => {
+    const libraryCategoryNames = songs
+      .flatMap(song => song.styles || [])
+      .map(style => style.keyboard_location?.trim());
+    const consecrationCategoryNames = consecrationGroups
+      .map(group => group.beat_category?.trim());
+
+    return sortOptionValues([...libraryCategoryNames, ...consecrationCategoryNames]);
+  }, [songs, consecrationGroups]);
+
+  const beatNameOptions = useMemo(() => {
+    const libraryBeatNames = songs
+      .flatMap(song => song.styles || [])
+      .map(style => style.beat_name?.trim());
+    const consecrationBeatNames = consecrationGroups
+      .filter(group => group.beat_name !== CONSECRATION_NO_STYLE_GROUP_NAME)
+      .map(group => group.beat_name?.trim());
+
+    return sortOptionValues([...libraryBeatNames, ...consecrationBeatNames]);
+  }, [songs, consecrationGroups]);
+
+  const newSongBeatNameOptions = useMemo(
+    () => getBeatOptionsForCategory(beatCategoryMap, formData.location, beatNameOptions),
+    [beatCategoryMap, formData.location, beatNameOptions]
+  );
 
   const contributors = useMemo(() => {
     const contributorOptions = visibleSongsForUser.map(song => ({
@@ -1856,6 +2412,12 @@ function AppIntegrated() {
     padding: '6px 10px',
     fontSize: '0.8rem'
   });
+  const moreNavActive = ['reports', 'manual', 'settings', 'logs', 'admin'].includes(activeView);
+
+  function openMoreNavPage(openPage) {
+    setShowMoreNav(false);
+    openPage();
+  }
 
   return (
     <div className="app-shell" style={{ fontFamily: 'system-ui, sans-serif', color: '#222', minHeight: '100vh', background: '#f0f2f7' }}>
@@ -1916,33 +2478,58 @@ function AppIntegrated() {
               <button type="button" onClick={openLibraryView} style={navButtonStyle('library')}>
                 Library
               </button>
-              <button type="button" onClick={openReportsView} style={navButtonStyle('reports')}>
-                Reports
+              <button type="button" onClick={openConsecrationView} style={navButtonStyle('consecration')}>
+                Consecration
               </button>
-              {role.owner && (
-                <button type="button" onClick={openSettingsView} style={navButtonStyle('settings')}>
-                  Settings
-                </button>
-              )}
-              {role.owner && (
-                <button type="button" onClick={openLogTrailView} style={navButtonStyle('logs')}>
-                  Log Trail
-                </button>
-              )}
-              {role.owner && (
-                <button type="button" onClick={openAdminView} style={navButtonStyle('admin')}>
-                  Admin
-                </button>
-              )}
             </>
           )}
-          {user && !authLoading && (
-            <button type="button" onClick={openManualView} style={navButtonStyle('manual')}>
-              Manual
+          {!authLoading && (
+            <button type="button" onClick={openSuggestionsView} style={navButtonStyle('suggestions')}>
+              Suggestions
             </button>
           )}
+          {user && !authLoading && (
+            <div className="app-header__more" ref={moreNavRef}>
+              <button
+                type="button"
+                onClick={() => setShowMoreNav(current => !current)}
+                style={navButtonStyle(moreNavActive ? activeView : 'more')}
+                aria-expanded={showMoreNav}
+              >
+                More
+              </button>
+
+              {showMoreNav && (
+                <div className="app-header__more-menu">
+                  {(role.approved || role.admin) && (
+                    <button type="button" onClick={() => openMoreNavPage(openReportsView)}>
+                      Reports
+                    </button>
+                  )}
+                  <button type="button" onClick={() => openMoreNavPage(openManualView)}>
+                    Manual
+                  </button>
+                  {role.owner && (
+                    <button type="button" onClick={() => openMoreNavPage(openSettingsView)}>
+                      Settings
+                    </button>
+                  )}
+                  {role.owner && (
+                    <button type="button" onClick={() => openMoreNavPage(openLogTrailView)}>
+                      Log Trail
+                    </button>
+                  )}
+                  {role.owner && (
+                    <button type="button" onClick={() => openMoreNavPage(openAdminView)}>
+                      Admin
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
           {user ? (
-            <button onClick={handleSignOut} style={{ background: '#c62828', color: 'white', padding: '7px 14px', fontSize: '0.83rem' }}>
+            <button onClick={handleSignOut} className="app-header__logout">
               Logout
             </button>
           ) : (
@@ -2057,6 +2644,23 @@ function AppIntegrated() {
           </section>
         )}
 
+        {activeView === 'consecration' && user && (role.approved || role.admin) && (
+          <ConsecrationBeatGroups
+            groups={consecrationGroups}
+            formData={consecrationFormData}
+            onFormChange={setConsecrationFormData}
+            onSaveGroup={saveConsecrationBeatGroup}
+            onUpdateGroup={updateConsecrationBeatGroup}
+            saving={saving}
+            canEdit={role.approved || role.admin}
+            beatCategoryOptions={beatCategoryOptions}
+            beatNameOptions={beatNameOptions}
+            beatCategoryMap={beatCategoryMap}
+            autoCollapseSubgroups={autoCollapseConsecrationSubgroups}
+            onAutoCollapseSubgroupsChange={updateConsecrationAutoCollapseSubgroups}
+          />
+        )}
+
         {activeView === 'library' && (
           <div className="library-search-row no-print" style={{ marginBottom: '12px' }}>
             <SearchBar value={search} onChange={setSearch} />
@@ -2143,6 +2747,8 @@ function AppIntegrated() {
             onDefaultKeyboardChange={updateDefaultKeyboard}
             logoutTimeoutMinutes={logoutTimeoutMinutes}
             onLogoutTimeoutChange={updateLogoutTimeout}
+            autoCollapseConsecrationSubgroups={autoCollapseConsecrationSubgroups}
+            onAutoCollapseConsecrationSubgroupsChange={updateConsecrationAutoCollapseSubgroups}
           />
         )}
 
@@ -2162,6 +2768,9 @@ function AppIntegrated() {
           <LogTrailPage
             logs={auditLogs}
             loading={auditLogsLoading}
+            saving={saving}
+            canClear={role.owner}
+            onClearLogs={requestClearAuditLogs}
           />
         )}
 
@@ -2177,6 +2786,21 @@ function AppIntegrated() {
           <ManualPage role={role} />
         )}
 
+        {!authLoading && activeView === 'suggestions' && (
+          <SuggestionsPage
+            suggestions={suggestions}
+            formData={suggestionFormData}
+            onFormChange={setSuggestionFormData}
+            onSubmit={saveSuggestion}
+            onViewDetails={viewSuggestionDetails}
+            onDelete={deleteSuggestion}
+            existingSongNames={songNameOptions}
+            saving={saving}
+            canDelete={role.canDeleteSongs}
+            canSeeSuggestions={Boolean(user)}
+          />
+        )}
+
         {user && !authLoading && activeView === 'songStats' && (
           <SongStatsPage
             song={activeStatsSong}
@@ -2185,8 +2809,11 @@ function AppIntegrated() {
         )}
 
         {role.approved && activeView === 'library' && showAddForm && (
-          <form onSubmit={handleSubmit} className="panel no-print" style={{ marginBottom: '18px', borderTop: '4px solid #1a237e' }}>
-            <h3 style={{ margin: '0 0 14px', color: '#1a237e', fontSize: '1rem' }}>➕ Add Song</h3>
+          <form onSubmit={handleSubmit} className="panel no-print app-work-form app-work-form--add" style={{ marginBottom: '18px' }}>
+            <div className="app-work-form__banner">
+              <span>Adding Song</span>
+              <strong>New library entry</strong>
+            </div>
 
             <div>
               <label>Song Name *</label>
@@ -2221,7 +2848,12 @@ function AppIntegrated() {
                 <div className="form-grid" style={{ marginTop: '10px' }}>
                   <div>
                     <label>Beat Name</label>
-                    <input placeholder="e.g. 8-Beat Modern" value={formData.beat_name} onChange={e => setFormData({ ...formData, beat_name: e.target.value })} />
+                    <input placeholder="e.g. 8-Beat Modern" value={formData.beat_name} onChange={e => updateFormBeatName(e.target.value)} list="library-beat-name-options" />
+                    <datalist id="library-beat-name-options">
+                      {newSongBeatNameOptions.map(beatName => (
+                        <option key={beatName} value={beatName} />
+                      ))}
+                    </datalist>
                   </div>
                   <div>
                     <label>Keyboard</label>
@@ -2235,7 +2867,12 @@ function AppIntegrated() {
                 <div className="form-grid" style={{ marginTop: '10px' }}>
                   <div>
                     <label>Beat Category</label>
-                    <input placeholder="e.g. Ballad, Country, Bank 3…" value={formData.location} onChange={e => setFormData({ ...formData, location: e.target.value })} />
+                    <input placeholder="e.g. Ballad, Country, Bank 3…" value={formData.location} onChange={e => setFormData({ ...formData, location: e.target.value })} list="library-beat-category-options" />
+                    <datalist id="library-beat-category-options">
+                      {beatCategoryOptions.map(category => (
+                        <option key={category} value={category} />
+                      ))}
+                    </datalist>
                   </div>
                   <div>
                     <label>Tempo (BPM)</label>
@@ -2328,6 +2965,9 @@ function AppIntegrated() {
               defaultKeyboardId={defaultKeyboardId}
               emptyBeatForm={EMPTY_BEAT_FORM}
               musicalKeyOptions={MUSICAL_KEY_OPTIONS}
+              beatCategoryOptions={beatCategoryOptions}
+              beatNameOptions={beatNameOptions}
+              beatCategoryMap={beatCategoryMap}
               isEditingSong={editingSongId === song.id}
               editSongName={editingSongId === song.id ? editSongName : ''}
               isEditingLyrics={editingLyricsSong?.id === song.id}

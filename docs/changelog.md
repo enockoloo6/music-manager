@@ -32,6 +32,14 @@ Implemented:
 * Song-card secondary actions moved behind More.
 * Beat edit/remove actions are collapsed behind Beat actions.
 * Audio tools load only when opened for a song.
+* Add/edit forms across Library and Consecration now use a consistent gold work-form treatment.
+* Consecration saved groups keep the blue list treatment while add/edit forms keep the gold work-form treatment.
+* Consecration groups support style groups, no-style groups, due highlighting, subgroup sizing, highlighted subgroups, subgroup collapse, and drag-and-drop song movement between subgroups.
+* Consecration group summaries use compact style details such as `Style (Category) | 142 BPM | Key F`.
+* Added a public Suggestions tab where anyone can search first, then submit song suggestions for Consecration, Presentation, Library, or Other review.
+* Suggestions now allow an optional suggester name, avoid app-internal style/group wording, hide the suggestion list from logged-out visitors, and leave song adding as a manual action for permitted users.
+* Super admins can clear the Log Trail; the clear action is recorded immediately after cleanup.
+* The in-app Manual documents the Consecration drag workflow.
 * Logged-out users no longer query audio metadata from song cards.
 * Global Print action removed from the header; Lyrics Mode keeps its print action.
 * Main navigation moved into the header.
@@ -118,6 +126,13 @@ Implemented:
 * Approved editors can now add another beat directly from a saved song card, including keyboard, beat category, tempo, key, use, preferred status, and notes.
 * Beat add/edit key fields now use standard musical key choices while still preserving older custom key values already stored on a song.
 * Updated the in-app Manual with the Add Another Beat workflow and key-selection behavior.
+* Added a Consecration Songs tab for logged-in approved users, matching the document-style flow where one beat/header can list many songs underneath it.
+* Added `music_manager.consecration_beat_groups` and `music_manager.consecration_beat_group_songs` so pasted Consecration song lists keep their order under each piano beat.
+* Consolidated secondary navigation into a role-aware More menu, keeping Library and Consecration as primary tabs while preserving owner-only access for Settings, Log Trail, and Admin.
+* More menu now closes when the user clicks outside it, mobile logout is quieter, and the Consecration form uses an Add Song list builder with bulk paste support instead of requiring manual line breaks.
+* Beat Category fields in Library and Consecration now suggest existing categories while still allowing users to type new category names.
+* Piano Beat fields now suggest existing beat names while still allowing new names, and Consecration bulk song entry now asks how pasted songs are separated before splitting them.
+* Save/edit actions now use visible primary styling, cancel actions use red styling, and a cleanup migration normalizes matching beat/category values for `Country Waltz`, `16 Beat`, `Christmas Waltz`, `Midnight Swing`, `Happy Reggae`, `SWING & JAZZ`, and `POP & ROCK`.
 
 Public audio visibility depends on applying the public read migration to the active Supabase project.
 The migration file exists at `supabase/migrations/20260714_public_audio_read_access.sql`; applying it requires Supabase CLI authentication or a Postgres admin connection string.

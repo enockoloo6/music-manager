@@ -21,6 +21,15 @@
   gap: 8px;
 }
 
+.audio-attachments__manager {
+  margin-bottom: 12px;
+  padding: 12px;
+}
+
+.audio-attachments__manager .app-work-form__banner {
+  margin: -12px -12px 10px;
+}
+
 .audio-recorder__controls {
   display: flex;
   gap: 8px;

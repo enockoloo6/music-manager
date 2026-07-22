@@ -11,13 +11,10 @@ function LyricsEditorForm({ song, saving, onCancel, onSave }) {
   }
 
   return (
-    <form className="lyrics-editor no-print" onSubmit={handleSubmit}>
-      <div className="lyrics-editor__header">
-        <div>
-          <div className="lyrics-editor__label">Song lyrics</div>
-          <strong>{song.song_name}</strong>
-        </div>
-        <button type="button" onClick={onCancel}>Cancel</button>
+    <form className="lyrics-editor app-work-form app-work-form--edit no-print" onSubmit={handleSubmit}>
+      <div className="app-work-form__banner">
+        <span>Editing Lyrics</span>
+        <strong>{song.song_name}</strong>
       </div>
 
       <textarea
@@ -29,9 +26,14 @@ function LyricsEditorForm({ song, saving, onCancel, onSave }) {
 
       <div className="lyrics-editor__actions">
         <span>{lyrics.trim().length} characters</span>
-        <button type="submit" disabled={saving}>
-          {saving ? 'Saving lyrics...' : 'Save lyrics'}
-        </button>
+        <div>
+          <button type="submit" disabled={saving}>
+            {saving ? 'Saving lyrics...' : 'Save lyrics'}
+          </button>
+          <button type="button" className="lyrics-editor__cancel" onClick={onCancel} disabled={saving}>
+            Cancel
+          </button>
+        </div>
       </div>
     </form>
   );
